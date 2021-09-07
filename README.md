@@ -2,7 +2,7 @@
 
 A Virtual Automated Market Maker (vAMM) for perpetual yield-based futures on Solana.
 
-** Features**
+**Features**
 
 1. Highly performant indexing based on DV01
 2. Zero impermanent loss
