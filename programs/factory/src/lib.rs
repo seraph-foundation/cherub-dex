@@ -18,7 +18,6 @@ pub mod factory {
         factory.token_count = factory.token_count + 1;
         let exchange_program = ctx.accounts.exchange_program.clone();
         let exchange_accounts = exchange::Initialize {
-            token_program: ctx.accounts.token_program.clone().into(),
             exchange: ctx.accounts.exchange.clone().into(),
         };
         let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
@@ -53,7 +52,6 @@ pub struct CreateExchange<'info> {
     #[account(mut)]
     pub exchange: CpiAccount<'info, Exchange>,
     pub exchange_program: AccountInfo<'info>,
-    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

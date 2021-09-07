@@ -16,8 +16,6 @@ describe("XV01", () => {
   let mintAuthority = provider.wallet;
   let mintA = null;
   let mintB = null;
-  let walletTokenAccountA = null;
-  let walletTokenAccountB = null;
 
   const amountA = 1000;
   const amountB = 500;
@@ -29,6 +27,9 @@ describe("XV01", () => {
 
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
+
+  let walletTokenAccountA = null;
+  let walletTokenAccountB = null;
 
   it("Initialize state", async () => {
     await provider.connection.confirmTransaction(
@@ -104,11 +105,9 @@ describe("XV01", () => {
   });
 
   it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize(mintA.publicKey, {  // TODO: Verify this is actual token address
+    const tx = await exchange.rpc.initialize(mintA.publicKey, {
       accounts: {
         exchange: exchangeAccount.publicKey,
-        factory: factoryAccount.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       },
       signers: [exchangeAccount],
@@ -121,6 +120,22 @@ describe("XV01", () => {
     assert.ok(exchangeAccountInfo.totalSupply.eq(new anchor.BN(0)));
     assert.ok(exchangeAccountInfo.decimals.eq(new anchor.BN(18)));
   });
+
+  //it("Initialize factory exchange", async () => {
+  //  const newExchangeAccount = anchor.web3.Keypair.generate();
+  //  const tx = await factory.rpc.createExchange(mintA.publicKey, {
+  //    accounts: {
+  //      factory: factoryAccount.publicKey,
+  //      exchange: newExchangeAccount.publicKey,
+  //      exchangeProgram: exchange.programId,
+  //      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+  //    },
+  //    signers: [newExchangeAccount],
+  //    instructions: [await exchange.account.exchange.createInstruction(newExchangeAccount)],
+  //  });
+
+  //  console.log("Your transaction signature", tx);
+  //});
 
   it("Add liquidity", async () => {
     const amount = new anchor.BN(1);
@@ -162,19 +177,4 @@ describe("XV01", () => {
     assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
     assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
   });
-
-  //it("Create exchange", async () => {
-  //  const tx = await factory.rpc.createExchange(newToken.publicKey, {
-  //    accounts: {
-  //      factory: factoryAccount.publicKey,
-  //      exchangeProgram: exchange.programId,
-  //      exchange: exchangeAccount.publicKey,
-  //      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-  //    },
-  //    signers: [exchangeAccount],
-  //    instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)],
-  //  });
-
-  //  console.log("Your transaction signature", tx);
-  //});
 });

@@ -38,7 +38,6 @@ pub mod exchange {
 pub struct Initialize<'info> {
     #[account(init)]
     pub exchange: ProgramAccount<'info, Exchange>,
-    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
