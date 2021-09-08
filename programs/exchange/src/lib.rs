@@ -5,7 +5,7 @@ use anchor_spl::token::{self, Transfer};
 pub mod exchange {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
         Ok(())
     }
 
