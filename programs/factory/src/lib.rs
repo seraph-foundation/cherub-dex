@@ -17,11 +17,11 @@ pub mod factory {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
         let exchange_program = ctx.accounts.exchange_program.clone();
-        let exchange_accounts = exchange::Initialize {
+        let exchange_accounts = exchange::Create {
             exchange: ctx.accounts.exchange.clone().into(),
         };
         let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
-        exchange::cpi::initialize(exchange_ctx, token)?;
+        exchange::cpi::create(exchange_ctx, token)?;
         msg!("Created exchange for token {}", token);
         Ok(())
     }

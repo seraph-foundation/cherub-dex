@@ -5,7 +5,11 @@ use anchor_spl::token::{self, Transfer};
 pub mod exchange {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, token: Pubkey) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+        Ok(())
+    }
+
+    pub fn create(ctx: Context<Create>, token: Pubkey) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token = token;
         exchange.total_supply = 0;
@@ -37,6 +41,12 @@ pub mod exchange {
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(init)]
+    pub exchange: ProgramAccount<'info, Exchange>,
+}
+
+#[derive(Accounts)]
+pub struct Create<'info> {
+    #[account(mut)]
     pub exchange: ProgramAccount<'info, Exchange>,
 }
 

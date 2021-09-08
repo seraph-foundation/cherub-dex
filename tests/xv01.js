@@ -105,7 +105,7 @@ describe("XV01", () => {
   });
 
   it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize(mintA.publicKey, {
+    const tx = await exchange.rpc.initialize({
       accounts: {
         exchange: exchangeAccount.publicKey,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
@@ -115,27 +115,25 @@ describe("XV01", () => {
     });
 
     console.log("Your transaction signature", tx);
+  });
+
+  it("Exchange created", async () => {
+    const tx = await factory.rpc.createExchange(mintA.publicKey, {
+      accounts: {
+        factory: factoryAccount.publicKey,
+        exchange: exchangeAccount.publicKey,
+        exchangeProgram: exchange.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      },
+      signers: [factoryAccount.owner],
+    });
+
+    console.log("Your transaction signature", tx);
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
     assert.ok(exchangeAccountInfo.totalSupply.eq(new anchor.BN(0)));
     assert.ok(exchangeAccountInfo.decimals.eq(new anchor.BN(18)));
   });
-
-  //it("Initialize factory exchange", async () => {
-  //  const newExchangeAccount = anchor.web3.Keypair.generate();
-  //  const tx = await factory.rpc.createExchange(mintA.publicKey, {
-  //    accounts: {
-  //      factory: factoryAccount.publicKey,
-  //      exchange: newExchangeAccount.publicKey,
-  //      exchangeProgram: exchange.programId,
-  //      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-  //    },
-  //    signers: [newExchangeAccount],
-  //    instructions: [await exchange.account.exchange.createInstruction(newExchangeAccount)],
-  //  });
-
-  //  console.log("Your transaction signature", tx);
-  //});
 
   it("Add liquidity", async () => {
     const amount = new anchor.BN(1);
