@@ -107,6 +107,7 @@ describe("XV01", () => {
   it("Exchange initialized", async () => {
     const tx = await exchange.rpc.initialize({
       accounts: {
+        factory: factoryAccount.publicKey,
         exchange: exchangeAccount.publicKey,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       },

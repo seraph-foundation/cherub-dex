@@ -5,7 +5,9 @@ use anchor_spl::token::{self, Transfer};
 pub mod exchange {
     use super::*;
 
-    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+        let factory = &mut ctx.accounts.factory;
+        exchange.factory = factory;
         Ok(())
     }
 
@@ -89,6 +91,7 @@ pub struct SolTo<'info> {
 
 #[account]
 pub struct Exchange {
+    pub factory: Pubkey,
     pub token: Pubkey,
     pub total_supply: u64,
     pub decimals: u64,
