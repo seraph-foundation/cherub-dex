@@ -11,7 +11,6 @@ pub mod exchange {
     pub fn initialize(ctx: Context<Initialize>, factory: Pubkey) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = factory;
-        exchange.total_supply = 0;
         Ok(())
     }
 
@@ -27,10 +26,23 @@ pub mod exchange {
         exchange.name = name;
         exchange.symbol = symbol;
         exchange.decimals = decimals;
+        exchange.total_supply = 0;
         Ok(())
     }
 
-    pub fn add_liquidity(ctx: Context<AddLiquidity>, amount: u64) -> ProgramResult {
+    pub fn add_liquidity(
+        ctx: Context<AddLiquidity>,
+        min_liquidity: u64,
+        max_tokens: u64,
+        deadline: i64,
+    ) -> ProgramResult {
+        let amount = 1;
+        let exchange = &mut ctx.accounts.exchange;
+        if exchange.total_supply > 0 {
+            exchange.total_supply = max_tokens;
+        } else {
+            exchange.total_supply = max_tokens;
+        }
         token::transfer(ctx.accounts.into(), amount)
     }
 
@@ -72,6 +84,8 @@ pub struct AddLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     #[account(mut)]
+    pub exchange: Account<'info, Exchange>,
+    #[account(mut)]
     pub from: AccountInfo<'info>,
     #[account(mut)]
     pub to: AccountInfo<'info>,
@@ -104,7 +118,7 @@ pub struct SolTo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
-impl<'a, 'b, 'c, 'info> From<&mut AddLiquidity<'info>>
+impl<'a, 'b, 'c, 'd, 'info> From<&mut AddLiquidity<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
 {
     fn from(accounts: &mut AddLiquidity<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
@@ -118,7 +132,7 @@ impl<'a, 'b, 'c, 'info> From<&mut AddLiquidity<'info>>
     }
 }
 
-impl<'a, 'b, 'c, 'info> From<&mut RemoveLiquidity<'info>>
+impl<'a, 'b, 'c, 'd, 'info> From<&mut RemoveLiquidity<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
 {
     fn from(

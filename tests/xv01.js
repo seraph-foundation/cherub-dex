@@ -1,4 +1,5 @@
 const anchor = require("@project-serum/anchor");
+const serumCmn = require("@project-serum/common");
 const { TOKEN_PROGRAM_ID, Token } = require("@solana/spl-token");
 const TokenInstructions = require("@project-serum/serum").TokenInstructions;
 const assert = require("assert");
@@ -82,6 +83,8 @@ describe("XV01", () => {
       amountB
     );
 
+    // await serumCmn.getTokenAccount(provider, mintA.address);
+
     walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
     walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);
 
@@ -147,13 +150,17 @@ describe("XV01", () => {
   });
 
   it("Add liquidity", async () => {
-    const amount = new anchor.BN(1);
-    const tx = await exchange.rpc.addLiquidity(amount, {
+    // There is a security issue with Anchor when using duplicate accounts `from` and `to`
+    const minLiquidity = new anchor.BN(1);
+    const maxTokens = new anchor.BN(10);
+    const deadline = new anchor.BN(Date.now() / 1000);
+    const tx = await exchange.rpc.addLiquidity(minLiquidity, maxTokens, deadline, {
       accounts: {
         authority: provider.wallet.publicKey,
+        exchange: exchangeAccount.publicKey,
         from: walletTokenAccountA,
         to: exchangeTokenAccountA,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID
       },
     });
 
@@ -162,8 +169,8 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(amount)));
-    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - amount)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(minLiquidity)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - minLiquidity)));
   });
 
   it("Remove liquidity", async () => {
@@ -171,6 +178,7 @@ describe("XV01", () => {
     const tx = await exchange.rpc.removeLiquidity(amount, {
       accounts: {
         authority: exchangeAccount.publicKey,
+        exchange: exchangeAccount.publicKey,
         from: exchangeTokenAccountA,
         to: walletTokenAccountA,
         tokenProgram: TOKEN_PROGRAM_ID,
