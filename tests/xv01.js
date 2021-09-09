@@ -21,9 +21,10 @@ describe("XV01", () => {
 
   const amountA = 1000;
   const amountB = 500;
+  const amountLamports = 10000000000;
 
-  const tokenName = strToBN("XV01");
-  const tokenSymbol = strToBN("XV01");
+  const nameA = strToBN("XV01");
+  const symbolA = strToBN("XV01");
 
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
@@ -38,7 +39,7 @@ describe("XV01", () => {
 
   it("State initialized", async () => {
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(payer.publicKey, 10000000000),
+      await provider.connection.requestAirdrop(payer.publicKey, amountLamports),
       "confirmed"
     );
 
@@ -127,7 +128,7 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    const tx = await factory.rpc.createExchange(mintA.publicKey, tokenName, tokenSymbol, {
+    const tx = await factory.rpc.createExchange(mintA.publicKey, nameA, symbolA, {
       accounts: {
         factory: factoryAccount.publicKey,
         exchange: exchangeAccount.publicKey,
