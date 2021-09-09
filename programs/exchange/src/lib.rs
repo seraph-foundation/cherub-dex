@@ -15,12 +15,18 @@ pub mod exchange {
         Ok(())
     }
 
-    pub fn create(ctx: Context<Create>, token: Pubkey, name: u64, symbol: u64) -> ProgramResult {
+    pub fn create(
+        ctx: Context<Create>,
+        token: Pubkey,
+        name: u64,
+        symbol: u64,
+        decimals: u64,
+    ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token = token;
         exchange.name = name;
         exchange.symbol = symbol;
-        exchange.decimals = 18;
+        exchange.decimals = decimals;
         Ok(())
     }
 

@@ -25,6 +25,7 @@ describe("XV01", () => {
 
   const nameA = strToBN("XV01");
   const symbolA = strToBN("XV01");
+  const decimalsA = 18;
 
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
@@ -128,7 +129,7 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    const tx = await factory.rpc.createExchange(mintA.publicKey, nameA, symbolA, {
+    const tx = await factory.rpc.createExchange(mintA.publicKey, nameA, symbolA, new anchor.BN(decimalsA), {
       accounts: {
         factory: factoryAccount.publicKey,
         exchange: exchangeAccount.publicKey,

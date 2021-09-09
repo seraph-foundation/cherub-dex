@@ -13,7 +13,6 @@ pub mod factory {
         let factory = &mut ctx.accounts.factory;
         factory.exchange_template = template;
         factory.token_count = 0;
-        msg!("Initialized factory with template {}", template);
         Ok(())
     }
 
@@ -22,6 +21,7 @@ pub mod factory {
         token: Pubkey,
         name: u64,
         symbol: u64,
+        decimals: u64,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
@@ -30,23 +30,19 @@ pub mod factory {
             exchange: ctx.accounts.exchange.clone().into(),
         };
         let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
-        exchange::cpi::create(exchange_ctx, token, name, symbol)?;
-        msg!("Created exchange for token {}", token);
+        exchange::cpi::create(exchange_ctx, token, name, symbol, decimals)?;
         Ok(())
     }
 
     pub fn get_exchange(_ctx: Context<GetExchange>, token: Pubkey) -> ProgramResult {
-        msg!("Got exchange {}", token);
         Ok(())
     }
 
     pub fn get_token(_ctx: Context<GetToken>, token: Pubkey) -> ProgramResult {
-        msg!("Got token {}", token);
         Ok(())
     }
 
     pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, token: Pubkey) -> ProgramResult {
-        msg!("Got token {} with id", token);
         Ok(())
     }
 }
