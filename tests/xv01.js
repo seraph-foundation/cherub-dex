@@ -22,6 +22,9 @@ describe("XV01", () => {
   const amountA = 1000;
   const amountB = 500;
 
+  const tokenName = strToBN("XV01");
+  const tokenSymbol = strToBN("XV01");
+
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
 
@@ -124,8 +127,6 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    const tokenName = stringToU64("XV01");
-    const tokenSymbol = stringToU64("XV01");
     const tx = await factory.rpc.createExchange(mintA.publicKey, tokenName, tokenSymbol, {
       accounts: {
         factory: factoryAccount.publicKey,
@@ -139,7 +140,6 @@ describe("XV01", () => {
     console.log("Your transaction signature", tx);
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
-    u64ToString(exchangeAccountInfo.name);
     assert.ok(exchangeAccountInfo.totalSupply.eq(new anchor.BN(0)));
     assert.ok(exchangeAccountInfo.decimals.eq(new anchor.BN(18)));
   });
@@ -186,7 +186,7 @@ describe("XV01", () => {
   });
 });
 
-function u64ToString(bn) {
+function bnToStr(bn) {
   // TODO: Finish this
   var array = bn.toBuffer();
   var result = "";
@@ -196,7 +196,7 @@ function u64ToString(bn) {
   return result;
 }
 
-function stringToU64(str) {
+function strToBN(str) {
   var result = [];
   for (var i = 0; i < str.length; i++) {
     result.push(str.charCodeAt(i).toString(2));
