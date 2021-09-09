@@ -124,7 +124,9 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    const tx = await factory.rpc.createExchange(mintA.publicKey, {
+    const tokenName = stringToU64("XV01");
+    const tokenSymbol = stringToU64("XV01");
+    const tx = await factory.rpc.createExchange(mintA.publicKey, tokenName, tokenSymbol, {
       accounts: {
         factory: factoryAccount.publicKey,
         exchange: exchangeAccount.publicKey,
@@ -182,3 +184,21 @@ describe("XV01", () => {
     assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
   });
 });
+
+function u64ToString(bn) {
+  var str = bn.toNumber().toString();
+  var array = [str.substr(0, 2), str.substr(2, 4), str.substr(4, 6)];
+  var result = "";
+  for (var i = 0; i < array.length; i++) {
+    result += String.fromCharCode(parseInt(array[i], 2));
+  }
+  return result;
+}
+
+function stringToU64(str) {
+  var result = [];
+  for (var i = 0; i < str.length; i++) {
+    result.push(str.charCodeAt(i).toString(2));
+  }
+  return new anchor.BN(result);
+}

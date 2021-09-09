@@ -17,7 +17,12 @@ pub mod factory {
         Ok(())
     }
 
-    pub fn create_exchange(ctx: Context<CreateExchange>, token: Pubkey) -> ProgramResult {
+    pub fn create_exchange(
+        ctx: Context<CreateExchange>,
+        token: Pubkey,
+        name: u64,
+        symbol: u64,
+    ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
         let exchange_program = ctx.accounts.exchange_program.clone();
@@ -25,7 +30,7 @@ pub mod factory {
             exchange: ctx.accounts.exchange.clone().into(),
         };
         let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
-        exchange::cpi::create(exchange_ctx, token)?;
+        exchange::cpi::create(exchange_ctx, token, name, symbol)?;
         msg!("Created exchange for token {}", token);
         Ok(())
     }

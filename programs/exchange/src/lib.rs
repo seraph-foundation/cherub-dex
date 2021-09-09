@@ -11,13 +11,15 @@ pub mod exchange {
     pub fn initialize(ctx: Context<Initialize>, factory: Pubkey) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = factory;
+        exchange.total_supply = 0;
         Ok(())
     }
 
-    pub fn create(ctx: Context<Create>, token: Pubkey) -> ProgramResult {
+    pub fn create(ctx: Context<Create>, token: Pubkey, name: u64, symbol: u64) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token = token;
-        exchange.total_supply = 0;
+        exchange.name = name;
+        exchange.symbol = symbol;
         exchange.decimals = 18;
         Ok(())
     }
@@ -45,7 +47,7 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 32 + 32 + 8 + 8)]
+    #[account(init, payer = user, space = 8 + 8 + 8 + 32 + 32 + 8 + 8)]
     pub exchange: Account<'info, Exchange>,
     #[account(signer)]
     pub user: AccountInfo<'info>,
@@ -130,6 +132,8 @@ impl<'a, 'b, 'c, 'info> From<&mut RemoveLiquidity<'info>>
 pub struct Exchange {
     pub factory: Pubkey,
     pub token: Pubkey,
+    pub name: u64,
+    pub symbol: u64,
     pub total_supply: u64,
     pub decimals: u64,
 }
