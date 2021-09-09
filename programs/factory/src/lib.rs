@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::system_program;
+
 use exchange::Exchange;
+
+declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod factory {
@@ -26,50 +30,57 @@ pub mod factory {
         Ok(())
     }
 
-    pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
+    pub fn get_exchange(_ctx: Context<GetExchange>, token: Pubkey) -> ProgramResult {
+        msg!("Got exchange {}", token);
         Ok(())
     }
 
-    pub fn get_token(_ctx: Context<GetToken>, _token: Pubkey) -> ProgramResult {
+    pub fn get_token(_ctx: Context<GetToken>, token: Pubkey) -> ProgramResult {
+        msg!("Got token {}", token);
         Ok(())
     }
 
-    pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, _token: Pubkey) -> ProgramResult {
+    pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, token: Pubkey) -> ProgramResult {
+        msg!("Got token {} with id", token);
         Ok(())
     }
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init)]
-    pub factory: ProgramAccount<'info, Factory>,
+    #[account(init, payer = user, space = 8 + 32 + 8)]
+    pub factory: Account<'info, Factory>,
+    #[account(signer)]
+    pub user: AccountInfo<'info>,
+    #[account(address = system_program::ID)]
+    pub system_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct CreateExchange<'info> {
     #[account(mut)]
-    pub factory: ProgramAccount<'info, Factory>,
+    pub factory: Account<'info, Factory>,
     #[account(mut)]
-    pub exchange: CpiAccount<'info, Exchange>,
+    pub exchange: Account<'info, Exchange>,
     pub exchange_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct GetExchange<'info> {
     #[account(mut)]
-    pub factory: ProgramAccount<'info, Factory>,
+    pub factory: Account<'info, Factory>,
 }
 
 #[derive(Accounts)]
 pub struct GetToken<'info> {
     #[account(mut)]
-    pub factory: ProgramAccount<'info, Factory>,
+    pub factory: Account<'info, Factory>,
 }
 
 #[derive(Accounts)]
 pub struct GetTokenWithId<'info> {
     #[account(mut)]
-    pub factory: ProgramAccount<'info, Factory>,
+    pub factory: Account<'info, Factory>,
 }
 
 #[account]

@@ -3,6 +3,8 @@ const { TOKEN_PROGRAM_ID, Token } = require("@solana/spl-token");
 const TokenInstructions = require("@project-serum/serum").TokenInstructions;
 const assert = require("assert");
 
+const { SystemProgram } = anchor.web3;
+
 describe("XV01", () => {
   anchor.setProvider(anchor.Provider.env());
 
@@ -31,7 +33,7 @@ describe("XV01", () => {
   let walletTokenAccountA = null;
   let walletTokenAccountB = null;
 
-  it("Initialize state", async () => {
+  it("State initialized", async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(payer.publicKey, 10000000000),
       "confirmed"
@@ -92,30 +94,33 @@ describe("XV01", () => {
     const tx = await factory.rpc.initialize(exchangeTemplate.publicKey, {
       accounts: {
         factory: factoryAccount.publicKey,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId
       },
-      signers: [factoryAccount],
-      instructions: [await factory.account.factory.createInstruction(factoryAccount)],
+      signers: [factoryAccount]
     });
 
     console.log("Your transaction signature", tx);
 
     let factoryAccountInfo = await factory.account.factory.fetch(factoryAccount.publicKey)
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
+    assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
   it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize({
+    const tx = await exchange.rpc.initialize(factoryAccount.publicKey, {
       accounts: {
-        factory: factoryAccount.publicKey,
         exchange: exchangeAccount.publicKey,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId
       },
-      signers: [exchangeAccount],
-      instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)],
+      signers: [exchangeAccount]
     });
 
     console.log("Your transaction signature", tx);
+
+    let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey)
+    assert.ok(exchangeAccountInfo.factory.toString() == factoryAccount.publicKey.toString());
   });
 
   it("Exchange created", async () => {

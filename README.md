@@ -12,4 +12,5 @@ A Virtual Automated Market Maker (vAMM) for perpetual yield-based futures on Sol
 
 * `airdrop` in JavaScript library does not work with VPN
 * Do not run `solana-validator-test` with `anchor test`
+* For sizing, 1 (bool) + 32 (Pubkey) + 8 (u64)
 

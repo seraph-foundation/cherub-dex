@@ -1,12 +1,15 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, Transfer};
+
+declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod exchange {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
-        let factory = &mut ctx.accounts.factory;
+    pub fn initialize(ctx: Context<Initialize>, factory: Pubkey) -> ProgramResult {
+        let exchange = &mut ctx.accounts.exchange;
         exchange.factory = factory;
         Ok(())
     }
@@ -42,14 +45,18 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init)]
-    pub exchange: ProgramAccount<'info, Exchange>,
+    #[account(init, payer = user, space = 8 + 32 + 32 + 8 + 8)]
+    pub exchange: Account<'info, Exchange>,
+    #[account(signer)]
+    pub user: AccountInfo<'info>,
+    #[account(address = system_program::ID)]
+    pub system_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Create<'info> {
     #[account(mut)]
-    pub exchange: ProgramAccount<'info, Exchange>,
+    pub exchange: Account<'info, Exchange>,
 }
 
 #[derive(Accounts)]
@@ -76,33 +83,23 @@ pub struct RemoveLiquidity<'info> {
 
 #[derive(Accounts)]
 pub struct GetInputPrice<'info> {
-    pub exchange: ProgramAccount<'info, Exchange>,
+    pub exchange: Account<'info, Exchange>,
 }
 
 #[derive(Accounts)]
 pub struct GetOutputPrice<'info> {
-    pub exchange: ProgramAccount<'info, Exchange>,
+    pub exchange: Account<'info, Exchange>,
 }
 
 #[derive(Accounts)]
 pub struct SolTo<'info> {
-    pub exchange: ProgramAccount<'info, Exchange>,
-}
-
-#[account]
-pub struct Exchange {
-    pub factory: Pubkey,
-    pub token: Pubkey,
-    pub total_supply: u64,
-    pub decimals: u64,
+    pub exchange: Account<'info, Exchange>,
 }
 
 impl<'a, 'b, 'c, 'info> From<&mut AddLiquidity<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
 {
-    fn from(
-        accounts: &mut AddLiquidity<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+    fn from(accounts: &mut AddLiquidity<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: accounts.from.clone(),
             to: accounts.to.clone(),
@@ -127,4 +124,12 @@ impl<'a, 'b, 'c, 'info> From<&mut RemoveLiquidity<'info>>
         let cpi_program = accounts.token_program.clone();
         CpiContext::new(cpi_program, cpi_accounts)
     }
+}
+
+#[account]
+pub struct Exchange {
+    pub factory: Pubkey,
+    pub token: Pubkey,
+    pub total_supply: u64,
+    pub decimals: u64,
 }
