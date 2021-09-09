@@ -139,6 +139,7 @@ describe("XV01", () => {
     console.log("Your transaction signature", tx);
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
+    u64ToString(exchangeAccountInfo.name);
     assert.ok(exchangeAccountInfo.totalSupply.eq(new anchor.BN(0)));
     assert.ok(exchangeAccountInfo.decimals.eq(new anchor.BN(18)));
   });
@@ -186,8 +187,8 @@ describe("XV01", () => {
 });
 
 function u64ToString(bn) {
-  var str = bn.toNumber().toString();
-  var array = [str.substr(0, 2), str.substr(2, 4), str.substr(4, 6)];
+  // TODO: Finish this
+  var array = bn.toBuffer();
   var result = "";
   for (var i = 0; i < array.length; i++) {
     result += String.fromCharCode(parseInt(array[i], 2));
@@ -200,5 +201,6 @@ function stringToU64(str) {
   for (var i = 0; i < str.length; i++) {
     result.push(str.charCodeAt(i).toString(2));
   }
-  return new anchor.BN(result);
+  var bn = new anchor.BN(result);
+  return bn
 }
