@@ -77,8 +77,8 @@ pub mod exchange {
         //    exchange.total_supply = token_amount;
         //}
 
-        token::transfer(ctx.accounts.into_y_context(), max_tokens_y);
-        token::transfer(ctx.accounts.into(), max_tokens_x)
+        token::transfer(ctx.accounts.into_x_context(), max_tokens_x);
+        token::transfer(ctx.accounts.into_y_context(), max_tokens_y)
     }
 
     pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, amount: u64) -> ProgramResult {
@@ -93,7 +93,7 @@ pub mod exchange {
         Ok(())
     }
 
-    pub fn sol_to(_ctx: Context<SolTo>) -> ProgramResult {
+    pub fn x_to(_ctx: Context<XTo>) -> ProgramResult {
         Ok(())
     }
 }
@@ -158,11 +158,20 @@ pub struct GetOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
-pub struct SolTo<'info> {
+pub struct XTo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
 impl<'info> AddLiquidity<'info> {
+    fn into_x_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.from_x.clone(),
+            to: self.to_x.clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+
     fn into_y_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.from_y.clone(),
@@ -170,20 +179,6 @@ impl<'info> AddLiquidity<'info> {
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
-    }
-}
-
-impl<'a, 'b, 'c, 'd, 'info> From<&mut AddLiquidity<'info>>
-    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
-{
-    fn from(accounts: &mut AddLiquidity<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: accounts.from_x.clone(),
-            to: accounts.to_x.clone(),
-            authority: accounts.authority.clone(),
-        };
-        let cpi_program = accounts.token_program.clone();
-        CpiContext::new(cpi_program, cpi_accounts)
     }
 }
 
