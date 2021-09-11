@@ -4,13 +4,16 @@ A Virtual Automated Market Maker (vAMM) for perpetual yield-based futures on Sol
 
 **Features**
 
-1. Highly performant indexing based on DV01
-2. Zero impermanent loss
-3. 100x leverage
+- XV01 perpetual futures based on high fidelity DV01 indexing
+- Zero impermanent loss based on next generation AMM technology
+- Deep liquidity with up to 100x leverage
 
 ### Notes
 
 * `airdrop` in JavaScript library does not work with VPN
-* Do not run `solana-validator-test` with `anchor test`
+* `anchor test` automatically runs `solana-validator-test`
 * For sizing, 1 (bool) + 32 (Pubkey) + 8 (u64)
 
+### Security
+
+* There is an exploit with Anchor when using duplicate accounts in an instruction

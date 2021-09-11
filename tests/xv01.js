@@ -1,5 +1,4 @@
 const anchor = require("@project-serum/anchor");
-const serumCmn = require("@project-serum/common");
 const { TOKEN_PROGRAM_ID, Token } = require("@solana/spl-token");
 const TokenInstructions = require("@project-serum/serum").TokenInstructions;
 const assert = require("assert");
@@ -17,27 +16,31 @@ describe("XV01", () => {
   const payer = anchor.web3.Keypair.generate();
 
   let mintAuthority = provider.wallet;
-  let mintA = null;
-  let mintB = null;
+  let mintX = null;
+  let mintY = null;
 
-  const amountA = 1000;
-  const amountB = 500;
-  const amountLamports = 10000000000;
+  const amountX = 1000;
+  const amountY = 500;
+  const amountZ = 1;
 
-  const nameA = strToBN("XV01");
-  const symbolA = strToBN("XV01");
-  const decimalsA = 18;
+  const amountLamports = 10000000000;  // How many lamports per SOL?
+
+  const decimalsX = 18;
+  const decimalsY = 18;
+  const decimalsZ = 18;
 
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
 
   const exchangeTemplate = anchor.web3.Keypair.generate();
 
-  let exchangeTokenAccountA = null;
-  let exchangeTokenAccountB = null;
+  let exchangeTokenAccountX = null;
+  let exchangeTokenAccountY = null;
+  let exchangeTokenAccountZ = null;
 
-  let walletTokenAccountA = null;
-  let walletTokenAccountB = null;
+  let walletTokenAccountX = null;
+  let walletTokenAccountY = null;
+  let walletTokenAccountZ = null;
 
   it("State initialized", async () => {
     await provider.connection.confirmTransaction(
@@ -45,7 +48,7 @@ describe("XV01", () => {
       "confirmed"
     );
 
-    mintA = await Token.createMint(
+    mintX = await Token.createMint(
       provider.connection,
       payer,
       mintAuthority.publicKey,
@@ -54,7 +57,7 @@ describe("XV01", () => {
       TOKEN_PROGRAM_ID
     );
 
-    mintB = await Token.createMint(
+    mintY = await Token.createMint(
       provider.connection,
       payer,
       mintAuthority.publicKey,
@@ -63,39 +66,59 @@ describe("XV01", () => {
       TOKEN_PROGRAM_ID
     );
 
-    walletTokenAccountA = await mintA.createAccount(provider.wallet.publicKey);
-    walletTokenAccountB = await mintB.createAccount(provider.wallet.publicKey);
-
-    exchangeTokenAccountA = await mintA.createAccount(exchangeAccount.publicKey);
-    exchangeTokenAccountB = await mintB.createAccount(exchangeAccount.publicKey);
-
-    await mintA.mintTo(
-      walletTokenAccountA,
+    mintZ = await Token.createMint(
+      provider.connection,
+      payer,
       mintAuthority.publicKey,
-      [mintAuthority.payer],
-      amountA
+      null,
+      0,
+      TOKEN_PROGRAM_ID
     );
 
-    await mintB.mintTo(
-      walletTokenAccountB,
+    walletTokenAccountX = await mintX.createAccount(provider.wallet.publicKey);
+    walletTokenAccountY = await mintY.createAccount(provider.wallet.publicKey);
+    walletTokenAccountZ = await mintZ.createAccount(provider.wallet.publicKey);
+
+    exchangeTokenAccountX = await mintX.createAccount(exchangeAccount.publicKey);
+    exchangeTokenAccountY = await mintY.createAccount(exchangeAccount.publicKey);
+    exchangeTokenAccountZ = await mintZ.createAccount(exchangeAccount.publicKey);
+
+    await mintX.mintTo(
+      walletTokenAccountX,
       mintAuthority.publicKey,
       [mintAuthority.payer],
-      amountB
+      amountX
     );
 
-    // await serumCmn.getTokenAccount(provider, mintA.address);
+    await mintY.mintTo(
+      walletTokenAccountY,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      amountY
+    );
 
-    walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
-    walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);
+    await mintZ.mintTo(
+      walletTokenAccountZ,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      amountZ
+    );
 
-    exchangeTokenAccountInfoA = await mintA.getAccountInfo(exchangeTokenAccountA);
-    exchangeTokenAccountInfoB = await mintB.getAccountInfo(exchangeTokenAccountB);
+    walletTokenAccountInfoX = await mintX.getAccountInfo(walletTokenAccountX);
+    walletTokenAccountInfoY = await mintY.getAccountInfo(walletTokenAccountY);
+    walletTokenAccountInfoZ = await mintZ.getAccountInfo(walletTokenAccountZ);
 
-    assert.ok(walletTokenAccountInfoA.amount.toNumber() == amountA);
-    assert.ok(walletTokenAccountInfoB.amount.toNumber() == amountB);
+    exchangeTokenAccountInfoX = await mintX.getAccountInfo(exchangeTokenAccountX);
+    exchangeTokenAccountInfoY = await mintY.getAccountInfo(exchangeTokenAccountY);
+    exchangeTokenAccountInfoZ = await mintZ.getAccountInfo(exchangeTokenAccountZ);
 
-    assert.ok(exchangeTokenAccountInfoA.amount.toNumber() == 0);
-    assert.ok(exchangeTokenAccountInfoB.amount.toNumber() == 0);
+    assert.ok(walletTokenAccountInfoX.amount.toNumber() == amountX);
+    assert.ok(walletTokenAccountInfoY.amount.toNumber() == amountY);
+    assert.ok(walletTokenAccountInfoZ.amount.toNumber() == amountZ);
+
+    assert.ok(exchangeTokenAccountInfoX.amount.toNumber() == 0);
+    assert.ok(exchangeTokenAccountInfoY.amount.toNumber() == 0);
+    assert.ok(exchangeTokenAccountInfoZ.amount.toNumber() == 0);
   });
 
   it("Factory initialized", async () => {
@@ -132,85 +155,89 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    const tx = await factory.rpc.createExchange(mintA.publicKey, nameA, symbolA, new anchor.BN(decimalsA), {
-      accounts: {
-        factory: factoryAccount.publicKey,
-        exchange: exchangeAccount.publicKey,
-        exchangeProgram: exchange.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-      },
-      signers: [factoryAccount.owner],
-    });
+    const tx = await factory.rpc.createExchange(
+      mintX.publicKey, new anchor.BN(decimalsX), mintY.publicKey, new anchor.BN(decimalsY), {
+        accounts: {
+          factory: factoryAccount.publicKey,
+          exchange: exchangeAccount.publicKey,
+          exchangeProgram: exchange.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        },
+        signers: [factoryAccount.owner],
+      });
 
     console.log("Your transaction signature", tx);
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
-    assert.ok(exchangeAccountInfo.totalSupply.eq(new anchor.BN(0)));
-    assert.ok(exchangeAccountInfo.decimals.eq(new anchor.BN(18)));
+    assert.ok(exchangeAccountInfo.totalSupplyX.eq(new anchor.BN(0)));
+    assert.ok(exchangeAccountInfo.decimalsX.eq(new anchor.BN(18)));
+    assert.ok(exchangeAccountInfo.totalSupplyY.eq(new anchor.BN(0)));
+    assert.ok(exchangeAccountInfo.decimalsY.eq(new anchor.BN(18)));
   });
 
   it("Add liquidity", async () => {
-    // There is a security issue with Anchor when using duplicate accounts `from` and `to`
-    const minLiquidity = new anchor.BN(1);
-    const maxTokens = new anchor.BN(10);
     const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.addLiquidity(minLiquidity, maxTokens, deadline, {
-      accounts: {
-        authority: provider.wallet.publicKey,
-        exchange: exchangeAccount.publicKey,
-        from: walletTokenAccountA,
-        to: exchangeTokenAccountA,
-        tokenProgram: TOKEN_PROGRAM_ID
-      },
-    });
+
+    const minLiquidityX = 0;
+    const minLiquidityY = 0;
+
+    const maxTokensX = 2;
+    const maxTokensY = 3;
+
+    const tx = await exchange.rpc.addLiquidity(
+      new anchor.BN(maxTokensX),
+      new anchor.BN(minLiquidityX),
+      new anchor.BN(maxTokensY),
+      new anchor.BN(minLiquidityY),
+      deadline, {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          exchange: exchangeAccount.publicKey,
+          fromX: walletTokenAccountX,
+          fromY: walletTokenAccountY,
+          fromZ: walletTokenAccountZ,
+          toX: exchangeTokenAccountX,
+          toY: exchangeTokenAccountY,
+          toZ: exchangeTokenAccountZ,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY
+        },
+      });
 
     console.log("Your transaction signature", tx);
 
-    let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
-    let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+    let exchangeTokenAccountXInfo = await mintX.getAccountInfo(exchangeTokenAccountX);
+    let walletTokenAccountXInfo = await mintX.getAccountInfo(walletTokenAccountX);
 
-    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(minLiquidity)));
-    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - minLiquidity)));
+    let exchangeTokenAccountYInfo = await mintY.getAccountInfo(exchangeTokenAccountY);
+    let walletTokenAccountYInfo = await mintY.getAccountInfo(walletTokenAccountY);
+
+    let exchangeTokenAccountZInfo = await mintZ.getAccountInfo(exchangeTokenAccountZ);
+    let walletTokenAccountZInfo = await mintZ.getAccountInfo(walletTokenAccountZ);
+
+    assert.ok(exchangeTokenAccountXInfo.amount.eq(new anchor.BN(maxTokensX)));
+    assert.ok(walletTokenAccountXInfo.amount.eq(new anchor.BN(amountX - maxTokensX)));
   });
 
-  it("Remove liquidity", async () => {
-    const amount = new anchor.BN(1);
-    const tx = await exchange.rpc.removeLiquidity(amount, {
-      accounts: {
-        authority: exchangeAccount.publicKey,
-        exchange: exchangeAccount.publicKey,
-        from: exchangeTokenAccountA,
-        to: walletTokenAccountA,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-      signers: [exchangeAccount]
-    });
+  //it("Remove liquidity", async () => {
+  //  const amount = new anchor.BN(1);
+  //  const tx = await exchange.rpc.removeLiquidity(amount, {
+  //    accounts: {
+  //      authority: exchangeAccount.publicKey,
+  //      exchange: exchangeAccount.publicKey,
+  //      from: exchangeTokenAccountX,
+  //      to: walletTokenAccountX,
+  //      tokenProgram: TOKEN_PROGRAM_ID,
+  //    },
+  //    signers: [exchangeAccount]
+  //  });
 
-    console.log("Your transaction signature", tx);
+  //  console.log("Your transaction signature", tx);
 
-    let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
-    let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+  //  let exchangeTokenAccountAInfo = await mintX.getAccountInfo(exchangeTokenAccountA);
+  //  let walletTokenAccountAInfo = await mintX.getAccountInfo(walletTokenAccountA);
 
-    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
-    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
-  });
+  //  assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
+  //  assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
+  //});
 });
-
-function bnToStr(bn) {
-  // TODO: Finish this
-  var array = bn.toBuffer();
-  var result = "";
-  for (var i = 0; i < array.length; i++) {
-    result += String.fromCharCode(parseInt(array[i], 2));
-  }
-  return result;
-}
-
-function strToBN(str) {
-  var result = [];
-  for (var i = 0; i < str.length; i++) {
-    result.push(str.charCodeAt(i).toString(2));
-  }
-  var bn = new anchor.BN(result);
-  return bn
-}

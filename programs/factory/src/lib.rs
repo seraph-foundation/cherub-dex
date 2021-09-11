@@ -18,10 +18,10 @@ pub mod factory {
 
     pub fn create_exchange(
         ctx: Context<CreateExchange>,
-        token: Pubkey,
-        name: u64,
-        symbol: u64,
-        decimals: u64,
+        token_x: Pubkey,
+        decimals_x: u64,
+        token_y: Pubkey,
+        decimals_y: u64,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
@@ -30,7 +30,7 @@ pub mod factory {
             exchange: ctx.accounts.exchange.clone().into(),
         };
         let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
-        exchange::cpi::create(exchange_ctx, token, name, symbol, decimals)?;
+        exchange::cpi::create(exchange_ctx, token_x, decimals_x, token_y, decimals_y)?;
         Ok(())
     }
 
