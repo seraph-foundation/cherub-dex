@@ -39,7 +39,9 @@ pub mod exchange {
         min_liquidity_y: u64,
         deadline: i64,
     ) -> ProgramResult {
-        assert!(max_tokens_x > 0 && max_tokens_y > 0 && deadline > ctx.accounts.clock.unix_timestamp);
+        assert!(
+            max_tokens_x > 0 && max_tokens_y > 0 && deadline > ctx.accounts.clock.unix_timestamp
+        );
 
         let authority = &mut ctx.accounts.authority;
         let exchange = &mut ctx.accounts.exchange;
@@ -75,15 +77,7 @@ pub mod exchange {
         //    exchange.total_supply = token_amount;
         //}
 
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.from_y.clone(),
-            to: ctx.accounts.to_y.clone(),
-            authority: ctx.accounts.authority.clone(),
-        };
-        let cpi_program = ctx.accounts.token_program.clone();
-        let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
-        token::transfer(cpi_context, max_tokens_y);
-
+        token::transfer(ctx.accounts.into_y_context(), max_tokens_y);
         token::transfer(ctx.accounts.into(), max_tokens_x)
     }
 
@@ -166,6 +160,17 @@ pub struct GetOutputPrice<'info> {
 #[derive(Accounts)]
 pub struct SolTo<'info> {
     pub exchange: Account<'info, Exchange>,
+}
+
+impl<'info> AddLiquidity<'info> {
+    fn into_y_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.from_y.clone(),
+            to: self.to_y.clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
 }
 
 impl<'a, 'b, 'c, 'd, 'info> From<&mut AddLiquidity<'info>>
