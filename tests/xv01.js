@@ -53,7 +53,7 @@ describe("XV01", () => {
       payer,
       mintAuthority.publicKey,
       null,
-      0,
+      decimalsX,
       TOKEN_PROGRAM_ID
     );
 
@@ -62,7 +62,7 @@ describe("XV01", () => {
       payer,
       mintAuthority.publicKey,
       null,
-      0,
+      decimalsY,
       TOKEN_PROGRAM_ID
     );
 
@@ -71,7 +71,7 @@ describe("XV01", () => {
       payer,
       mintAuthority.publicKey,
       null,
-      0,
+      decimalsZ,
       TOKEN_PROGRAM_ID
     );
 
@@ -119,14 +119,17 @@ describe("XV01", () => {
     assert.ok(exchangeTokenAccountInfoX.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoY.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoZ.amount.toNumber() == 0);
+
+    //assert.ok(exchangeAccountInfo.decimalsX.eq(new anchor.BN(18)));
+    //assert.ok(exchangeAccountInfo.decimalsY.eq(new anchor.BN(18)));
   });
 
   it("Factory initialized", async () => {
     const tx = await factory.rpc.initialize(exchangeTemplate.publicKey, {
       accounts: {
-        factory: factoryAccount.publicKey,
-        user: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId
+        authority: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+        factory: factoryAccount.publicKey
       },
       signers: [factoryAccount]
     });
@@ -141,9 +144,9 @@ describe("XV01", () => {
   it("Exchange initialized", async () => {
     const tx = await exchange.rpc.initialize(factoryAccount.publicKey, {
       accounts: {
-        exchange: exchangeAccount.publicKey,
-        user: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId
+        authority: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+        exchange: exchangeAccount.publicKey
       },
       signers: [exchangeAccount]
     });
@@ -156,7 +159,7 @@ describe("XV01", () => {
 
   it("Exchange created", async () => {
     const tx = await factory.rpc.createExchange(
-      mintX.publicKey, new anchor.BN(decimalsX), mintY.publicKey, new anchor.BN(decimalsY), {
+      mintX.publicKey, mintY.publicKey, {
         accounts: {
           factory: factoryAccount.publicKey,
           exchange: exchangeAccount.publicKey,
@@ -170,9 +173,7 @@ describe("XV01", () => {
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
     assert.ok(exchangeAccountInfo.totalSupplyX.eq(new anchor.BN(0)));
-    assert.ok(exchangeAccountInfo.decimalsX.eq(new anchor.BN(18)));
     assert.ok(exchangeAccountInfo.totalSupplyY.eq(new anchor.BN(0)));
-    assert.ok(exchangeAccountInfo.decimalsY.eq(new anchor.BN(18)));
   });
 
   it("Add liquidity", async () => {

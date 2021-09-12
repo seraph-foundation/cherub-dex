@@ -19,40 +19,32 @@ pub mod factory {
     pub fn create_exchange(
         ctx: Context<CreateExchange>,
         token_x: Pubkey,
-        decimals_x: u64,
         token_y: Pubkey,
-        decimals_y: u64,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
-        let exchange_program = ctx.accounts.exchange_program.clone();
-        let exchange_accounts = exchange::Create {
-            exchange: ctx.accounts.exchange.clone().into(),
-        };
-        let exchange_ctx = CpiContext::new(exchange_program, exchange_accounts);
-        exchange::cpi::create(exchange_ctx, token_x, decimals_x, token_y, decimals_y)?;
+        exchange::cpi::create(ctx.accounts.into(), token_x, token_y)
+    }
+
+    pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
         Ok(())
     }
 
-    pub fn get_exchange(_ctx: Context<GetExchange>, token: Pubkey) -> ProgramResult {
+    pub fn get_token(_ctx: Context<GetToken>, _token: Pubkey) -> ProgramResult {
         Ok(())
     }
 
-    pub fn get_token(_ctx: Context<GetToken>, token: Pubkey) -> ProgramResult {
-        Ok(())
-    }
-
-    pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, token: Pubkey) -> ProgramResult {
+    pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, _token: Pubkey) -> ProgramResult {
         Ok(())
     }
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 32 + 8)]
+    #[account(init, payer = authority, space = 8 + 32 + 8)]
     pub factory: Account<'info, Factory>,
     #[account(signer)]
-    pub user: AccountInfo<'info>,
+    pub authority: AccountInfo<'info>,
     #[account(address = system_program::ID)]
     pub system_program: AccountInfo<'info>,
 }
@@ -82,6 +74,20 @@ pub struct GetToken<'info> {
 pub struct GetTokenWithId<'info> {
     #[account(mut)]
     pub factory: Account<'info, Factory>,
+}
+
+impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, exchange::Create<'info>>
+{
+    fn from(
+        accounts: &mut CreateExchange<'info>,
+    ) -> CpiContext<'a, 'b, 'c, 'info, exchange::Create<'info>> {
+        let cpi_accounts = exchange::Create {
+            exchange: accounts.exchange.clone().into(),
+        };
+        let cpi_program = accounts.exchange_program.clone();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
 
 #[account]

@@ -17,15 +17,11 @@ pub mod exchange {
     pub fn create(
         ctx: Context<Create>,
         token_x: Pubkey,
-        decimals_x: u64,
         token_y: Pubkey,
-        decimals_y: u64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token_x = token_x;
-        exchange.decimals_x = decimals_x;
         exchange.token_y = token_y;
-        exchange.decimals_y = decimals_y;
         exchange.total_supply_x = 0;
         exchange.total_supply_y = 0;
         Ok(())
@@ -65,7 +61,7 @@ pub mod exchange {
             // assert self.token.transferFrom(msg.sender, self, token_amount)
             let initial_liquidity = exchange.total_supply_y;
             exchange.total_supply_x = initial_liquidity;
-            token::transfer(ctx.accounts.into_x_context(), max_tokens_x);
+            token::transfer(ctx.accounts.into_x_context(), max_tokens_x)?;
         }
 
         token::transfer(ctx.accounts.into_y_context(), max_tokens_y)
@@ -90,10 +86,10 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 32 + 32 + 32 + 8 + 8 + 8 + 8)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 8 + 8)]
     pub exchange: Account<'info, Exchange>,
     #[account(signer)]
-    pub user: AccountInfo<'info>,
+    pub authority: AccountInfo<'info>,
     #[account(address = system_program::ID)]
     pub system_program: AccountInfo<'info>,
 }
@@ -192,9 +188,7 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut RemoveLiquidity<'info>>
 pub struct Exchange {
     pub factory: Pubkey,
     pub token_x: Pubkey,
-    pub decimals_x: u64,
     pub token_y: Pubkey,
-    pub decimals_y: u64,
     pub total_supply_x: u64,
     pub total_supply_y: u64,
 }
