@@ -18,12 +18,12 @@ pub mod factory {
 
     pub fn create_exchange(
         ctx: Context<CreateExchange>,
-        token_x: Pubkey,
-        token_y: Pubkey,
+        token_a: Pubkey,
+        token_b: Pubkey,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
-        exchange::cpi::create(ctx.accounts.into(), token_x, token_y)
+        exchange::cpi::create(ctx.accounts.into(), token_a, token_b)
     }
 
     pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
