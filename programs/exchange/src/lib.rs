@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, Transfer, TokenAccount};
+use anchor_spl::token::{self, TokenAccount, Transfer};
 
 declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -14,11 +14,7 @@ pub mod exchange {
         Ok(())
     }
 
-    pub fn create(
-        ctx: Context<Create>,
-        token_a: Pubkey,
-        token_b: Pubkey,
-    ) -> ProgramResult {
+    pub fn create(ctx: Context<Create>, token_a: Pubkey, token_b: Pubkey) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token_a = token_a;
         exchange.token_b = token_b;
@@ -28,7 +24,7 @@ pub mod exchange {
     }
 
     pub fn add_liquidity(
-        ctx: Context<AddLiquidity>,
+        ctx: Context<UpdateLiquidity>,
         max_tokens_a: u64,
         min_liquidity_a: u64,
         max_tokens_b: u64,
@@ -61,14 +57,19 @@ pub mod exchange {
             // assert self.token.transferFrom(msg.sender, self, token_amount)
             let initial_liquidity = exchange.total_supply_b;
             exchange.total_supply_a = initial_liquidity;
-            token::transfer(ctx.accounts.into_a_context(), max_tokens_a)?;
+            token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
         }
 
-        token::transfer(ctx.accounts.into_b_context(), max_tokens_b)
+        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
     }
 
-    pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, amount: u64) -> ProgramResult {
-        token::transfer(ctx.accounts.into(), amount)
+    pub fn remove_liquidity(
+        ctx: Context<UpdateLiquidity>,
+        max_tokens_a: u64,
+        max_tokens_b: u64,
+    ) -> ProgramResult {
+        token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
+        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
     }
 
     pub fn get_input_price(_ctx: Context<GetInputPrice>) -> ProgramResult {
@@ -101,9 +102,11 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
-pub struct AddLiquidity<'info> {
+pub struct UpdateLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
@@ -114,23 +117,6 @@ pub struct AddLiquidity<'info> {
     pub from_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to_b: Account<'info, TokenAccount>,
-    pub token_program: AccountInfo<'info>,
-    pub clock: Sysvar<'info, Clock>,
-}
-
-#[derive(Accounts)]
-pub struct RemoveLiquidity<'info> {
-    #[account(signer)]
-    pub authority: AccountInfo<'info>,
-    #[account(mut)]
-    pub from_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub to_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub from_b: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub to_b: Account<'info, TokenAccount>,
-    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -148,8 +134,8 @@ pub struct XTo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
-impl<'info> AddLiquidity<'info> {
-    fn into_a_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+impl<'info> UpdateLiquidity<'info> {
+    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.from_a.to_account_info().clone(),
             to: self.to_a.to_account_info().clone(),
@@ -158,29 +144,13 @@ impl<'info> AddLiquidity<'info> {
         CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_b_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.from_b.to_account_info().clone(),
             to: self.to_b.to_account_info().clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
-    }
-}
-
-impl<'a, 'b, 'c, 'd, 'info> From<&mut RemoveLiquidity<'info>>
-    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
-{
-    fn from(
-        accounts: &mut RemoveLiquidity<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: accounts.from_a.to_account_info().clone(),
-            to: accounts.to_a.to_account_info().clone(),
-            authority: accounts.authority.clone(),
-        };
-        let cpi_program = accounts.token_program.clone();
-        CpiContext::new(cpi_program, cpi_accounts)
     }
 }
 

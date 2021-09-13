@@ -221,28 +221,33 @@ describe("XV01", () => {
   });
 
   it("Remove liquidity", async () => {
-    const amount = new anchor.BN(1);
-    const tx = await exchange.rpc.removeLiquidity(amount, {
-      accounts: {
-        authority: exchangeAccount.publicKey,
-        exchange: exchangeAccount.publicKey,
-        fromA: exchangeTokenAccountA,
-        fromB: exchangeTokenAccountB,
-        fromC: exchangeTokenAccountC,
-        toA: walletTokenAccountA,
-        toB: walletTokenAccountB,
-        toC: walletTokenAccountC,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-      signers: [exchangeAccount]
-    });
+    const maxTokensA = 2;
+    const maxTokensB = 3;
+    const tx = await exchange.rpc.removeLiquidity(
+      new anchor.BN(maxTokensA),
+      new anchor.BN(maxTokensB),
+      {
+        accounts: {
+          authority: exchangeAccount.publicKey,
+          exchange: exchangeAccount.publicKey,
+          fromA: exchangeTokenAccountA,
+          fromB: exchangeTokenAccountB,
+          fromC: exchangeTokenAccountC,
+          toA: walletTokenAccountA,
+          toB: walletTokenAccountB,
+          toC: walletTokenAccountC,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY
+        },
+        signers: [exchangeAccount]
+      });
 
     console.log("Your transaction signature", tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    //assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
-    //assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
   });
 });
