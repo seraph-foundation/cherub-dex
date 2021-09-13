@@ -14,12 +14,19 @@ pub mod exchange {
         Ok(())
     }
 
-    pub fn create(ctx: Context<Create>, token_a: Pubkey, token_b: Pubkey) -> ProgramResult {
+    pub fn create(
+        ctx: Context<Create>,
+        token_a: Pubkey,
+        token_b: Pubkey,
+        token_c: Pubkey,
+    ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.token_a = token_a;
         exchange.token_b = token_b;
+        exchange.token_c = token_c;
         exchange.total_supply_a = 0;
         exchange.total_supply_b = 0;
+        exchange.total_supply_c = 0;
         Ok(())
     }
 
@@ -73,7 +80,7 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 8 + 8)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8)]
     pub exchange: Account<'info, Exchange>,
     #[account(signer)]
     pub authority: AccountInfo<'info>,
@@ -146,6 +153,8 @@ pub struct Exchange {
     pub factory: Pubkey,
     pub token_a: Pubkey,
     pub token_b: Pubkey,
+    pub token_c: Pubkey,
     pub total_supply_a: u64,
     pub total_supply_b: u64,
+    pub total_supply_c: u64,
 }

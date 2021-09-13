@@ -156,7 +156,9 @@ describe("XV01", () => {
 
   it("Exchange created", async () => {
     const tx = await factory.rpc.createExchange(
-      mintA.publicKey, mintB.publicKey, {
+      mintA.publicKey,
+      mintB.publicKey,
+      mintC.publicKey, {
         accounts: {
           factory: factoryAccount.publicKey,
           exchange: exchangeAccount.publicKey,
@@ -177,7 +179,6 @@ describe("XV01", () => {
 
   const maxTokensA = 2;
   const maxTokensB = 3;
-  const maxTokensC = 0;
 
   it("Add liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -217,8 +218,8 @@ describe("XV01", () => {
     let exchangeTokenAccountCInfo = await mintC.getAccountInfo(exchangeTokenAccountC);
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(maxTokensC)));
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC - maxTokensC)));
+    assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC)));
   });
 
   it("Remove liquidity", async () => {
