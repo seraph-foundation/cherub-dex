@@ -138,21 +138,21 @@ describe("XV01", () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
-  it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize(factoryAccount.publicKey, {
-      accounts: {
-        authority: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-        exchange: exchangeAccount.publicKey
-      },
-      signers: [exchangeAccount]
-    });
+  //it("Exchange initialized", async () => {
+  //  const tx = await exchange.rpc.initialize(factoryAccount.publicKey, {
+  //    accounts: {
+  //      authority: provider.wallet.publicKey,
+  //      systemProgram: SystemProgram.programId,
+  //      exchange: exchangeAccount.publicKey
+  //    },
+  //    signers: [exchangeAccount]
+  //  });
 
-    console.log("Your transaction signature", tx);
+  //  console.log("Your transaction signature", tx);
 
-    let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey)
-    assert.ok(exchangeAccountInfo.factory.toString() == factoryAccount.publicKey.toString());
-  });
+  //  let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey)
+  //  assert.ok(exchangeAccountInfo.factory.toString() == factoryAccount.publicKey.toString());
+  //});
 
   it("Exchange created", async () => {
     const tx = await factory.rpc.createExchange(
