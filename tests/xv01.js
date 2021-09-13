@@ -119,9 +119,6 @@ describe("XV01", () => {
     assert.ok(exchangeTokenAccountInfoA.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoB.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoC.amount.toNumber() == 0);
-
-    assert.ok(exchangeAccountInfo.decimalsA.eq(new anchor.BN(18)));
-    assert.ok(exchangeAccountInfo.decimalsB.eq(new anchor.BN(18)));
   });
 
   it("Factory initialized", async () => {
