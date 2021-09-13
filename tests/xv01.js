@@ -176,15 +176,15 @@ describe("XV01", () => {
     assert.ok(exchangeAccountInfo.totalSupplyB.eq(new anchor.BN(0)));
   });
 
+  const minLiquidityA = 0;
+  const minLiquidityB = 0;
+
+  const maxTokensA = 2;
+  const maxTokensB = 3;
+  const maxTokensC = 0;
+
   it("Add liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
-
-    const minLiquidityA = 0;
-    const minLiquidityB = 0;
-
-    const maxTokensA = 2;
-    const maxTokensB = 3;
-
     const tx = await exchange.rpc.addLiquidity(
       new anchor.BN(maxTokensA),
       new anchor.BN(minLiquidityA),
@@ -227,8 +227,6 @@ describe("XV01", () => {
   });
 
   it("Remove liquidity", async () => {
-    const maxTokensA = 2;
-    const maxTokensB = 3;
     const tx = await exchange.rpc.removeLiquidity(
       new anchor.BN(maxTokensA),
       new anchor.BN(maxTokensB),
@@ -255,5 +253,17 @@ describe("XV01", () => {
 
     assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
     assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
+
+    let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+    let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB)));
+
+    let exchangeTokenAccountCInfo = await mintC.getAccountInfo(exchangeTokenAccountC);
+    let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+
+    assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC)));
   });
 });
