@@ -224,10 +224,13 @@ describe("XV01", () => {
   });
 
   it("Remove liquidity", async () => {
+    const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.removeLiquidity(
       new anchor.BN(maxTokensA),
+      new anchor.BN(minLiquidityA),
       new anchor.BN(maxTokensB),
-      {
+      new anchor.BN(minLiquidityB),
+      deadline, {
         accounts: {
           authority: exchangeAccount.publicKey,
           exchange: exchangeAccount.publicKey,

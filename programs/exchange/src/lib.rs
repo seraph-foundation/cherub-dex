@@ -31,10 +31,6 @@ pub mod exchange {
         min_liquidity_b: u64,
         deadline: i64,
     ) -> ProgramResult {
-        assert!(
-            max_tokens_a > 0 && max_tokens_b > 0 && deadline > ctx.accounts.clock.unix_timestamp
-        );
-
         let exchange = &mut ctx.accounts.exchange;
         if exchange.total_supply_b > 0 {
             // eth_reserve: uint256(wei) = self.balance - msg.value
@@ -59,14 +55,16 @@ pub mod exchange {
             exchange.total_supply_a = initial_liquidity;
             token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
         }
-
         token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
     }
 
     pub fn remove_liquidity(
         ctx: Context<UpdateLiquidity>,
         max_tokens_a: u64,
+        min_liquidity_a: u64,
         max_tokens_b: u64,
+        min_liquidity_b: u64,
+        deadline: i64,
     ) -> ProgramResult {
         token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
         token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
@@ -102,6 +100,7 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(max_tokens_a: u64, min_liquidity_a: u64, max_tokens_b: u64, min_liquidity_b: u64, deadline: i64)]
 pub struct UpdateLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
@@ -109,11 +108,11 @@ pub struct UpdateLiquidity<'info> {
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, Exchange>,
-    #[account(mut)]
+    #[account(mut, constraint = from_a.amount >= max_tokens_a && max_tokens_a > 0)]
     pub from_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to_a: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut, constraint = from_b.amount >= max_tokens_b && max_tokens_b > 0)]
     pub from_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to_b: Account<'info, TokenAccount>,
