@@ -80,7 +80,7 @@ pub mod exchange {
         Ok(())
     }
 
-    pub fn x_to(_ctx: Context<XTo>) -> ProgramResult {
+    pub fn a_to(_ctx: Context<ATo>) -> ProgramResult {
         Ok(())
     }
 }
@@ -130,7 +130,7 @@ pub struct GetOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
-pub struct XTo<'info> {
+pub struct ATo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
