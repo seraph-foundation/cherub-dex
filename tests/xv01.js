@@ -210,14 +210,20 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(maxTokensA)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - maxTokensA)));
+
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(maxTokensB)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB - maxTokensB)));
 
     let exchangeTokenAccountCInfo = await mintC.getAccountInfo(exchangeTokenAccountC);
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(maxTokensA)));
-    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - maxTokensA)));
+    assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(maxTokensC)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC - maxTokensC)));
   });
 
   it("Remove liquidity", async () => {
