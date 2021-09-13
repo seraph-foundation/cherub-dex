@@ -28,33 +28,22 @@ pub mod exchange {
         max_tokens_a: u64,
         min_liquidity_a: u64,
         max_tokens_b: u64,
-        min_liquidity_b: u64,
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         if exchange.total_supply_b > 0 {
-            // eth_reserve: uint256(wei) = self.balance - msg.value
-            // token_reserve: uint256 = self.token.balanceOf(self)
-            // token_amount: uint256 = msg.value * token_reserve / eth_reserve + 1
-            // liquidity_minted: uint256 = msg.value * total_liquidity / eth_reserve
-            // assert max_tokens >= token_amount and liquidity_minted >= min_liquidity
-            // self.balances[msg.sender] += liquidity_minted
-            // self.totalSupply = total_liquidity + liquidity_minted
-            let y_reserve = exchange.total_supply_b - max_tokens_b;
-            let x_amount = max_tokens_b * exchange.total_supply_a / y_reserve + 1;
-            let liquidity_minted = max_tokens_b * exchange.total_supply_b / y_reserve;
-            assert!(max_tokens_a >= x_amount && liquidity_minted >= min_liquidity_a);
+            let b_reserve = exchange.total_supply_b - max_tokens_b;
+            let a_amount = max_tokens_b * exchange.total_supply_a / b_reserve + 1;
+            let liquidity_minted = max_tokens_b * exchange.total_supply_b / b_reserve;
+            assert!(max_tokens_a >= a_amount && liquidity_minted >= min_liquidity_a);
+            // TODO: Implement `self.balances[msg.sender] += liquidity_minted`
             exchange.total_supply_a = exchange.total_supply_a + liquidity_minted;
         } else {
-            // token_amount: uint256 = max_tokens
-            // initial_liquidity: uint256 = as_unitless_number(self.balance)  # `balance` is already defined
-            // self.totalSupply = initial_liquidity
-            // self.balances[msg.sender] = initial_liquidity
-            // assert self.token.transferFrom(msg.sender, self, token_amount)
+            // TODO: Implement `self.balances[msg.sender] = initial_liquidity`
             let initial_liquidity = exchange.total_supply_b;
-            exchange.total_supply_a = initial_liquidity;
-            token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
+            exchange.total_supply_b = initial_liquidity;
         }
+        token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
         token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
     }
 
@@ -63,7 +52,6 @@ pub mod exchange {
         max_tokens_a: u64,
         min_liquidity_a: u64,
         max_tokens_b: u64,
-        min_liquidity_b: u64,
         deadline: i64,
     ) -> ProgramResult {
         token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
@@ -100,7 +88,7 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(max_tokens_a: u64, min_liquidity_a: u64, max_tokens_b: u64, min_liquidity_b: u64, deadline: i64)]
+#[instruction(max_tokens_a: u64, min_liquidity_a: u64, max_tokens_b: u64, deadline: i64)]
 pub struct UpdateLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,

@@ -174,7 +174,6 @@ describe("XV01", () => {
   });
 
   const minLiquidityA = 0;
-  const minLiquidityB = 0;
 
   const maxTokensA = 2;
   const maxTokensB = 3;
@@ -186,7 +185,6 @@ describe("XV01", () => {
       new anchor.BN(maxTokensA),
       new anchor.BN(minLiquidityA),
       new anchor.BN(maxTokensB),
-      new anchor.BN(minLiquidityB),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -229,7 +227,6 @@ describe("XV01", () => {
       new anchor.BN(maxTokensA),
       new anchor.BN(minLiquidityA),
       new anchor.BN(maxTokensB),
-      new anchor.BN(minLiquidityB),
       deadline, {
         accounts: {
           authority: exchangeAccount.publicKey,
