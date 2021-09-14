@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, TokenAccount, Transfer};
+use anchor_spl::token::{self, MintTo, TokenAccount, Transfer};
 
 declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -24,6 +24,9 @@ pub mod exchange {
         exchange.token_a = token_a;
         exchange.token_b = token_b;
         exchange.token_c = token_c;
+        exchange.total_supply_a = 0;
+        exchange.total_supply_b = 0;
+        exchange.total_supply_c = 0;
         Ok(())
     }
 
@@ -35,20 +38,23 @@ pub mod exchange {
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
-        //if exchange.total_supply_b > 0 {
-        //    let b_reserve = exchange.total_supply_b - max_tokens_b;
-        //    let a_amount = max_tokens_b * exchange.total_supply_a / b_reserve + 1;
-        //    let liquidity_minted = max_tokens_b * exchange.total_supply_b / b_reserve;
-        //    assert!(max_tokens_a >= a_amount && liquidity_minted >= min_liquidity_a);
-        //    // TODO: Implement `self.balances[msg.sender] += liquidity_minted`
-        //    exchange.total_supply_a = exchange.total_supply_a + liquidity_minted;
-        //} else {
-        //    // TODO: Implement `self.balances[msg.sender] = initial_liquidity`
-        //    let initial_liquidity = exchange.total_supply_b;
-        //    exchange.total_supply_b = initial_liquidity;
-        //}
+        let mut liquidity_minted = 0;
+        if exchange.total_supply_b > 0 {
+            let b_reserve = exchange.total_supply_b - max_tokens_b;
+            let a_amount = max_tokens_b * exchange.total_supply_a / b_reserve + 1;
+            liquidity_minted = max_tokens_b * exchange.total_supply_b / b_reserve;
+            assert!(max_tokens_a >= a_amount && liquidity_minted >= min_liquidity_a);
+            exchange.total_supply_a = exchange.total_supply_a + liquidity_minted;
+            token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)?;
+        } else {
+            let token_amount = max_tokens_a;
+            let initial_liquidity = max_tokens_b;
+            exchange.total_supply_b = liquidity_minted;
+            token::mint_to(ctx.accounts.into_context_c(), initial_liquidity)?;
+        }
         token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
-        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
+        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)?;
+        Ok(())
     }
 
     pub fn remove_liquidity(
@@ -77,7 +83,7 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32)]
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8)]
     pub exchange: Account<'info, Exchange>,
     #[account(signer)]
     pub authority: AccountInfo<'info>,
@@ -100,6 +106,8 @@ pub struct UpdateLiquidity<'info> {
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, Exchange>,
+    #[account(mut)]
+    pub mint: AccountInfo<'info>,
     #[account(mut, constraint = from_a.amount >= max_tokens_a && max_tokens_a > 0)]
     pub from_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -148,10 +156,10 @@ impl<'info> UpdateLiquidity<'info> {
         CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.from_c.to_account_info().clone(),
-            to: self.to_c.to_account_info().clone(),
+    fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.mint.clone(),
+            to: self.to_c.clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -164,4 +172,7 @@ pub struct Exchange {
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
+    pub total_supply_a: u64,
+    pub total_supply_b: u64,
+    pub total_supply_c: u64,
 }

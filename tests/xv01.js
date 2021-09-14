@@ -21,7 +21,7 @@ describe("XV01", () => {
 
   const amountA = 1000;
   const amountB = 500;
-  const amountC = 1;
+  const amountC = 0;
 
   const amountLamports = 10000000000;  // How many lamports per SOL?
 
@@ -97,13 +97,6 @@ describe("XV01", () => {
       amountB
     );
 
-    await mintC.mintTo(
-      walletTokenAccountC,
-      mintAuthority.publicKey,
-      [mintAuthority.payer],
-      amountC
-    );
-
     walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
     walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);
     walletTokenAccountInfoC = await mintC.getAccountInfo(walletTokenAccountC);
@@ -170,9 +163,10 @@ describe("XV01", () => {
 
     console.log("Your transaction signature", tx);
 
-    //let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
-    //assert.ok(exchangeAccountInfo.totalSupplyA.eq(new anchor.BN(0)));
-    //assert.ok(exchangeAccountInfo.totalSupplyB.eq(new anchor.BN(0)));
+    let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey);
+    assert.ok(exchangeAccountInfo.totalSupplyA.eq(new anchor.BN(0)));
+    assert.ok(exchangeAccountInfo.totalSupplyB.eq(new anchor.BN(0)));
+    assert.ok(exchangeAccountInfo.totalSupplyC.eq(new anchor.BN(0)));
   });
 
   const minLiquidityA = 0;
@@ -180,7 +174,9 @@ describe("XV01", () => {
   const maxTokensA = 2;
   const maxTokensB = 3;
 
-  it("Add liquidity", async () => {
+  const initialLiquidityMinted = 3;
+
+  it("Add initial liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.addLiquidity(
       new anchor.BN(maxTokensA),
@@ -192,6 +188,7 @@ describe("XV01", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount.publicKey,
+          mint: mintC.publicKey,
           fromA: walletTokenAccountA,
           fromB: walletTokenAccountB,
           fromC: exchangeTokenAccountC,
@@ -199,6 +196,7 @@ describe("XV01", () => {
           toB: exchangeTokenAccountB,
           toC: walletTokenAccountC
         },
+        signers: [provider.wallet.owner]
       });
 
     console.log("Your transaction signature", tx);
@@ -218,8 +216,9 @@ describe("XV01", () => {
     let exchangeTokenAccountCInfo = await mintC.getAccountInfo(exchangeTokenAccountC);
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
+    console.log(walletTokenAccountCInfo.amount.toNumber());
     assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(0)));
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialLiquidityMinted)));
   });
 
   it("Remove liquidity", async () => {
@@ -233,6 +232,7 @@ describe("XV01", () => {
           authority: exchangeAccount.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          mint: mintC.publicKey,
           exchange: exchangeAccount.publicKey,
           fromA: exchangeTokenAccountA,
           fromB: exchangeTokenAccountB,
@@ -260,8 +260,5 @@ describe("XV01", () => {
 
     let exchangeTokenAccountCInfo = await mintC.getAccountInfo(exchangeTokenAccountC);
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
-
-    assert.ok(exchangeTokenAccountCInfo.amount.eq(new anchor.BN(0)));
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(amountC)));
   });
 });
