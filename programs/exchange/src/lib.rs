@@ -1,3 +1,8 @@
+//! An example of an AMM program, inspired by Uniswap V1 seen here:
+//! https://github.com/Uniswap/uniswap-v1/. This example has some
+//! implementation changes to address the differences between the EVM and
+//! Solana's BPF-modified LLVM, but more or less should be the same overall.
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, MintTo, TokenAccount, Transfer};
@@ -33,35 +38,35 @@ pub mod exchange {
     pub fn add_liquidity(
         ctx: Context<UpdateLiquidity>,
         max_tokens_a: u64,
-        min_liquidity_a: u64,
         max_tokens_b: u64,
+        min_liquidity_c: u64,
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
-        let mut liquidity_minted = 0;
-        if exchange.total_supply_b > 0 {
-            let b_reserve = exchange.total_supply_b - max_tokens_b;
-            let a_amount = max_tokens_b * exchange.total_supply_a / b_reserve + 1;
-            liquidity_minted = max_tokens_b * exchange.total_supply_b / b_reserve;
-            assert!(max_tokens_a >= a_amount && liquidity_minted >= min_liquidity_a);
-            exchange.total_supply_a = exchange.total_supply_a + liquidity_minted;
+        if exchange.total_supply_c > 0 {
+            assert!(min_liquidity_c > 0);
+            let reserve_b = exchange.total_supply_b - max_tokens_b;
+            let amount_a = max_tokens_b * exchange.total_supply_a / reserve_b + 1;
+            let liquidity_minted = max_tokens_b * exchange.total_supply_c / reserve_b;
+            assert!(max_tokens_a >= amount_a && liquidity_minted >= min_liquidity_c);
+            exchange.total_supply_c = exchange.total_supply_c + liquidity_minted;
             token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)?;
+            token::transfer(ctx.accounts.into_context_a(), amount_a)?;
         } else {
-            let token_amount = max_tokens_a;
+            let amount_a = max_tokens_a;
             let initial_liquidity = max_tokens_b;
-            exchange.total_supply_b = liquidity_minted;
+            exchange.total_supply_c = initial_liquidity;
             token::mint_to(ctx.accounts.into_context_c(), initial_liquidity)?;
+            token::transfer(ctx.accounts.into_context_a(), amount_a)?;
         }
-        token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
-        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)?;
-        Ok(())
+        token::transfer(ctx.accounts.into_context_b(), max_tokens_b)
     }
 
     pub fn remove_liquidity(
         ctx: Context<UpdateLiquidity>,
         max_tokens_a: u64,
-        min_liquidity_a: u64,
         max_tokens_b: u64,
+        min_liquidity_c: u64,
         deadline: i64,
     ) -> ProgramResult {
         token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
@@ -97,12 +102,13 @@ pub struct Create<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
-#[instruction(max_tokens_a: u64, min_liquidity_a: u64, max_tokens_b: u64, deadline: i64)]
 #[derive(Accounts)]
+#[instruction(max_tokens_a: u64, max_tokens_b: u64, min_liquidity_c: u64, deadline: i64)]
 pub struct UpdateLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
+    #[account(constraint = deadline >= clock.unix_timestamp)]
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, Exchange>,
@@ -117,7 +123,7 @@ pub struct UpdateLiquidity<'info> {
     #[account(mut)]
     pub to_b: AccountInfo<'info>,
     #[account(mut)]
-    pub from_c: Account<'info, TokenAccount>,
+    pub from_c: AccountInfo<'info>,
     #[account(mut)]
     pub to_c: AccountInfo<'info>,
 }

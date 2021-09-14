@@ -169,19 +169,18 @@ describe("XV01", () => {
     assert.ok(exchangeAccountInfo.totalSupplyC.eq(new anchor.BN(0)));
   });
 
-  const minLiquidityA = 0;
-
   const maxTokensA = 2;
   const maxTokensB = 3;
-
+  const minLiquidityC = 0;
   const initialLiquidityMinted = 3;
+  const liquidityMinted = 0;
 
   it("Add initial liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.addLiquidity(
       new anchor.BN(maxTokensA),
-      new anchor.BN(minLiquidityA),
       new anchor.BN(maxTokensB),
+      new anchor.BN(minLiquidityC),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -225,8 +224,8 @@ describe("XV01", () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.removeLiquidity(
       new anchor.BN(maxTokensA),
-      new anchor.BN(minLiquidityA),
       new anchor.BN(maxTokensB),
+      new anchor.BN(minLiquidityC),
       deadline, {
         accounts: {
           authority: exchangeAccount.publicKey,
