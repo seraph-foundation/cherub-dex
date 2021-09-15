@@ -213,7 +213,7 @@ describe("XV01", () => {
   });
 
   const additionalMaxTokensA = 150;
-  const additionalTokensB = 74;
+  const additionalTokensB = 75;
   const additionalMinLiquidityC = 5;
   const additionalLiquidityMinted = 25;
 
@@ -244,23 +244,23 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(151)));
-    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99849)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(250)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99750)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
 
-    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(75)));
-    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99925)));
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(125)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99875)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(62)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(87)));
   });
 
-  const removeTokensC = 62;
-  const removeMinTokensA = 151;
-  const removeMinTokensB = 75;
+  const removeTokensC = 87;
+  const removeMinTokensA = initialMaxTokensA + additionalMaxTokensA;
+  const removeMinTokensB = initialTokensB + additionalTokensB;
 
   it("Remove liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);

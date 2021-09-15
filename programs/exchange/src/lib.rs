@@ -46,7 +46,7 @@ pub mod exchange {
         let mut amount_a = max_tokens_a;
         if exchange.total_supply_c > 0 {
             assert!(min_liquidity_c > 0);
-            amount_a = tokens_b * ctx.accounts.to_a.amount / ctx.accounts.to_b.amount + 1;
+            amount_a = tokens_b * ctx.accounts.to_a.amount / ctx.accounts.to_b.amount;
             liquidity_minted = tokens_b * exchange.total_supply_c / ctx.accounts.to_a.amount;
             assert!(max_tokens_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
