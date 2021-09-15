@@ -131,12 +131,10 @@ pub struct AddLiquidity<'info> {
 #[derive(Accounts)]
 #[instruction(tokens_c: u64, min_tokens_a: u64, min_tokens_b: u64)]
 pub struct RemoveLiquidity<'info> {
-    #[account(signer)]
     pub authority: AccountInfo<'info>,
-    pub burn_authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
-    #[account(mut)]
+    #[account(signer, mut)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,

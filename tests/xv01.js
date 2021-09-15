@@ -300,6 +300,6 @@ describe("XV01", () => {
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
 });
