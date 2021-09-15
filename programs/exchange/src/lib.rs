@@ -219,7 +219,7 @@ impl<'info> RemoveLiquidity<'info> {
         let cpi_accounts = Burn {
             mint: self.mint.clone(),
             to: self.to_c.clone(),
-            authority: self.burn_authority.clone(),
+            authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
     }

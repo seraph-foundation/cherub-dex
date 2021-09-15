@@ -270,8 +270,7 @@ describe("XV01", () => {
       new anchor.BN(removeMinTokensB),
       deadline, {
         accounts: {
-          authority: exchangeAccount.publicKey,
-          burnAuthority: provider.wallet.publicKey,
+          authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           mint: mintC.publicKey,
