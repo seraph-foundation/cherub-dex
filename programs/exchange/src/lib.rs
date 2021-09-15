@@ -36,23 +36,23 @@ pub mod exchange {
     #[access_control(add_future_deadline(&ctx, deadline) add_correct_tokens(&ctx))]
     pub fn add_liquidity(
         ctx: Context<AddLiquidity>,
-        max_tokens_a: u64,
-        tokens_b: u64,
+        max_amount_a: u64,
+        amount_b: u64,
         min_liquidity_c: u64,
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
-        let mut liquidity_minted = tokens_b;
-        let mut amount_a = max_tokens_a;
+        let mut liquidity_minted = amount_b;
+        let mut amount_a = max_amount_a;
         if exchange.total_supply_c > 0 {
             assert!(min_liquidity_c > 0);
-            amount_a = tokens_b * ctx.accounts.to_a.amount / ctx.accounts.to_b.amount;
-            liquidity_minted = tokens_b * exchange.total_supply_c / ctx.accounts.to_a.amount;
-            assert!(max_tokens_a >= amount_a && liquidity_minted >= min_liquidity_c);
+            amount_a = amount_b * ctx.accounts.to_a.amount / ctx.accounts.to_b.amount;
+            liquidity_minted = amount_b * exchange.total_supply_c / ctx.accounts.to_a.amount;
+            assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
         exchange.total_supply_c += liquidity_minted;
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), tokens_b)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
         token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)?;
         Ok(())
     }
@@ -60,20 +60,20 @@ pub mod exchange {
     #[access_control(remove_future_deadline(&ctx, deadline) remove_correct_tokens(&ctx))]
     pub fn remove_liquidity(
         ctx: Context<RemoveLiquidity>,
-        tokens_c: u64,
-        min_tokens_a: u64,
-        min_tokens_b: u64,
+        amount_c: u64,
+        min_amount_a: u64,
+        min_amount_b: u64,
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         assert!(exchange.total_supply_c > 0);
         let reserve_b = ctx.accounts.from_b.amount;
-        let tokens_a = min_tokens_a;
-        let tokens_b = min_tokens_b;
-        exchange.total_supply_c -= tokens_c;
-        token::burn(ctx.accounts.into_context_c(), tokens_c)?;
-        token::transfer(ctx.accounts.into_context_a(), tokens_a)?;
-        token::transfer(ctx.accounts.into_context_b(), tokens_b)
+        let amount_a = min_amount_a;
+        let amount_b = min_amount_b;
+        exchange.total_supply_c -= amount_c;
+        token::burn(ctx.accounts.into_context_c(), amount_c)?;
+        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)
     }
 
     pub fn get_input_price(_ctx: Context<GetInputPrice>) -> ProgramResult {
@@ -106,7 +106,7 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(max_tokens_a: u64, tokens_b: u64)]
+#[instruction(max_amount_a: u64, amount_b: u64)]
 pub struct AddLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
@@ -116,11 +116,11 @@ pub struct AddLiquidity<'info> {
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,
-    #[account(mut, constraint = max_tokens_a > 0)]
+    #[account(mut, constraint = max_amount_a > 0)]
     pub from_a: AccountInfo<'info>,
     #[account(mut)]
     pub to_a: Account<'info, TokenAccount>,
-    #[account(mut, constraint = tokens_b > 0)]
+    #[account(mut, constraint = amount_b > 0)]
     pub from_b: AccountInfo<'info>,
     #[account(mut)]
     pub to_b: Account<'info, TokenAccount>,
@@ -129,7 +129,7 @@ pub struct AddLiquidity<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(tokens_c: u64, min_tokens_a: u64, min_tokens_b: u64)]
+#[instruction(amount_c: u64, min_amount_a: u64, min_amount_b: u64)]
 pub struct RemoveLiquidity<'info> {
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
@@ -138,15 +138,15 @@ pub struct RemoveLiquidity<'info> {
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,
-    #[account(mut, constraint = min_tokens_a > 0)]
+    #[account(mut, constraint = min_amount_a > 0)]
     pub from_a: AccountInfo<'info>,
     #[account(mut)]
     pub to_a: Account<'info, TokenAccount>,
-    #[account(mut, constraint = min_tokens_b > 0)]
+    #[account(mut, constraint = min_amount_b > 0)]
     pub from_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub to_b: AccountInfo<'info>,
-    #[account(mut, constraint = tokens_c > 0)]
+    #[account(mut, constraint = amount_c > 0)]
     pub to_c: AccountInfo<'info>,
 }
 
