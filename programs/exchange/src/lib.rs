@@ -5,7 +5,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, MintTo, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, MintTo, TokenAccount, Transfer};
 
 declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -33,9 +33,9 @@ pub mod exchange {
         Ok(())
     }
 
-    #[access_control(future_deadline(&ctx, deadline) correct_tokens(&ctx))]
+    #[access_control(add_future_deadline(&ctx, deadline) add_correct_tokens(&ctx))]
     pub fn add_liquidity(
-        ctx: Context<UpdateLiquidity>,
+        ctx: Context<AddLiquidity>,
         max_tokens_a: u64,
         tokens_b: u64,
         min_liquidity_c: u64,
@@ -53,18 +53,26 @@ pub mod exchange {
         exchange.total_supply_c += liquidity_minted;
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
         token::transfer(ctx.accounts.into_context_b(), tokens_b)?;
-        token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)
+        token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)?;
+        Ok(())
     }
 
-    #[access_control(future_deadline(&ctx, deadline) correct_tokens(&ctx))]
+    #[access_control(remove_future_deadline(&ctx, deadline) remove_correct_tokens(&ctx))]
     pub fn remove_liquidity(
-        ctx: Context<UpdateLiquidity>,
-        max_tokens_a: u64,
-        tokens_b: u64,
-        min_liquidity_c: u64,
+        ctx: Context<RemoveLiquidity>,
+        tokens_c: u64,
+        min_tokens_a: u64,
+        min_tokens_b: u64,
         deadline: i64,
     ) -> ProgramResult {
-        token::transfer(ctx.accounts.into_context_a(), max_tokens_a)?;
+        let exchange = &mut ctx.accounts.exchange;
+        assert!(exchange.total_supply_c > 0);
+        let reserve_b = ctx.accounts.from_b.amount;
+        let tokens_a = min_tokens_a;
+        let tokens_b = min_tokens_b;
+        exchange.total_supply_c -= tokens_c;
+        //token::burn(ctx.accounts.into_context_c(), tokens_c)?;
+        token::transfer(ctx.accounts.into_context_a(), tokens_a)?;
         token::transfer(ctx.accounts.into_context_b(), tokens_b)
     }
 
@@ -83,12 +91,12 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8)]
-    pub exchange: Account<'info, Exchange>,
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     #[account(address = system_program::ID)]
     pub system_program: AccountInfo<'info>,
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 8)]
+    pub exchange: Account<'info, Exchange>,
 }
 
 #[derive(Accounts)]
@@ -99,7 +107,7 @@ pub struct Create<'info> {
 
 #[derive(Accounts)]
 #[instruction(max_tokens_a: u64, tokens_b: u64)]
-pub struct UpdateLiquidity<'info> {
+pub struct AddLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
@@ -121,6 +129,29 @@ pub struct UpdateLiquidity<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(tokens_c: u64, min_tokens_a: u64, min_tokens_b: u64)]
+pub struct RemoveLiquidity<'info> {
+    #[account(signer)]
+    pub authority: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    pub clock: Sysvar<'info, Clock>,
+    #[account(mut)]
+    pub exchange: Account<'info, Exchange>,
+    #[account(mut)]
+    pub mint: AccountInfo<'info>,
+    #[account(mut, constraint = min_tokens_a > 0)]
+    pub from_a: AccountInfo<'info>,
+    #[account(mut)]
+    pub to_a: Account<'info, TokenAccount>,
+    #[account(mut, constraint = min_tokens_b > 0)]
+    pub from_b: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub to_b: AccountInfo<'info>,
+    #[account(mut, constraint = tokens_c > 0)]
+    pub to_c: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
 pub struct GetInputPrice<'info> {
     pub exchange: Account<'info, Exchange>,
 }
@@ -135,7 +166,7 @@ pub struct ATo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
 
-impl<'info> UpdateLiquidity<'info> {
+impl<'info> AddLiquidity<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.from_a.clone(),
@@ -164,6 +195,35 @@ impl<'info> UpdateLiquidity<'info> {
     }
 }
 
+impl<'info> RemoveLiquidity<'info> {
+    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.from_a.clone(),
+            to: self.to_a.to_account_info().clone(),
+            authority: self.exchange.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+
+    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.from_b.to_account_info().clone(),
+            to: self.to_b.to_account_info().clone(),
+            authority: self.exchange.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+
+    fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_accounts = Burn {
+            mint: self.mint.clone(),
+            to: self.to_c.clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+}
+
 #[account]
 pub struct Exchange {
     pub factory: Pubkey,
@@ -171,6 +231,7 @@ pub struct Exchange {
     pub token_b: Pubkey,
     pub token_c: Pubkey,
     pub total_supply_c: u64,
+    pub price: u64,
 }
 
 #[error]
@@ -181,18 +242,41 @@ pub enum ErrorCode {
     CorrectTokens,
 }
 
-fn future_deadline<'info>(ctx: &Context<UpdateLiquidity<'info>>, deadline: i64) -> Result<()> {
+fn add_future_deadline<'info>(ctx: &Context<AddLiquidity<'info>>, deadline: i64) -> Result<()> {
     if !(ctx.accounts.clock.unix_timestamp <= deadline) {
         return Err(ErrorCode::FutureDeadline.into());
     }
     Ok(())
 }
 
-fn correct_tokens<'info>(ctx: &Context<UpdateLiquidity<'info>>) -> Result<()> {
+fn remove_future_deadline<'info>(
+    ctx: &Context<RemoveLiquidity<'info>>,
+    deadline: i64,
+) -> Result<()> {
+    if !(ctx.accounts.clock.unix_timestamp <= deadline) {
+        return Err(ErrorCode::FutureDeadline.into());
+    }
+    Ok(())
+}
+
+fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
     if !(ctx.accounts.to_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     if !(ctx.accounts.to_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
+        return Err(ErrorCode::CorrectTokens.into());
+    }
+    if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {
+        return Err(ErrorCode::CorrectTokens.into());
+    }
+    Ok(())
+}
+
+fn remove_correct_tokens<'info>(ctx: &Context<RemoveLiquidity<'info>>) -> Result<()> {
+    if !(ctx.accounts.to_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
+        return Err(ErrorCode::CorrectTokens.into());
+    }
+    if !(ctx.accounts.from_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {

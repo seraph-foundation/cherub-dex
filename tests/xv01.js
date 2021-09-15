@@ -22,7 +22,7 @@ describe("XV01", () => {
   const amountA = 100000;
   const amountB = 100000;
 
-  const amountLamports = 1000000000;  // 10000000 Lamports in 1 SOL
+  const amountLamports = 1000000000;  // 10,000,000 Lamports in 1 SOL
   const decimalsA = 18;
   const decimalsB = 18;
   const decimalsC = 18;
@@ -95,13 +95,12 @@ describe("XV01", () => {
 
     let walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
     let walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);
-    let walletTokenAccountInfoC = await mintC.getAccountInfo(walletTokenAccountC);
-
-    let exchangeTokenAccountInfoA = await mintA.getAccountInfo(exchangeTokenAccountA);
-    let exchangeTokenAccountInfoB = await mintB.getAccountInfo(exchangeTokenAccountB);
 
     assert.ok(walletTokenAccountInfoA.amount.toNumber() == amountA);
     assert.ok(walletTokenAccountInfoB.amount.toNumber() == amountB);
+
+    let exchangeTokenAccountInfoA = await mintA.getAccountInfo(exchangeTokenAccountA);
+    let exchangeTokenAccountInfoB = await mintB.getAccountInfo(exchangeTokenAccountB);
 
     assert.ok(exchangeTokenAccountInfoA.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoB.amount.toNumber() == 0);
@@ -120,6 +119,7 @@ describe("XV01", () => {
     console.log("Your transaction signature", tx);
 
     let factoryAccountInfo = await factory.account.factory.fetch(factoryAccount.publicKey)
+
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
@@ -137,6 +137,7 @@ describe("XV01", () => {
     console.log("Your transaction signature", tx);
 
     let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey)
+
     assert.ok(exchangeAccountInfo.factory.toString() == factoryAccount.publicKey.toString());
   });
 
@@ -157,9 +158,11 @@ describe("XV01", () => {
     console.log("Your transaction signature", tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
+
     assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
   });
 
@@ -194,15 +197,18 @@ describe("XV01", () => {
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+
     assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(initialMaxTokensA)));
     assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - initialMaxTokensA)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(initialTokensB)));
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB - initialTokensB)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+
     assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialLiquidityMinted)));
   });
 
@@ -238,30 +244,30 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    console.log(exchangeTokenAccountAInfo.amount.toNumber());
-    console.log(walletTokenAccountAInfo.amount.toNumber());
-    //assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(initialMaxTokensA + additionalMaxTokensA)));
-    //assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA - additionalMaxTokensA)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(151)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99849)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
 
-    console.log(exchangeTokenAccountBInfo.amount.toNumber());
-    console.log(walletTokenAccountBInfo.amount.toNumber());
-    //assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(additionalMmaxTokensB)));
-    //assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB - additionalMaxTokensB)));
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(75)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99925)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
-    //console.log(walletTokenAccountCInfo.amount.toNumber());
-    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(62)));
+
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(62)));
   });
+
+  const removeTokensC = 62;
+  const removeMinTokensA = 151;
+  const removeMinTokensB = 75;
 
   it("Remove liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.removeLiquidity(
-      new anchor.BN(initialMaxTokensA),
-      new anchor.BN(initialTokensB),
-      new anchor.BN(initialMinLiquidityC),
+      new anchor.BN(removeTokensC),
+      new anchor.BN(removeMinTokensA),
+      new anchor.BN(removeMinTokensB),
       deadline, {
         accounts: {
           authority: exchangeAccount.publicKey,
@@ -283,15 +289,17 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    //assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
-    //assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(amountA)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
 
-    //assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
-    //assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB)));
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(amountB)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+
+    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
 });
