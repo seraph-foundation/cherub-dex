@@ -213,7 +213,7 @@ describe("XV01", () => {
   });
 
   const additionalMaxTokensA = 150;
-  const additionalTokensB = 25;
+  const additionalTokensB = 74;
   const additionalMinLiquidityC = 5;
   const additionalLiquidityMinted = 25;
 
