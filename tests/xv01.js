@@ -271,6 +271,7 @@ describe("XV01", () => {
       deadline, {
         accounts: {
           authority: exchangeAccount.publicKey,
+          burnAuthority: provider.wallet.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           mint: mintC.publicKey,

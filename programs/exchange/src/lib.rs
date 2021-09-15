@@ -71,7 +71,7 @@ pub mod exchange {
         let tokens_a = min_tokens_a;
         let tokens_b = min_tokens_b;
         exchange.total_supply_c -= tokens_c;
-        //token::burn(ctx.accounts.into_context_c(), tokens_c)?;
+        token::burn(ctx.accounts.into_context_c(), tokens_c)?;
         token::transfer(ctx.accounts.into_context_a(), tokens_a)?;
         token::transfer(ctx.accounts.into_context_b(), tokens_b)
     }
@@ -133,6 +133,7 @@ pub struct AddLiquidity<'info> {
 pub struct RemoveLiquidity<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
+    pub burn_authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
@@ -218,7 +219,7 @@ impl<'info> RemoveLiquidity<'info> {
         let cpi_accounts = Burn {
             mint: self.mint.clone(),
             to: self.to_c.clone(),
-            authority: self.authority.clone(),
+            authority: self.burn_authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
