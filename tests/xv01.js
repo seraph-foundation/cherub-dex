@@ -211,11 +211,11 @@ describe("XV01", () => {
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount.publicKey,
           mint: mintC.publicKey,
-          fromA: walletTokenAccountA,
-          fromB: walletTokenAccountB,
-          toA: exchangeTokenAccountA,
-          toB: exchangeTokenAccountB,
-          toC: walletTokenAccountC
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          userC: walletTokenAccountC,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB
         },
         signers: [provider.wallet.owner]
       });
@@ -257,11 +257,11 @@ describe("XV01", () => {
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount.publicKey,
           mint: mintC.publicKey,
-          fromA: walletTokenAccountA,
-          fromB: walletTokenAccountB,
-          toA: exchangeTokenAccountA,
-          toB: exchangeTokenAccountB,
-          toC: walletTokenAccountC
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          userC: walletTokenAccountC,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB
         },
         signers: [provider.wallet.owner]
       });
@@ -297,8 +297,8 @@ describe("XV01", () => {
           systemProgram: SystemProgram.programId,
           exchange: exchangeAccount.publicKey,
           quote: traderInputQuoteAccount.publicKey,
-          fromA: exchangeTokenAccountA,
-          fromB: exchangeTokenAccountB,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB,
         },
         signers: [traderInputQuoteAccount]
       });
@@ -322,8 +322,8 @@ describe("XV01", () => {
           systemProgram: SystemProgram.programId,
           exchange: exchangeAccount.publicKey,
           quote: traderOutputQuoteAccount.publicKey,
-          fromA: exchangeTokenAccountA,
-          fromB: exchangeTokenAccountB,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB,
         },
         signers: [traderOutputQuoteAccount]
       });
@@ -352,11 +352,11 @@ describe("XV01", () => {
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           mint: mintC.publicKey,
           exchange: exchangeAccount.publicKey,
-          fromA: exchangeTokenAccountA,
-          fromB: exchangeTokenAccountB,
-          toA: walletTokenAccountA,
-          toB: walletTokenAccountB,
-          toC: walletTokenAccountC
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB,
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          userC: walletTokenAccountC
         },
         signers: [exchangeAccount]
       });

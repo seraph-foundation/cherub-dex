@@ -64,8 +64,8 @@ pub mod exchange {
         let mut amount_a = max_amount_a;
         if exchange.total_supply_c > 0 {
             assert!(min_liquidity_c > 0);
-            amount_a = amount_b * ctx.accounts.to_a.amount / ctx.accounts.to_b.amount;
-            liquidity_minted = amount_b * exchange.total_supply_c / ctx.accounts.to_a.amount;
+            amount_a = amount_b * ctx.accounts.exchange_a.amount / ctx.accounts.exchange_b.amount;
+            liquidity_minted = amount_b * exchange.total_supply_c / ctx.accounts.exchange_a.amount;
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
         exchange.total_supply_c += liquidity_minted;
@@ -90,8 +90,8 @@ pub mod exchange {
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
-        let amount_a = amount_c * ctx.accounts.from_a.amount / exchange.total_supply_c;
-        let amount_b = amount_c * ctx.accounts.from_b.amount / exchange.total_supply_c;
+        let amount_a = amount_c * ctx.accounts.exchange_a.amount / exchange.total_supply_c;
+        let amount_b = amount_c * ctx.accounts.exchange_b.amount / exchange.total_supply_c;
         exchange.total_supply_c -= amount_c;
         token::burn(ctx.accounts.into_context_c(), amount_c)?;
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
@@ -109,8 +109,8 @@ pub mod exchange {
         let quote = &mut ctx.accounts.quote;
         quote.price = get_input_price(
             amount_b,
-            ctx.accounts.from_b.amount,
-            ctx.accounts.from_a.amount,
+            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange_a.amount,
             ctx.accounts.exchange.fee,
         ) as u64;
         Ok(())
@@ -127,8 +127,8 @@ pub mod exchange {
         let quote = &mut ctx.accounts.quote;
         quote.price = get_output_price(
             amount_a,
-            ctx.accounts.from_a.amount,
-            ctx.accounts.from_b.amount,
+            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
         ) as u64;
         Ok(())
@@ -166,16 +166,16 @@ pub struct AddLiquidity<'info> {
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,
+    #[account(mut)]
+    pub exchange_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut, constraint = max_amount_a > 0)]
-    pub from_a: AccountInfo<'info>,
-    #[account(mut)]
-    pub to_a: Account<'info, TokenAccount>,
+    pub user_a: AccountInfo<'info>,
     #[account(mut, constraint = amount_b > 0)]
-    pub from_b: AccountInfo<'info>,
+    pub user_b: AccountInfo<'info>,
     #[account(mut)]
-    pub to_b: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub to_c: AccountInfo<'info>,
+    pub user_c: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -189,15 +189,15 @@ pub struct RemoveLiquidity<'info> {
     #[account(mut)]
     pub mint: AccountInfo<'info>,
     #[account(mut, constraint = min_amount_a > 0)]
-    pub from_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub to_a: AccountInfo<'info>,
+    pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut, constraint = min_amount_b > 0)]
-    pub from_b: Account<'info, TokenAccount>,
+    pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub to_b: AccountInfo<'info>,
+    pub user_a: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_b: AccountInfo<'info>,
     #[account(mut, constraint = amount_c > 0)]
-    pub to_c: AccountInfo<'info>,
+    pub user_c: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -210,8 +210,8 @@ pub struct GetBToAOutputPrice<'info> {
     pub exchange: Account<'info, Exchange>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
     pub quote: Account<'info, Quote>,
-    pub from_a: Account<'info, TokenAccount>,
-    pub from_b: Account<'info, TokenAccount>,
+    pub exchange_a: Account<'info, TokenAccount>,
+    pub exchange_b: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
@@ -222,8 +222,8 @@ pub struct ATo<'info> {
 impl<'info> AddLiquidity<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.from_a.clone(),
-            to: self.to_a.to_account_info().clone(),
+            from: self.user_a.clone(),
+            to: self.exchange_a.to_account_info().clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -231,8 +231,8 @@ impl<'info> AddLiquidity<'info> {
 
     fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.from_b.clone(),
-            to: self.to_b.to_account_info().clone(),
+            from: self.user_b.clone(),
+            to: self.exchange_b.to_account_info().clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -241,7 +241,7 @@ impl<'info> AddLiquidity<'info> {
     fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
             mint: self.mint.clone(),
-            to: self.to_c.clone(),
+            to: self.user_c.clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -251,8 +251,8 @@ impl<'info> AddLiquidity<'info> {
 impl<'info> RemoveLiquidity<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.from_a.to_account_info().clone(),
-            to: self.to_a.clone(),
+            from: self.exchange_a.to_account_info().clone(),
+            to: self.user_a.clone(),
             authority: self.exchange.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -260,8 +260,8 @@ impl<'info> RemoveLiquidity<'info> {
 
     fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.from_b.to_account_info().clone(),
-            to: self.to_b.clone(),
+            from: self.exchange_b.to_account_info().clone(),
+            to: self.user_b.clone(),
             authority: self.exchange.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -270,7 +270,7 @@ impl<'info> RemoveLiquidity<'info> {
     fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_accounts = Burn {
             mint: self.mint.clone(),
-            to: self.to_c.clone(),
+            to: self.user_c.clone(),
             authority: self.authority.clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -323,10 +323,10 @@ fn future_deadline_remove_liquidity<'info>(
 }
 
 fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
-    if !(ctx.accounts.to_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
+    if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
-    if !(ctx.accounts.to_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
+    if !(ctx.accounts.exchange_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {
@@ -336,10 +336,10 @@ fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
 }
 
 fn remove_correct_tokens<'info>(ctx: &Context<RemoveLiquidity<'info>>) -> Result<()> {
-    if !(ctx.accounts.from_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
+    if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
-    if !(ctx.accounts.from_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
+    if !(ctx.accounts.exchange_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {
