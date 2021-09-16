@@ -125,7 +125,7 @@ describe("XV01", () => {
   });
 
   it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize(factoryAccount.publicKey, {
+    const tx = await exchange.rpc.initialize({
       accounts: {
         authority: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId,
@@ -135,10 +135,6 @@ describe("XV01", () => {
     });
 
     console.log("Your transaction signature", tx);
-
-    let exchangeAccountInfo = await exchange.account.exchange.fetch(exchangeAccount.publicKey)
-
-    assert.ok(exchangeAccountInfo.factory.toString() == factoryAccount.publicKey.toString());
   });
 
   it("Exchange created", async () => {

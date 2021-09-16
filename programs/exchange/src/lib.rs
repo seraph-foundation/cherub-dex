@@ -13,19 +13,19 @@ declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod exchange {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>, factory: Pubkey) -> ProgramResult {
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.factory = factory;
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
         Ok(())
     }
 
     pub fn create(
         ctx: Context<Create>,
+        factory: Pubkey,
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
+        exchange.factory = factory;
         exchange.token_a = token_a;
         exchange.token_b = token_b;
         exchange.token_c = token_c;
@@ -74,7 +74,12 @@ pub mod exchange {
         token::transfer(ctx.accounts.into_context_b(), amount_b)
     }
 
-    pub fn get_input_price(ctx: Context<GetInputPrice>) -> ProgramResult {
+    pub fn get_input_price(
+        ctx: Context<GetInputPrice>,
+        amount_input: u64,
+        reserve_input: u64,
+        reserve_output: u64,
+    ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.price_input = 0;
         Ok(())

@@ -24,7 +24,7 @@ pub mod factory {
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
-        exchange::cpi::create(ctx.accounts.into(), token_a, token_b, token_c)
+        exchange::cpi::create(ctx.accounts.into(), factory.key(), token_a, token_b, token_c)
     }
 
     pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
