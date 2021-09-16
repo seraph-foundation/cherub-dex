@@ -134,6 +134,22 @@ pub mod exchange {
         Ok(())
     }
 
+    /// Convert B to A.
+    ///
+    /// amount_b Amount B sold (exact input)
+    pub fn b_to_a_input(ctx: Context<BToAInput>, amount_b: u64) -> ProgramResult {
+        let reserve_a = ctx.accounts.exchange_b.amount;
+        let amount_a = get_input_price(
+            amount_b,
+            ctx.accounts.exchange_b.amount - amount_b,
+            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.fee,
+        ) as u64;
+        assert!(amount_a >= 1);
+        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)
+    }
+
     pub fn a_to(_ctx: Context<ATo>) -> ProgramResult {
         Ok(())
     }
@@ -215,6 +231,25 @@ pub struct GetBToAOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(amount_b: u64)]
+pub struct BToAInput<'info> {
+    #[account(signer)]
+    pub authority: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    pub exchange: Account<'info, Exchange>,
+    #[account(mut)]
+    pub exchange_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_b: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_a: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_b: AccountInfo<'info>,
+    #[account(mut, constraint = amount_b > 0)]
+    pub recipient: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
 pub struct ATo<'info> {
     pub exchange: Account<'info, Exchange>,
 }
@@ -277,6 +312,26 @@ impl<'info> RemoveLiquidity<'info> {
     }
 }
 
+impl<'info> BToAInput<'info> {
+    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.exchange_a.to_account_info().clone(),
+            to: self.user_a.clone(),
+            authority: self.exchange.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+
+    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_b.to_account_info().clone(),
+            to: self.exchange_b.to_account_info().clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
+    }
+}
+
 /// ABC exchange account state.
 #[account]
 pub struct Exchange {
@@ -302,6 +357,10 @@ pub enum ErrorCode {
     CorrectTokens,
 }
 
+/// Access control function for ensuring transaction is performed in present
+/// or future.
+///
+/// deadline Timestamp specified by user
 fn future_deadline_add_liquidity<'info>(
     ctx: &Context<AddLiquidity<'info>>,
     deadline: i64,
@@ -312,6 +371,10 @@ fn future_deadline_add_liquidity<'info>(
     Ok(())
 }
 
+/// Access control function for ensuring transaction is performed in present
+/// or future.
+///
+/// deadline Timestamp specified by user
 fn future_deadline_remove_liquidity<'info>(
     ctx: &Context<RemoveLiquidity<'info>>,
     deadline: i64,
@@ -322,6 +385,7 @@ fn future_deadline_remove_liquidity<'info>(
     Ok(())
 }
 
+/// Access control function for ensuring correct token accounts are used.
 fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
     if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
@@ -335,6 +399,7 @@ fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
     Ok(())
 }
 
+/// Access control function for ensuring correct token accounts are used.
 fn remove_correct_tokens<'info>(ctx: &Context<RemoveLiquidity<'info>>) -> Result<()> {
     if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
