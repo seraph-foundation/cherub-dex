@@ -20,8 +20,8 @@ pub mod exchange {
     }
 
     /// This function acts as a contract constructor which is not currently
-    /// supported in contracts deployed using `initialize()` which is called once
-    /// by the factory during contract creation.
+    /// supported in contracts deployed using `initialize()` which is called
+    /// once by the factory during contract creation.
     pub fn create(
         ctx: Context<Create>,
         factory: Pubkey,
