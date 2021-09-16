@@ -1,3 +1,8 @@
+//! An example of an AMM factory program, inspired by Uniswap V1 seen here:
+//! https://github.com/Uniswap/uniswap-v1/. This example has some
+//! implementation changes to address the differences between the EVM and
+//! Solana's BPF-modified LLVM, but more or less should be the same overall.
+//!
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
 
@@ -5,10 +10,12 @@ use exchange::Exchange;
 
 declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+/// Factory
 #[program]
 pub mod factory {
     use super::*;
 
+    /// Initializes the factory account
     pub fn initialize(ctx: Context<Initialize>, template: Pubkey) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         factory.exchange_template = template;

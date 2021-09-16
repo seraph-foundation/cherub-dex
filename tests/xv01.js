@@ -13,8 +13,6 @@ describe("XV01", () => {
 
   const provider = anchor.getProvider();
 
-  const payer = anchor.web3.Keypair.generate();
-
   let mintAuthority = provider.wallet;
   let mintA = null;
   let mintB = null;
@@ -22,15 +20,21 @@ describe("XV01", () => {
   const amountA = 100000;
   const amountB = 100000;
 
+  const traderAmountA = 500;
+  const traderAmountB = 500;
+
   const amountLamports = 1000000000;  // 10,000,000 Lamports in 1 SOL
+
   const decimalsA = 18;
   const decimalsB = 18;
   const decimalsC = 18;
 
+  const exchangeTemplate = anchor.web3.Keypair.generate();
+
+  const payerAccount = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
-
-  const exchangeTemplate = anchor.web3.Keypair.generate();
+  const traderAccount = anchor.web3.Keypair.generate();
 
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
@@ -39,15 +43,19 @@ describe("XV01", () => {
   let walletTokenAccountB = null;
   let walletTokenAccountC = null;
 
+  let traderTokenAccountA = null;
+  let traderTokenAccountB = null;
+  let traderTokenAccountC = null;
+
   it("State initialized", async () => {
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(payer.publicKey, amountLamports),
+      await provider.connection.requestAirdrop(payerAccount.publicKey, amountLamports),
       "confirmed"
     );
 
     mintA = await Token.createMint(
       provider.connection,
-      payer,
+      payerAccount,
       mintAuthority.publicKey,
       null,
       decimalsA,
@@ -56,7 +64,7 @@ describe("XV01", () => {
 
     mintB = await Token.createMint(
       provider.connection,
-      payer,
+      payerAccount,
       mintAuthority.publicKey,
       null,
       decimalsB,
@@ -65,7 +73,7 @@ describe("XV01", () => {
 
     mintC = await Token.createMint(
       provider.connection,
-      payer,
+      payerAccount,
       mintAuthority.publicKey,
       null,
       decimalsC,
@@ -78,6 +86,9 @@ describe("XV01", () => {
 
     exchangeTokenAccountA = await mintA.createAccount(exchangeAccount.publicKey);
     exchangeTokenAccountB = await mintB.createAccount(exchangeAccount.publicKey);
+
+    traderTokenAccountA = await mintA.createAccount(traderAccount.publicKey);
+    traderTokenAccountB = await mintB.createAccount(traderAccount.publicKey);
 
     await mintA.mintTo(
       walletTokenAccountA,
@@ -93,6 +104,20 @@ describe("XV01", () => {
       amountB
     );
 
+    await mintA.mintTo(
+      traderTokenAccountA,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      traderAmountA
+    );
+
+    await mintB.mintTo(
+      traderTokenAccountB,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      traderAmountB
+    );
+
     let walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
     let walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);
 
@@ -104,6 +129,12 @@ describe("XV01", () => {
 
     assert.ok(exchangeTokenAccountInfoA.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoB.amount.toNumber() == 0);
+
+    let traderTokenAccountInfoA = await mintA.getAccountInfo(traderTokenAccountA);
+    let traderTokenAccountInfoB = await mintB.getAccountInfo(traderTokenAccountB);
+
+    assert.ok(traderTokenAccountInfoA.amount.toNumber() == traderAmountA);
+    assert.ok(traderTokenAccountInfoB.amount.toNumber() == traderAmountB);
   });
 
   it("Factory initialized", async () => {
@@ -252,6 +283,56 @@ describe("XV01", () => {
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
     assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(87)));
+  });
+
+  const traderInputQuoteAccount = anchor.web3.Keypair.generate();
+  const aToBAmount = 10;
+
+  it("Get input price", async () => {
+    const tx = await exchange.rpc.getBToAInputPrice(
+      new anchor.BN(aToBAmount),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+          exchange: exchangeAccount.publicKey,
+          quote: traderInputQuoteAccount.publicKey,
+          fromA: exchangeTokenAccountA,
+          fromB: exchangeTokenAccountB,
+        },
+        signers: [traderInputQuoteAccount]
+      });
+
+    console.log("Your transaction signature", tx);
+
+    let traderInputAccountQuoteInfo = await exchange.account.quote.fetch(traderInputQuoteAccount.publicKey);
+
+    assert.ok(traderInputAccountQuoteInfo.price.eq(new anchor.BN(48)));
+  });
+
+  const traderOutputQuoteAccount = anchor.web3.Keypair.generate();
+  const bToAAmount = 5;
+
+  it("Get output price", async () => {
+    const tx = await exchange.rpc.getBToAOutputPrice(
+      new anchor.BN(bToAAmount),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+          exchange: exchangeAccount.publicKey,
+          quote: traderOutputQuoteAccount.publicKey,
+          fromA: exchangeTokenAccountA,
+          fromB: exchangeTokenAccountB,
+        },
+        signers: [traderOutputQuoteAccount]
+      });
+
+    console.log("Your transaction signature", tx);
+
+    let traderOutputQuoteAccountInfo = await exchange.account.quote.fetch(traderOutputQuoteAccount.publicKey);
+
+    assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)));
   });
 
   const removeAmountC = 87;
