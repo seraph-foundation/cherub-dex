@@ -137,7 +137,15 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
-    pub fn b_to_a_input(ctx: Context<BToAInput>, amount_b: u64) -> ProgramResult {
+    pub fn b_to_a_input(
+        ctx: Context<BToAInput>,
+        amount_b: u64,
+        deadline: Option<i64>,
+    ) -> ProgramResult {
+        match deadline {
+            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
+            None => (),
+        }
         let reserve_a = ctx.accounts.exchange_b.amount;
         let amount_a = get_input_price(
             amount_b,
@@ -235,6 +243,7 @@ pub struct GetBToAOutputPrice<'info> {
 pub struct BToAInput<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
+    pub clock: Sysvar<'info, Clock>,
     pub token_program: AccountInfo<'info>,
     #[account(signer)]
     pub exchange: Account<'info, Exchange>,

@@ -338,13 +338,16 @@ describe("XV01", () => {
   const bToAAmountB = 6;
 
   it("B to A input", async () => {
+    const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.bToAInput(
       new anchor.BN(bToAAmountB),
+      deadline,
       {
         accounts: {
           authority: provider.wallet.publicKey,
-          exchange: exchangeAccount.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
+          exchange: exchangeAccount.publicKey,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
           exchangeA: exchangeTokenAccountA,
