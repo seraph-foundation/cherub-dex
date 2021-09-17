@@ -372,6 +372,42 @@ describe("XV01", () => {
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99869)));
   });
 
+  const aToBAmountA = 12;
+
+  it("B to A input", async () => {
+    const deadline = new anchor.BN(Date.now() / 1000);
+    const tx = await exchange.rpc.bToAInput(
+      new anchor.BN(aToBAmountA),
+      deadline,
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          exchange: exchangeAccount.publicKey,
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB,
+          recipient: walletTokenAccountA
+        },
+        signers: [exchangeAccount, provider.wallet.owner]
+      });
+
+    console.log("Your transaction signature", tx);
+
+    let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
+    let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(168)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99832)));
+
+    let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+    let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(143)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99857)));
+  });
 
   const removeAmountC = 87;
   const removeMinAmountA = initialMaxAmountA + additionalMaxAmountA;
