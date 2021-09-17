@@ -138,7 +138,7 @@ pub mod exchange {
     ///
     /// amount_b Amount B sold (exact input)
     pub fn b_to_a_input(
-        ctx: Context<BToAInput>,
+        ctx: Context<SwapInput>,
         amount_b: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
@@ -158,8 +158,28 @@ pub mod exchange {
         token::transfer(ctx.accounts.into_context_b(), amount_b)
     }
 
-    pub fn a_to(_ctx: Context<ATo>) -> ProgramResult {
-        Ok(())
+    /// Convert A to B.
+    ///
+    /// amount_a Amount A sold (exact input)
+    pub fn a_to_b_input(
+        ctx: Context<SwapInput>,
+        amount_a: u64,
+        deadline: Option<i64>,
+    ) -> ProgramResult {
+        match deadline {
+            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
+            None => (),
+        }
+        let reserve_a = ctx.accounts.exchange_b.amount;
+        let amount_b = get_input_price(
+            amount_a,
+            ctx.accounts.exchange_a.amount - amount_a,
+            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange.fee,
+        ) as u64;
+        assert!(amount_a >= 1);
+        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)
     }
 }
 
@@ -239,8 +259,7 @@ pub struct GetBToAOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(amount_b: u64)]
-pub struct BToAInput<'info> {
+pub struct SwapInput<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
@@ -253,92 +272,103 @@ pub struct BToAInput<'info> {
     pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_a: AccountInfo<'info>,
-    #[account(mut, constraint = amount_b > 0)]
+    #[account(mut)]
     pub user_b: AccountInfo<'info>,
     #[account(mut)]
     pub recipient: AccountInfo<'info>,
 }
 
-#[derive(Accounts)]
-pub struct ATo<'info> {
-    pub exchange: Account<'info, Exchange>,
-}
-
 impl<'info> AddLiquidity<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_a.clone(),
-            to: self.exchange_a.to_account_info().clone(),
-            authority: self.authority.clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.user_a.clone(),
+                to: self.exchange_a.to_account_info().clone(),
+                authority: self.authority.clone(),
+            },
+        )
     }
 
     fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_b.clone(),
-            to: self.exchange_b.to_account_info().clone(),
-            authority: self.authority.clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.user_b.clone(),
+                to: self.exchange_b.to_account_info().clone(),
+                authority: self.authority.clone(),
+            },
+        )
     }
 
     fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-        let cpi_accounts = MintTo {
-            mint: self.mint.clone(),
-            to: self.user_c.clone(),
-            authority: self.authority.clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            MintTo {
+                mint: self.mint.clone(),
+                to: self.user_c.clone(),
+                authority: self.authority.clone(),
+            },
+        )
     }
 }
 
 impl<'info> RemoveLiquidity<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info().clone(),
-            to: self.user_a.clone(),
-            authority: self.exchange.to_account_info().clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.exchange_a.to_account_info().clone(),
+                to: self.user_a.clone(),
+                authority: self.exchange.to_account_info().clone(),
+            },
+        )
     }
 
     fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.exchange_b.to_account_info().clone(),
-            to: self.user_b.clone(),
-            authority: self.exchange.to_account_info().clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.exchange_b.to_account_info().clone(),
+                to: self.user_b.clone(),
+                authority: self.exchange.to_account_info().clone(),
+            },
+        )
     }
 
     fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
-        let cpi_accounts = Burn {
-            mint: self.mint.clone(),
-            to: self.user_c.clone(),
-            authority: self.authority.clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Burn {
+                mint: self.mint.clone(),
+                to: self.user_c.clone(),
+                authority: self.authority.clone(),
+            },
+        )
     }
 }
 
-impl<'info> BToAInput<'info> {
+impl<'info> SwapInput<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info().clone(),
-            to: self.recipient.clone(),
-            authority: self.exchange.to_account_info().clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.exchange_a.to_account_info().clone(),
+                to: self.recipient.clone(),
+                authority: self.exchange.to_account_info().clone(),
+            },
+        )
     }
 
     fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info().clone(),
-            to: self.exchange_b.to_account_info().clone(),
-            authority: self.authority.clone(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
+        CpiContext::new(
+            self.token_program.clone(),
+            Transfer {
+                from: self.user_b.to_account_info().clone(),
+                to: self.exchange_b.to_account_info().clone(),
+                authority: self.authority.clone(),
+            },
+        )
     }
 }
 
