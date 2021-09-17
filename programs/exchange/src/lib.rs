@@ -137,11 +137,7 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
-    pub fn b_to_a_input(
-        ctx: Context<SwapInput>,
-        amount_b: u64,
-        deadline: Option<i64>,
-    ) -> ProgramResult {
+    pub fn b_to_a_input(ctx: Context<Swap>, amount_b: u64, deadline: Option<i64>) -> ProgramResult {
         match deadline {
             Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
             None => (),
@@ -161,8 +157,52 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
-    pub fn a_to_b_input(
-        ctx: Context<SwapInput>,
+    pub fn a_to_b_input(ctx: Context<Swap>, amount_a: u64, deadline: Option<i64>) -> ProgramResult {
+        match deadline {
+            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
+            None => (),
+        }
+        let reserve_a = ctx.accounts.exchange_b.amount;
+        let amount_b = get_input_price(
+            amount_a,
+            ctx.accounts.exchange_a.amount - amount_a,
+            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange.fee,
+        ) as u64;
+        assert!(amount_a >= 1);
+        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)
+    }
+
+    /// Convert B to A.
+    ///
+    /// amount_b Amount B sold (exact output)
+    pub fn b_to_a_output(
+        ctx: Context<Swap>,
+        amount_b: u64,
+        deadline: Option<i64>,
+    ) -> ProgramResult {
+        match deadline {
+            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
+            None => (),
+        }
+        let reserve_a = ctx.accounts.exchange_b.amount;
+        let amount_a = get_output_price(
+            amount_b,
+            ctx.accounts.exchange_b.amount - amount_b,
+            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.fee,
+        ) as u64;
+        assert!(amount_a >= 1);
+        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_context_b(), amount_b)
+    }
+
+    /// Convert A to B.
+    ///
+    /// amount_a Amount A sold (exact output)
+    pub fn a_to_b_output(
+        ctx: Context<Swap>,
         amount_a: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
@@ -171,7 +211,7 @@ pub mod exchange {
             None => (),
         }
         let reserve_a = ctx.accounts.exchange_b.amount;
-        let amount_b = get_input_price(
+        let amount_b = get_output_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
             ctx.accounts.exchange_b.amount,
@@ -259,7 +299,7 @@ pub struct GetBToAOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
-pub struct SwapInput<'info> {
+pub struct Swap<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
@@ -348,7 +388,7 @@ impl<'info> RemoveLiquidity<'info> {
     }
 }
 
-impl<'info> SwapInput<'info> {
+impl<'info> Swap<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         CpiContext::new(
             self.token_program.clone(),
