@@ -397,6 +397,14 @@ pub enum ErrorCode {
     CorrectTokens,
 }
 
+/// Deadline must be in the future
+fn future_deadline(ts: i64, deadline: i64) -> Result<()> {
+    if !(ts <= deadline) {
+        return Err(ErrorCode::FutureDeadline.into());
+    }
+    Ok(())
+}
+
 /// Access control function for ensuring transaction is performed in present
 /// or future.
 ///
@@ -405,10 +413,7 @@ fn future_deadline_add_liquidity<'info>(
     ctx: &Context<AddLiquidity<'info>>,
     deadline: i64,
 ) -> Result<()> {
-    if !(ctx.accounts.clock.unix_timestamp <= deadline) {
-        return Err(ErrorCode::FutureDeadline.into());
-    }
-    Ok(())
+    future_deadline(ctx.accounts.clock.unix_timestamp, deadline)
 }
 
 /// Access control function for ensuring transaction is performed in present
@@ -419,10 +424,7 @@ fn future_deadline_remove_liquidity<'info>(
     ctx: &Context<RemoveLiquidity<'info>>,
     deadline: i64,
 ) -> Result<()> {
-    if !(ctx.accounts.clock.unix_timestamp <= deadline) {
-        return Err(ErrorCode::FutureDeadline.into());
-    }
-    Ok(())
+    future_deadline(ctx.accounts.clock.unix_timestamp, deadline)
 }
 
 /// Access control function for ensuring correct token accounts are used.
