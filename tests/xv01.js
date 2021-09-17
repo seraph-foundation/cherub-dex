@@ -348,7 +348,8 @@ describe("XV01", () => {
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
           exchangeA: exchangeTokenAccountA,
-          exchangeB: exchangeTokenAccountB
+          exchangeB: exchangeTokenAccountB,
+          recipient: walletTokenAccountA
         },
         signers: [exchangeAccount, provider.wallet.owner]
       });

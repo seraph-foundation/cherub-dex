@@ -246,6 +246,8 @@ pub struct BToAInput<'info> {
     pub user_a: AccountInfo<'info>,
     #[account(mut, constraint = amount_b > 0)]
     pub user_b: AccountInfo<'info>,
+    #[account(mut)]
+    pub recipient: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -315,7 +317,7 @@ impl<'info> BToAInput<'info> {
     fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.exchange_a.to_account_info().clone(),
-            to: self.user_a.clone(),
+            to: self.recipient.clone(),
             authority: self.exchange.to_account_info().clone(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
