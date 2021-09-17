@@ -236,6 +236,7 @@ pub struct BToAInput<'info> {
     #[account(signer)]
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
+    #[account(signer)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -243,10 +244,8 @@ pub struct BToAInput<'info> {
     pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_a: AccountInfo<'info>,
-    #[account(mut)]
-    pub user_b: AccountInfo<'info>,
     #[account(mut, constraint = amount_b > 0)]
-    pub recipient: AccountInfo<'info>,
+    pub user_b: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

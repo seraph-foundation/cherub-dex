@@ -335,6 +335,40 @@ describe("XV01", () => {
     assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)));
   });
 
+  const bToAAmountB = 6;
+
+  it("B to A input", async () => {
+    const tx = await exchange.rpc.bToAInput(
+      new anchor.BN(bToAAmountB),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          exchange: exchangeAccount.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB
+        },
+        signers: [exchangeAccount, provider.wallet.owner]
+      });
+
+    console.log("Your transaction signature", tx);
+
+    let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
+    let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(218)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99782)));
+
+    let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+    let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(131)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99869)));
+  });
+
+
   const removeAmountC = 87;
   const removeMinAmountA = initialMaxAmountA + additionalMaxAmountA;
   const removeMinAmountB = initialAmountB + additionalAmountB;
