@@ -410,15 +410,11 @@ describe("XV01", () => {
   });
 
   const removeAmountC = 87;
-  const removeMinAmountA = initialMaxAmountA + additionalMaxAmountA;
-  const removeMinAmountB = initialAmountB + additionalAmountB;
 
   it("Remove liquidity", async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.removeLiquidity(
       new anchor.BN(removeAmountC),
-      new anchor.BN(removeMinAmountA),
-      new anchor.BN(removeMinAmountB),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,

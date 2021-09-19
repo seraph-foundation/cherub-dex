@@ -15,7 +15,7 @@ pub mod exchange {
     use super::*;
 
     /// Initializes the exchange account.
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
         Ok(())
     }
 
@@ -85,8 +85,6 @@ pub mod exchange {
     pub fn remove_liquidity(
         ctx: Context<RemoveLiquidity>,
         amount_c: u64,
-        min_amount_a: u64,
-        min_amount_b: u64,
         deadline: i64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
@@ -142,7 +140,6 @@ pub mod exchange {
             Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
             None => (),
         }
-        let reserve_a = ctx.accounts.exchange_b.amount;
         let amount_a = get_input_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -162,7 +159,6 @@ pub mod exchange {
             Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
             None => (),
         }
-        let reserve_a = ctx.accounts.exchange_b.amount;
         let amount_b = get_input_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
@@ -186,7 +182,6 @@ pub mod exchange {
             Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
             None => (),
         }
-        let reserve_a = ctx.accounts.exchange_b.amount;
         let amount_a = get_output_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -210,7 +205,6 @@ pub mod exchange {
             Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
             None => (),
         }
-        let reserve_a = ctx.accounts.exchange_b.amount;
         let amount_b = get_output_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
@@ -263,7 +257,7 @@ pub struct AddLiquidity<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(amount_c: u64, min_amount_a: u64, min_amount_b: u64)]
+#[instruction(amount_c: u64)]
 pub struct RemoveLiquidity<'info> {
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
@@ -272,9 +266,9 @@ pub struct RemoveLiquidity<'info> {
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,
-    #[account(mut, constraint = min_amount_a > 0)]
+    #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut, constraint = min_amount_b > 0)]
+    #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user_a: AccountInfo<'info>,
