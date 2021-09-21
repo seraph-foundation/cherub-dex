@@ -28,14 +28,13 @@ pub mod exchange {
     /// fee Fee given in BPS
     pub fn create(
         ctx: Context<Create>,
-        factory: Pubkey,
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
         fee: u64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
-        exchange.factory = factory;
+        exchange.factory = ctx.accounts.factory.key();
         exchange.token_a = token_a;
         exchange.token_b = token_b;
         exchange.token_c = token_c;

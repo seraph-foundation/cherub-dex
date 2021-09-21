@@ -24,13 +24,13 @@ pub mod factory {
         Ok(())
     }
 
+    /// Creates an exchange for a new token pair
     pub fn create_exchange(
         ctx: Context<CreateExchange>,
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
         fee: u64,
-        nonce: u8,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
@@ -45,14 +45,7 @@ pub mod factory {
         //)?;
         //let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
         //exchange::cpi::create(cpi_ctx, factory.key(), token_a, token_b, token_c)?;
-        exchange::cpi::create(
-            ctx.accounts.into(),
-            factory.key(),
-            token_a,
-            token_b,
-            token_c,
-            fee,
-        )?;
+        exchange::cpi::create(ctx.accounts.into(), token_a, token_b, token_c, fee)?;
         Ok(())
     }
 
@@ -93,8 +86,6 @@ pub struct CreateExchange<'info> {
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
-    //#[account(mut)]
-    //pub mint_c: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -119,17 +110,14 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Create<'info>>
 {
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
-        CpiContext::new(
-            accounts.exchange_program.clone(),
-            Create {
-                factory: accounts.factory.to_account_info().clone(),
-                exchange: accounts.exchange.clone().into(),
-                token_program: accounts.token_program.clone(),
-                exchange_a: accounts.exchange_a.clone(),
-                exchange_b: accounts.exchange_b.clone(),
-                //mint_c: accounts.mint_c.clone(),
-            },
-        )
+        let cpi_accounts = Create {
+            factory: accounts.factory.to_account_info().clone(),
+            exchange: accounts.exchange.clone().into(),
+            token_program: accounts.token_program.clone(),
+            exchange_a: accounts.exchange_a.clone(),
+            exchange_b: accounts.exchange_b.clone(),
+        };
+        CpiContext::new(accounts.exchange_program.clone(), cpi_accounts)
     }
 }
 

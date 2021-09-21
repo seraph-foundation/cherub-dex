@@ -156,7 +156,7 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    let [signer, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+    let [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [exchangeAccount.publicKey.toBuffer()],
       factory.programId
     );
@@ -165,8 +165,7 @@ describe("XV01", () => {
       mintA.publicKey,
       mintB.publicKey,
       mintC.publicKey,
-      fee,
-      nonce, {
+      fee, {
         accounts: {
           authority: provider.wallet.publicKey,
           exchange: exchangeAccount.publicKey,
@@ -174,8 +173,7 @@ describe("XV01", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           exchangeProgram: exchange.programId,
           exchangeA: exchangeTokenAccountA,
-          exchangeB: exchangeTokenAccountB,
-          //mintC: mintC.publicKey
+          exchangeB: exchangeTokenAccountB
         },
         signers: [factoryAccount.owner, exchangeAccount],
         instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)]
@@ -190,6 +188,10 @@ describe("XV01", () => {
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
 
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
+    console.log(exchangeTokenAccountAInfo.owner)
+    console.log(pda);
+    assert.ok(exchangeTokenAccountAInfo.owner.equals(pda));
+    assert.ok(exchangeTokenAccountBInfo.owner.equals(pda));
   });
 
   const initialMaxAmountA = 100;
@@ -392,7 +394,7 @@ describe("XV01", () => {
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
           exchange: exchangeAccount.publicKey,
-          pda: pda,
+          pda,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
           exchangeA: exchangeTokenAccountA,
@@ -432,7 +434,7 @@ describe("XV01", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           mint: mintC.publicKey,
-          pda: pda,
+          pda,
           exchange: exchangeAccount.publicKey,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB,
