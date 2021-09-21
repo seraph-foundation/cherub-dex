@@ -5,7 +5,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, Burn, MintTo, SetAuthority, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
 declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -39,7 +39,6 @@ pub mod exchange {
         exchange.token_b = token_b;
         exchange.token_c = token_c;
         exchange.fee = fee;
-        exchange.total_supply_c = 0;
         let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
         token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
@@ -62,16 +61,14 @@ pub mod exchange {
         min_liquidity_c: u64,
         deadline: i64,
     ) -> ProgramResult {
-        let exchange = &mut ctx.accounts.exchange;
         let mut liquidity_minted = amount_b;
         let mut amount_a = max_amount_a;
-        if exchange.total_supply_c > 0 {
+        if ctx.accounts.mint.supply > 0 {
             assert!(min_liquidity_c > 0);
             amount_a = amount_b * ctx.accounts.exchange_a.amount / ctx.accounts.exchange_b.amount;
-            liquidity_minted = amount_b * exchange.total_supply_c / ctx.accounts.exchange_a.amount;
+            liquidity_minted = amount_b * ctx.accounts.mint.supply / ctx.accounts.exchange_a.amount;
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
-        exchange.total_supply_c += liquidity_minted;
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
@@ -90,11 +87,8 @@ pub mod exchange {
         amount_c: u64,
         deadline: i64,
     ) -> ProgramResult {
-        let exchange = &mut ctx.accounts.exchange;
-        let amount_a = amount_c * ctx.accounts.exchange_a.amount / exchange.total_supply_c;
-        let amount_b = amount_c * ctx.accounts.exchange_b.amount / exchange.total_supply_c;
-        exchange.total_supply_c -= amount_c;
-        token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
+        let amount_a = amount_c * ctx.accounts.exchange_a.amount / ctx.accounts.mint.supply;
+        let amount_b = amount_c * ctx.accounts.exchange_b.amount / ctx.accounts.mint.supply;
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(
@@ -105,6 +99,7 @@ pub mod exchange {
             ctx.accounts.into_ctx_b().with_signer(&[&seeds[..]]),
             amount_b,
         )?;
+        token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
         Ok(())
     }
 
@@ -148,10 +143,10 @@ pub mod exchange {
     ///
     /// amount_b Amount B sold (exact input)
     pub fn b_to_a_input(ctx: Context<Swap>, amount_b: u64, deadline: Option<i64>) -> ProgramResult {
-        match deadline {
-            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
-            None => (),
-        }
+        assert!(
+            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
+                >= ctx.accounts.clock.unix_timestamp
+        );
         let amount_a = get_input_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -173,17 +168,17 @@ pub mod exchange {
     ///
     /// amount_a Amount A sold (exact input)
     pub fn a_to_b_input(ctx: Context<Swap>, amount_a: u64, deadline: Option<i64>) -> ProgramResult {
-        match deadline {
-            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
-            None => (),
-        }
+        assert!(
+            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
+                >= ctx.accounts.clock.unix_timestamp
+        );
         let amount_b = get_input_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
         ) as u64;
-        assert!(amount_a >= 1);
+        assert!(amount_b >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(
@@ -202,10 +197,10 @@ pub mod exchange {
         amount_b: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        match deadline {
-            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
-            None => (),
-        }
+        assert!(
+            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
+                >= ctx.accounts.clock.unix_timestamp
+        );
         let amount_a = get_output_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -226,17 +221,17 @@ pub mod exchange {
         amount_a: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        match deadline {
-            Some(d) => assert!(d >= ctx.accounts.clock.unix_timestamp),
-            None => (),
-        }
+        assert!(
+            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
+                >= ctx.accounts.clock.unix_timestamp
+        );
         let amount_b = get_output_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
         ) as u64;
-        assert!(amount_a >= 1);
+        assert!(amount_b >= 1);
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         Ok(())
@@ -265,7 +260,7 @@ pub struct AddLiquidity<'info> {
     #[account(mut)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
-    pub mint: AccountInfo<'info>,
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -285,10 +280,10 @@ pub struct RemoveLiquidity<'info> {
     pub token_program: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     pub pda: AccountInfo<'info>,
-    #[account(mut, constraint = exchange.total_supply_c > 0)]
-    pub exchange: Account<'info, Exchange>,
     #[account(mut)]
-    pub mint: AccountInfo<'info>,
+    pub exchange: Account<'info, Exchange>,
+    #[account(mut, constraint = mint.supply > 0)]
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -376,7 +371,7 @@ impl<'info> AddLiquidity<'info> {
 
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
-            mint: self.mint.clone(),
+            mint: self.mint.to_account_info().clone(),
             to: self.user_c.clone(),
             authority: self.authority.clone(),
         };
@@ -406,7 +401,7 @@ impl<'info> RemoveLiquidity<'info> {
 
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_accounts = Burn {
-            mint: self.mint.clone(),
+            mint: self.mint.to_account_info().clone(),
             to: self.user_c.clone(),
             authority: self.authority.clone(),
         };
@@ -442,7 +437,6 @@ pub struct Exchange {
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
-    pub total_supply_c: u64, // TODO: Can I get this from the mint?
     pub fee: u64,
 }
 
