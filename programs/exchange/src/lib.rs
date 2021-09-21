@@ -53,7 +53,7 @@ pub mod exchange {
     /// amount_b Amount of B deposited
     /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
     /// deadline Time after which this transaction can no longer be executed
-    #[access_control(future_deadline_add_liquidity(&ctx, deadline) add_correct_tokens(&ctx))]
+    #[access_control(add_future_deadline(&ctx, deadline) add_correct_tokens(&ctx))]
     pub fn add_liquidity(
         ctx: Context<AddLiquidity>,
         max_amount_a: u64,
@@ -81,7 +81,7 @@ pub mod exchange {
     /// min_amount_a Minimum A withdrawn
     /// min_amount_b Minimum B withdrawn
     /// deadline Time after which this transaction can no longer be executed
-    #[access_control(future_deadline_remove_liquidity(&ctx, deadline) remove_correct_tokens(&ctx))]
+    #[access_control(remove_future_deadline(&ctx, deadline) remove_correct_tokens(&ctx))]
     pub fn remove_liquidity(
         ctx: Context<RemoveLiquidity>,
         amount_c: u64,
@@ -143,10 +143,8 @@ pub mod exchange {
     ///
     /// amount_b Amount B sold (exact input)
     pub fn b_to_a_input(ctx: Context<Swap>, amount_b: u64, deadline: Option<i64>) -> ProgramResult {
-        assert!(
-            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
-                >= ctx.accounts.clock.unix_timestamp
-        );
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
         let amount_a = get_input_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -168,10 +166,8 @@ pub mod exchange {
     ///
     /// amount_a Amount A sold (exact input)
     pub fn a_to_b_input(ctx: Context<Swap>, amount_a: u64, deadline: Option<i64>) -> ProgramResult {
-        assert!(
-            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
-                >= ctx.accounts.clock.unix_timestamp
-        );
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
         let amount_b = get_input_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
@@ -197,10 +193,8 @@ pub mod exchange {
         amount_b: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        assert!(
-            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
-                >= ctx.accounts.clock.unix_timestamp
-        );
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
         let amount_a = get_output_price(
             amount_b,
             ctx.accounts.exchange_b.amount - amount_b,
@@ -221,10 +215,8 @@ pub mod exchange {
         amount_a: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        assert!(
-            deadline.unwrap_or(ctx.accounts.clock.unix_timestamp)
-                >= ctx.accounts.clock.unix_timestamp
-        );
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
         let amount_b = get_output_price(
             amount_a,
             ctx.accounts.exchange_a.amount - amount_a,
@@ -240,9 +232,9 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Create<'info> {
-    pub factory: AccountInfo<'info>,
     #[account(zero)]
     pub exchange: Account<'info, Exchange>,
+    pub factory: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -316,6 +308,7 @@ pub struct Swap<'info> {
     pub authority: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     pub token_program: AccountInfo<'info>,
+    pub pda: AccountInfo<'info>,
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -327,7 +320,6 @@ pub struct Swap<'info> {
     pub user_b: AccountInfo<'info>,
     #[account(mut)]
     pub recipient: AccountInfo<'info>,
-    pub pda: AccountInfo<'info>,
 }
 
 /// Implements creation accounts
@@ -466,10 +458,7 @@ fn future_deadline(ts: i64, deadline: i64) -> Result<()> {
 /// or future.
 ///
 /// deadline Timestamp specified by user
-fn future_deadline_add_liquidity<'info>(
-    ctx: &Context<AddLiquidity<'info>>,
-    deadline: i64,
-) -> Result<()> {
+fn add_future_deadline<'info>(ctx: &Context<AddLiquidity<'info>>, deadline: i64) -> Result<()> {
     future_deadline(ctx.accounts.clock.unix_timestamp, deadline)
 }
 
@@ -477,7 +466,7 @@ fn future_deadline_add_liquidity<'info>(
 /// or future.
 ///
 /// deadline Timestamp specified by user
-fn future_deadline_remove_liquidity<'info>(
+fn remove_future_deadline<'info>(
     ctx: &Context<RemoveLiquidity<'info>>,
     deadline: i64,
 ) -> Result<()> {

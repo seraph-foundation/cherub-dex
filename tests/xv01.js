@@ -168,9 +168,9 @@ describe("XV01", () => {
   });
 
   it("Exchange created", async () => {
-    let [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [exchangeAccount.publicKey.toBuffer()],
-      factory.programId
+    const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(anchor.utils.bytes.utf8.encode("exchange"))],
+      exchange.programId
     );
     const fee = new anchor.BN(3);
     const tx = await factory.rpc.createExchange(
@@ -200,8 +200,6 @@ describe("XV01", () => {
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
 
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
-    console.log(exchangeTokenAccountAInfo.owner)
-    console.log(pda);
     assert.ok(exchangeTokenAccountAInfo.owner.equals(pda));
     assert.ok(exchangeTokenAccountBInfo.owner.equals(pda));
   });
