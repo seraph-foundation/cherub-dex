@@ -406,14 +406,14 @@ describe("XV01", () => {
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
 
-    //assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(168)));
-    //assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99832)));
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(206)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99794)));
 
     let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
     let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
 
-    //assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(143)));
-    //assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99857)));
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(150)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99850)));
   });
 
   const removeAmountC = 87;
