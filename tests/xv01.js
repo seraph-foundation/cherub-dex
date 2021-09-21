@@ -135,6 +135,18 @@ describe("XV01", () => {
 
     assert.ok(traderTokenAccountInfoA.amount.toNumber() == traderAmountA);
     assert.ok(traderTokenAccountInfoB.amount.toNumber() == traderAmountB);
+
+    let mintAInfo = await mintA.getMintInfo();
+
+    assert.ok(mintAInfo.supply.toNumber() == traderAmountA + amountA);
+
+    let mintBInfo = await mintB.getMintInfo();
+
+    assert.ok(mintBInfo.supply.toNumber() == traderAmountB + amountB);
+
+    let mintCInfo = await mintC.getMintInfo();
+
+    assert.ok(mintCInfo.supply.toNumber() == 0);
   });
 
   it("Factory initialized", async () => {
