@@ -5,6 +5,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
+use anchor_spl::token::TokenAccount;
 
 use exchange::{Create, Exchange};
 
@@ -28,17 +29,17 @@ pub mod factory {
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
+        fee: u64,
         nonce: u8,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
-
         //let seeds = &[factory.to_account_info().key.as_ref(), &[nonce]];
         //let signer = &[&seeds[..]];
         //let mut remaining_accounts: &[AccountInfo] = &[ctx.accounts.factory.to_account_info()];
         //let cpi_program = ctx.accounts.exchange_program.clone();
-        //let cpi_accounts = exchange::Create::try_accounts(
-        //    ctx.accounts.exchange_program.key,
+        //let cpi_accounts = Create::try_accounts(
+        //    ctx.accounts.exchange.key,
         //    &mut remaining_accounts,
         //    &[],
         //)?;
@@ -50,8 +51,8 @@ pub mod factory {
             token_a,
             token_b,
             token_c,
+            fee,
         )?;
-
         Ok(())
     }
 
@@ -87,6 +88,13 @@ pub struct CreateExchange<'info> {
     #[account(mut)]
     pub factory: Account<'info, Factory>,
     pub exchange_program: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub exchange_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_b: Account<'info, TokenAccount>,
+    //#[account(mut)]
+    //pub mint_c: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -114,7 +122,12 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
         CpiContext::new(
             accounts.exchange_program.clone(),
             Create {
+                factory: accounts.factory.to_account_info().clone(),
                 exchange: accounts.exchange.clone().into(),
+                token_program: accounts.token_program.clone(),
+                exchange_a: accounts.exchange_a.clone(),
+                exchange_b: accounts.exchange_b.clone(),
+                //mint_c: accounts.mint_c.clone(),
             },
         )
     }

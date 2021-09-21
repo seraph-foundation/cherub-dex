@@ -16,4 +16,5 @@ default = []
 
 [dependencies]
 anchor-lang = "0.15.0"
+anchor-spl = "0.15.0"
 exchange = { path = "../exchange", features = ["cpi"] }

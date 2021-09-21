@@ -5,7 +5,8 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, Burn, MintTo, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, MintTo, SetAuthority, TokenAccount, Transfer};
+use spl_token::instruction::AuthorityType::AccountOwner;
 
 declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -24,20 +25,26 @@ pub mod exchange {
     /// token_a Token A public key
     /// token_b Token B public key
     /// token_c Token C public key
+    /// fee Fee given in BPS
     pub fn create(
         ctx: Context<Create>,
         factory: Pubkey,
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
+        fee: u64,
     ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = factory;
         exchange.token_a = token_a;
         exchange.token_b = token_b;
         exchange.token_c = token_c;
+        exchange.fee = fee;
         exchange.total_supply_c = 0;
-        exchange.fee = 3; // Given in BPS
+        let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
+        token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
+        // TODO: C authority
         Ok(())
     }
 
@@ -66,9 +73,9 @@ pub mod exchange {
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
         exchange.total_supply_c += liquidity_minted;
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
-        token::mint_to(ctx.accounts.into_context_c(), liquidity_minted)?;
+        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
         Ok(())
     }
 
@@ -88,9 +95,17 @@ pub mod exchange {
         let amount_a = amount_c * ctx.accounts.exchange_a.amount / exchange.total_supply_c;
         let amount_b = amount_c * ctx.accounts.exchange_b.amount / exchange.total_supply_c;
         exchange.total_supply_c -= amount_c;
-        token::burn(ctx.accounts.into_context_c(), amount_c)?;
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::transfer(
+            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
+        token::transfer(
+            ctx.accounts.into_ctx_b().with_signer(&[&seeds[..]]),
+            amount_b,
+        )?;
         Ok(())
     }
 
@@ -145,8 +160,13 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::transfer(
+            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         Ok(())
     }
 
@@ -165,8 +185,13 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::transfer(
+            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         Ok(())
     }
 
@@ -189,8 +214,8 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         Ok(())
     }
 
@@ -213,16 +238,22 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         Ok(())
     }
 }
 
 #[derive(Accounts)]
 pub struct Create<'info> {
+    pub factory: AccountInfo<'info>,
     #[account(zero)]
     pub exchange: Account<'info, Exchange>,
+    pub token_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub exchange_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_b: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
@@ -254,7 +285,8 @@ pub struct RemoveLiquidity<'info> {
     pub authority: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
-    #[account(signer, mut, constraint = exchange.total_supply_c > 0)]
+    pub pda: AccountInfo<'info>,
+    #[account(mut, constraint = exchange.total_supply_c > 0)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub mint: AccountInfo<'info>,
@@ -290,7 +322,6 @@ pub struct Swap<'info> {
     pub authority: AccountInfo<'info>,
     pub clock: Sysvar<'info, Clock>,
     pub token_program: AccountInfo<'info>,
-    #[account(signer)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -302,99 +333,106 @@ pub struct Swap<'info> {
     pub user_b: AccountInfo<'info>,
     #[account(mut)]
     pub recipient: AccountInfo<'info>,
+    pub pda: AccountInfo<'info>,
 }
 
+/// Implements creation accounts
+impl<'info> Create<'info> {
+    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_accounts = SetAuthority {
+            account_or_mint: self.exchange_a.to_account_info().clone(),
+            current_authority: self.exchange.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+
+    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_accounts = SetAuthority {
+            account_or_mint: self.exchange_b.to_account_info().clone(),
+            current_authority: self.exchange.to_account_info().clone(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+}
+
+/// Implements adding liquidity accounts
 impl<'info> AddLiquidity<'info> {
-    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.user_a.clone(),
-                to: self.exchange_a.to_account_info().clone(),
-                authority: self.authority.clone(),
-            },
-        )
+    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_a.clone(),
+            to: self.exchange_a.to_account_info().clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.user_b.clone(),
-                to: self.exchange_b.to_account_info().clone(),
-                authority: self.authority.clone(),
-            },
-        )
+    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_b.clone(),
+            to: self.exchange_b.to_account_info().clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            MintTo {
-                mint: self.mint.clone(),
-                to: self.user_c.clone(),
-                authority: self.authority.clone(),
-            },
-        )
+    fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.mint.clone(),
+            to: self.user_c.clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 }
 
+/// Implements removing liquidity accounts
 impl<'info> RemoveLiquidity<'info> {
-    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.exchange_a.to_account_info().clone(),
-                to: self.user_a.clone(),
-                authority: self.exchange.to_account_info().clone(),
-            },
-        )
+    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.exchange_a.to_account_info().clone(),
+            to: self.user_a.clone(),
+            authority: self.pda.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.exchange_b.to_account_info().clone(),
-                to: self.user_b.clone(),
-                authority: self.exchange.to_account_info().clone(),
-            },
-        )
+    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.exchange_b.to_account_info().clone(),
+            to: self.user_b.clone(),
+            authority: self.pda.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Burn {
-                mint: self.mint.clone(),
-                to: self.user_c.clone(),
-                authority: self.authority.clone(),
-            },
-        )
+    fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_accounts = Burn {
+            mint: self.mint.clone(),
+            to: self.user_c.clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 }
 
+/// Implements swap accounts
 impl<'info> Swap<'info> {
-    fn into_context_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.exchange_a.to_account_info().clone(),
-                to: self.recipient.clone(),
-                authority: self.exchange.to_account_info().clone(),
-            },
-        )
+    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.exchange_a.to_account_info().clone(),
+            to: self.recipient.clone(),
+            authority: self.pda.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
-    fn into_context_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        CpiContext::new(
-            self.token_program.clone(),
-            Transfer {
-                from: self.user_b.to_account_info().clone(),
-                to: self.exchange_b.to_account_info().clone(),
-                authority: self.authority.clone(),
-            },
-        )
+    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_b.to_account_info().clone(),
+            to: self.exchange_b.to_account_info().clone(),
+            authority: self.authority.clone(),
+        };
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 }
 
@@ -405,7 +443,7 @@ pub struct Exchange {
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
-    pub total_supply_c: u64,
+    pub total_supply_c: u64, // TODO: Can I get this from the mint?
     pub fee: u64,
 }
 
