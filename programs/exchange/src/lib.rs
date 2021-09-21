@@ -14,10 +14,7 @@ declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod exchange {
     use super::*;
 
-    /// Initializes the exchange account.
-    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
-        Ok(())
-    }
+    const EXCHANGE_PDA_SEED: &[u8] = b"exchange";
 
     /// This function acts as a contract constructor which is not currently
     /// supported in contracts deployed using `initialize()` which is called
@@ -40,7 +37,7 @@ pub mod exchange {
         exchange.token_b = token_b;
         exchange.token_c = token_c;
         exchange.total_supply_c = 0;
-        exchange.fee = 3;
+        exchange.fee = 3; // Given in BPS
         Ok(())
     }
 
@@ -93,7 +90,8 @@ pub mod exchange {
         exchange.total_supply_c -= amount_c;
         token::burn(ctx.accounts.into_context_c(), amount_c)?;
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        Ok(())
     }
 
     /// Price function for B to A trades with an exact input.
@@ -148,7 +146,8 @@ pub mod exchange {
         ) as u64;
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        Ok(())
     }
 
     /// Convert A to B.
@@ -167,7 +166,8 @@ pub mod exchange {
         ) as u64;
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        Ok(())
     }
 
     /// Convert B to A.
@@ -190,7 +190,8 @@ pub mod exchange {
         ) as u64;
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        Ok(())
     }
 
     /// Convert A to B.
@@ -213,23 +214,14 @@ pub mod exchange {
         ) as u64;
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_context_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_context_b(), amount_b)
+        token::transfer(ctx.accounts.into_context_b(), amount_b)?;
+        Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(signer)]
-    pub authority: AccountInfo<'info>,
-    #[account(address = system_program::ID)]
-    pub system_program: AccountInfo<'info>,
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8)]
-    pub exchange: Account<'info, Exchange>,
-}
-
-#[derive(Accounts)]
 pub struct Create<'info> {
-    #[account(mut)]
+    #[account(zero)]
     pub exchange: Account<'info, Exchange>,
 }
 

@@ -155,31 +155,39 @@ describe("XV01", () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
-  it("Exchange initialized", async () => {
-    const tx = await exchange.rpc.initialize({
-      accounts: {
-        authority: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-        exchange: exchangeAccount.publicKey
-      },
-      signers: [exchangeAccount]
-    });
+  //it("Exchange initialized", async () => {
+  //  const tx = await exchange.rpc.initialize({
+  //    accounts: {
+  //      authority: provider.wallet.publicKey,
+  //      systemProgram: SystemProgram.programId,
+  //      exchange: exchangeAccount.publicKey
+  //    },
+  //    signers: [exchangeAccount]
+  //  });
 
-    console.log("Your transaction signature", tx);
-  });
+  //  console.log("Your transaction signature", tx);
+  //});
 
   it("Exchange created", async () => {
+    //const name = anchor.utils.bytes.utf8.encode("A/B");
+    let [signer, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+      [exchangeAccount.publicKey.toBuffer()],
+      factory.programId
+    );
     const tx = await factory.rpc.createExchange(
       mintA.publicKey,
       mintB.publicKey,
-      mintC.publicKey, {
+      mintC.publicKey,
+      nonce, {
         accounts: {
-          factory: factoryAccount.publicKey,
+          authority: provider.wallet.publicKey,
           exchange: exchangeAccount.publicKey,
+          factory: factoryAccount.publicKey,
           exchangeProgram: exchange.programId,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         },
-        signers: [factoryAccount.owner],
+        signers: [factoryAccount.owner, exchangeAccount],
+        instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)]
       });
 
     console.log("Your transaction signature", tx);

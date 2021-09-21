@@ -2,11 +2,11 @@
 //! https://github.com/Uniswap/uniswap-v1/. This example has some
 //! implementation changes to address the differences between the EVM and
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
-//!
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
 
-use exchange::Exchange;
+use exchange::{Create, Exchange};
 
 declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -28,10 +28,31 @@ pub mod factory {
         token_a: Pubkey,
         token_b: Pubkey,
         token_c: Pubkey,
+        nonce: u8,
     ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory.clone();
         factory.token_count = factory.token_count + 1;
-        exchange::cpi::create(ctx.accounts.into(), factory.key(), token_a, token_b, token_c)
+
+        //let seeds = &[factory.to_account_info().key.as_ref(), &[nonce]];
+        //let signer = &[&seeds[..]];
+        //let mut remaining_accounts: &[AccountInfo] = &[ctx.accounts.factory.to_account_info()];
+        //let cpi_program = ctx.accounts.exchange_program.clone();
+        //let cpi_accounts = exchange::Create::try_accounts(
+        //    ctx.accounts.exchange_program.key,
+        //    &mut remaining_accounts,
+        //    &[],
+        //)?;
+        //let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
+        //exchange::cpi::create(cpi_ctx, factory.key(), token_a, token_b, token_c)?;
+        exchange::cpi::create(
+            ctx.accounts.into(),
+            factory.key(),
+            token_a,
+            token_b,
+            token_c,
+        )?;
+
+        Ok(())
     }
 
     pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
@@ -59,10 +80,12 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct CreateExchange<'info> {
+    #[account(signer)]
+    pub authority: AccountInfo<'info>,
+    #[account(zero)]
+    pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub factory: Account<'info, Factory>,
-    #[account(mut)]
-    pub exchange: Account<'info, Exchange>,
     pub exchange_program: AccountInfo<'info>,
 }
 
@@ -85,16 +108,15 @@ pub struct GetTokenWithId<'info> {
 }
 
 impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
-    for CpiContext<'a, 'b, 'c, 'info, exchange::Create<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, Create<'info>>
 {
-    fn from(
-        accounts: &mut CreateExchange<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, exchange::Create<'info>> {
-        let cpi_accounts = exchange::Create {
-            exchange: accounts.exchange.clone().into(),
-        };
-        let cpi_program = accounts.exchange_program.clone();
-        CpiContext::new(cpi_program, cpi_accounts)
+    fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
+        CpiContext::new(
+            accounts.exchange_program.clone(),
+            Create {
+                exchange: accounts.exchange.clone().into(),
+            },
+        )
     }
 }
 
