@@ -90,19 +90,16 @@ pub struct CreateExchange<'info> {
 
 #[derive(Accounts)]
 pub struct GetExchange<'info> {
-    #[account(mut)]
     pub factory: Account<'info, Factory>,
 }
 
 #[derive(Accounts)]
 pub struct GetToken<'info> {
-    #[account(mut)]
     pub factory: Account<'info, Factory>,
 }
 
 #[derive(Accounts)]
 pub struct GetTokenWithId<'info> {
-    #[account(mut)]
     pub factory: Account<'info, Factory>,
 }
 

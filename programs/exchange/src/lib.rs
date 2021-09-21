@@ -15,7 +15,7 @@ declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod exchange {
     use super::*;
 
-    const EXCHANGE_PDA_SEED: &[u8] = b"exchange";
+    const EXCHANGE_PDA_SEED: &[u8] = b"exchange"; // TODO: This should use token pk for exchange PDAs
 
     /// This function acts as a contract constructor which is not currently
     /// supported in contracts deployed using `initialize()` which is called
