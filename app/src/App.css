@@ -18,7 +18,7 @@
 
 .ConnectWallet {
     float: right;
-    width: 30%;
+    width: 20%;
     margin-right: 5px;
     border-radius: 0;
 }
@@ -32,7 +32,7 @@
     border-color: black !important;
     border-radius: 0;
     float: left;
-    width: 30%;
+    width: 20%;
     margin-left: 5px;
 }
 
@@ -42,6 +42,26 @@
 
 .CurrentBlock {
     color: green;
+}
+
+.PoolInput {
+    text-align: right;
+}
+
+.DepositButton {
+    width: 100%;
+    color: #1890ff;
+    border-color: #1890ff;
+}
+
+.SwapButton {
+    width: 100%;
+    color: #1890ff;
+    border-color: #1890ff;
+}
+
+.SwapInput {
+    text-align: right;
 }
 
 /* Ant */

@@ -1,7 +1,7 @@
 import 'antd/dist/antd.css';
 import './App.css';
 
-import { Button, Card, Col, Layout, Menu, Row, Typography } from 'antd';
+import { Button, Card, Col, Input, Layout, Menu, Row, Select, Typography } from 'antd';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
@@ -12,6 +12,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import idl from './idl.json';
 
 const { Header, Footer, Content } = Layout;
+const { Option } = Select;
 const { Title } = Typography;
 const { SystemProgram, Keypair } = web3;
 
@@ -55,12 +56,23 @@ function App() {
     }
   }
 
+  const selectBefore = (
+    <Select defaultValue="SOL" className="select-before">
+      <Option value="SOL">SOL</Option>
+      <Option value="BTC">BTC</Option>
+    </Select>
+  );
+
   async function handleMenuClick(e) {
     setMenu(e.key);
   };
 
   async function onConnectWalletClick(e) {
     document.getElementsByClassName('WalletMultiButton')[0].click();
+  };
+
+  async function onLearnMoreClick(e) {
+    window.open("https://www.github.com/xv01-finance", "_blank");
   };
 
   return (
@@ -101,46 +113,67 @@ function App() {
               <Title>Perpetual futures and yield-based XV01 pooling protocol</Title>
               <Row>
                 <Col span={12}>
-                  <Button className="ConnectWallet" type="primary" size="large">Connect Wallet</Button>
+                  <Button className="ConnectWallet" onClick={onConnectWalletClick} type="primary" size="large">Connect Wallet</Button>
                 </Col>
                 <Col span={12}>
-                  <Button className="LearnMore" ghost size="large">Learn More</Button>
+                  <Button className="LearnMore" onClick={onLearnMoreClick} ghost size="large">Learn More</Button>
                 </Col>
               </Row>
             </>
           ) : <Title level={2}>Balance: 0 SOL</Title> }
           <br/>
           <br/>
-          <Row>
-            <Col span={6}></Col>
-            <Col span={12} className="Cards">
-              { menu === "swap" ? (
+          { menu === "swap" ? (
+            <Row>
+              <Col span={8}></Col>
+              <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Swap" bordered={false}>
-                    <p>Card content</p>
+                    <Input className="SwapInput" addonBefore={selectBefore} defaultValue="0" />
+                    <br/>
+                    <p>Your current balance is <strong>0</strong></p>
+                    <Input className="SwapInput" addonBefore={selectBefore} defaultValue="0" />
+                    <br/>
+                    <br/>
+                    <Button size="large" disabled={!wallet.connected} className="SwapButton" type="ghost">Swap</Button>
                   </Card>
                 </div>
-              ) : "" }
-              { menu === "pool" ? (
+              </Col>
+              <Col span={8}></Col>
+            </Row>
+          ) : "" }
+          { menu === "pool" ? (
+            <Row>
+              <Col span={8}></Col>
+              <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Pool" bordered={false}>
-                    <p>Card content</p>
+                    <Input className="PoolInput" addonBefore={selectBefore} defaultValue="0" />
+                    <br/>
+                    <p>Your current balance is <strong>0</strong></p>
+                    <Button size="large" disabled={!wallet.connected} className="DepositButton" type="ghost">Deposit</Button>
                   </Card>
                 </div>
-              ) : "" }
-              { menu === "charts" ? (
+              </Col>
+              <Col span={8}></Col>
+            </Row>
+          ) : "" }
+          { menu === "charts" ? (
+            <Row>
+              <Col span={2}></Col>
+              <Col span={20} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Charts" bordered={false}>
-                    <p>Card content</p>
+                    <p>Coming soon!</p>
                   </Card>
                 </div>
-              ) : "" }
-            </Col>
-            <Col span={6}></Col>
-          </Row>
+              </Col>
+              <Col span={2}></Col>
+            </Row>
+          ) : "" }
         </div>
       </Content>
-      <Footer><code className="CurrentBlock"><small>97,826,670</small></code></Footer>
+      <Footer><code className="CurrentBlock"><small>• 97,826,670</small></code></Footer>
     </Layout>
   );
 }
