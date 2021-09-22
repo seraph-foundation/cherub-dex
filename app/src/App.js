@@ -1,14 +1,17 @@
+import 'antd/dist/antd.css';
 import './App.css';
-import { useState } from 'react';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { Program, Provider, web3 } from '@project-serum/anchor';
-import idl from './idl.json';
 
-import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
+import { Button } from 'antd';
+import { Program, Provider, web3 } from '@project-serum/anchor';
+import { useState } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
+import { Connection, PublicKey } from '@solana/web3.js';
 
-const wallets = [ getPhantomWallet() ]
+import idl from './idl.json';
+
+const wallets = [getPhantomWallet()]
 
 const { SystemProgram, Keypair } = web3;
 const baseAccount = Keypair.generate();
@@ -24,8 +27,7 @@ function App() {
   const wallet = useWallet()
 
   async function getProvider() {
-    /* create the provider and return it to the caller */
-    /* network set to local network for now */
+    // Create the provider and return it to the caller network set to local network for now
     const network = "http://127.0.0.1:8899";
     const connection = new Connection(network, opts.preflightCommitment);
 
@@ -35,12 +37,12 @@ function App() {
     return provider;
   }
 
-  async function initialize() {    
+  async function initialize() {
     const provider = await getProvider();
-    /* create the program interface combining the idl, program ID, and provider */
+    // Create the program interface combining the idl, program ID, and provider
     const program = new Program(idl, programID, provider);
     try {
-      /* interact with the program via rpc */
+      // Interact with the program via rpc
       await program.rpc.initialize("Hello World", {
         accounts: {
           baseAccount: baseAccount.publicKey,
@@ -87,9 +89,8 @@ function App() {
       <div className="App">
         <div>
           {
-            !value && (<button onClick={initialize}>Initialize</button>)
+            !value && (<Button type="primary" onClick={initialize}>Initialize</Button>)
           }
-
           {
             value ? (
               <div>
@@ -102,7 +103,7 @@ function App() {
                 <button onClick={update}>Add data</button>
               </div>
             ) : (
-              <h3>Please Inialize.</h3>
+              <h3>Please Initialize.</h3>
             )
           }
           {
