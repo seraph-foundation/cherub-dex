@@ -1,38 +1,63 @@
+/* Custom */
 .App {
-  text-align: center;
+    text-align: center;
+    height: 100vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.Menu, .Header {
+    background-color: transparent;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.Cards {
+    text-align: left;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.Connected {
+    float: right;
 }
 
-.App-link {
-  color: #61dafb;
+.ConnectWallet {
+    float: right;
+    width: 30%;
+    margin-right: 5px;
+    border-radius: 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ConnectWalletHeader {
+    text-align: right;
+}
+
+.LearnMore {
+    color: black !important;
+    border-color: black !important;
+    border-radius: 0;
+    float: left;
+    width: 30%;
+    margin-left: 5px;
+}
+
+.WalletMultiButton {
+    display: none !important;
+}
+
+.CurrentBlock {
+    color: green;
+}
+
+/* Ant */
+.logo {
+    float: left;
+}
+
+.ant-card-head {
+    border-bottom: none;
+}
+
+/* SOL Wallet */
+.wallet-adapter-button.wallet-adapter-button-trigger {
+    float: right;
+    border-radius: 0;
+    font-size: 14px;
+    height: 100%;
+    background-color: #1890ff;
 }
