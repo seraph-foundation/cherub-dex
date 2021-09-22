@@ -34,10 +34,12 @@ const selectBeforeTo = (
   </Select>
 );
 
+const lamportsPerSol = 10000000;
 const network = "http://127.0.0.1:8899";
 
 function App() {
   const [menu, setMenu] = useState('swap');
+  const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
 
@@ -83,13 +85,16 @@ function App() {
   useEffect(() => {
     if (wallet.connected && !blockHeightInterval) {
       setBlockHeightInterval(true);
-      setInterval(function () {
-        getProvider().then(function(provider) {
+      getProvider().then(function(provider) {
+        provider.connection.getBalance(wallet.publicKey).then(function(result) {
+          setBalance(result / lamportsPerSol);
+        });
+        setInterval(function () {
           provider.connection.getEpochInfo().then(function(epochInfo) {
             setBlockHeight(epochInfo.blockHeight);
           });
-        });
-      }, 1000);
+        }, 1000);
+      });
     }
   });
 
@@ -136,7 +141,7 @@ function App() {
                 </Col>
               </Row>
             </>
-          ) : <Title level={2}>Balance: 0 SOL</Title> }
+          ) : <Title level={2}>Balance: {balance} SOL</Title> }
           <br/>
           <br/>
           { menu === "swap" ? (
@@ -147,7 +152,7 @@ function App() {
                   <Card title="Swap" bordered={false}>
                     <Input className="SwapInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
-                    <p>Your current balance is <strong>0</strong></p>
+                    <p>Your current balance is <strong>{balance}</strong></p>
                     <Input className="SwapInput" addonBefore={selectBeforeTo} defaultValue="0" />
                     <br/>
                     <br/>
@@ -166,7 +171,7 @@ function App() {
                   <Card title="Pool" bordered={false}>
                     <Input className="PoolInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
-                    <p>Your current balance is <strong>0</strong></p>
+                    <p>Your current balance is <strong>{balance}</strong></p>
                     <Button size="large" disabled={!wallet.connected} className="DepositButton" type="ghost">Deposit</Button>
                   </Card>
                 </div>
