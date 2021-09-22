@@ -4,9 +4,26 @@ A Virtual Automated Market Maker (vAMM) for perpetual yield-based futures on Sol
 
 **Features**
 
-- Perpetual futures based on high frequency XV01 (a take on DV01) indexing
-- Zero impermanent loss based on next generation AMM technology
-- Deep liquidity with up to 100x leverage
+- Perpetual futures AMM based on high-frequency Pyth indexing
+- Zero impermanent using on next generation vAMM technology
+- Access deep liquidity with up to 100x leverage from XV01 (a take on DV01) investors
+
+## Development
+
+**Requirements**
+
+- Anchor 0.15.0
+- Solana 1.7.11
+- Node 14.15.0
+
+**Running**
+
+Make sure cluster is set to `localnet` in `Anchor.toml`.
+
+`solana-validator-test`
+`anchor deploy`
+`node copyIdl.js`
+`cd app && yarn start`
 
 ### Notes
 
