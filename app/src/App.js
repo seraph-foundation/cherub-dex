@@ -3,7 +3,7 @@ import './App.css';
 
 import { Button, Card, Col, Input, Layout, Menu, Row, Select, Typography } from 'antd';
 import { Program, Provider, web3 } from '@project-serum/anchor';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
@@ -21,25 +21,37 @@ const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: "processed" };
 const programID = new PublicKey(idl.metadata.address);
 
+const selectBeforeFrom = (
+  <Select defaultValue="SOL" className="select-before">
+    <Option value="SOL">SOL</Option>
+  </Select>
+);
+
+const selectBeforeTo = (
+  <Select defaultValue="BTC" className="select-before">
+    <Option value="BTC">BTC</Option>
+    <Option value="ETH">ETH</Option>
+  </Select>
+);
+
+const network = "http://127.0.0.1:8899";
+
 function App() {
   const [menu, setMenu] = useState('swap');
+  const [blockHeight, setBlockHeight] = useState(0);
+  const [blockHeightInterval, setBlockHeightInterval] = useState(false);
+
   const wallet = useWallet()
 
   async function getProvider() {
-    // Create the provider and return it to the caller network set to local network for now
-    const network = "http://127.0.0.1:8899";
     const connection = new Connection(network, opts.preflightCommitment);
-    const provider = new Provider(connection, wallet, opts.preflightCommitment);
-    console.log('provider', provider);
-    return provider;
+    return new Provider(connection, wallet, opts.preflightCommitment);
   }
 
   async function initialize() {
     const provider = await getProvider();
-    // Create the program interface combining the idl, program ID, and provider
     const program = new Program(idl, programID, provider);
     try {
-      // Interact with the program via rpc
       await program.rpc.initialize("Hello World", {
         accounts: {
           baseAccount: baseAccount.publicKey,
@@ -56,31 +68,37 @@ function App() {
     }
   }
 
-  const selectBefore = (
-    <Select defaultValue="SOL" className="select-before">
-      <Option value="SOL">SOL</Option>
-      <Option value="BTC">BTC</Option>
-    </Select>
-  );
-
   async function handleMenuClick(e) {
     setMenu(e.key);
-  };
+  }
 
   async function onConnectWalletClick(e) {
     document.getElementsByClassName('WalletMultiButton')[0].click();
-  };
+  }
 
   async function onLearnMoreClick(e) {
     window.open("https://www.github.com/xv01-finance", "_blank");
-  };
+  }
+
+  useEffect(() => {
+    if (wallet.connected && !blockHeightInterval) {
+      setBlockHeightInterval(true);
+      setInterval(function () {
+        getProvider().then(function(provider) {
+          provider.connection.getEpochInfo().then(function(epochInfo) {
+            setBlockHeight(epochInfo.blockHeight);
+          });
+        });
+      }, 1000);
+    }
+  });
 
   return (
     <Layout className="App">
       <Header className="Header">
         <Row>
           <Col span={3}>
-            <div className="logo"><strong>xv01.finance</strong></div>
+            <div className="logo"><strong>xv01.fi</strong></div>
           </Col>
           <Col span={13}>
             <Menu className="Menu" onClick={handleMenuClick} selectedKeys={[menu]} mode="horizontal">
@@ -90,16 +108,14 @@ function App() {
             </Menu>
           </Col>
           <Col span={8} className="ConnectWalletHeader">
-            { !wallet.connected ? (
-              <>
-                <WalletMultiButton className="WalletMultiButton" />
-                <Button onClick={onConnectWalletClick} type="link">Connect Wallet</Button>
-              </>) :
-              <div className="Connected">
-                <code>
-                  { wallet.publicKey.toString().substr(0, 4) }...{ wallet.publicKey.toString().substr(-4) }
-                </code>
-              </div>
+            { !wallet.connected ?
+            <>
+              <WalletMultiButton className="WalletMultiButton"/>
+              <Button onClick={onConnectWalletClick} type="link">Connect Wallet</Button>
+            </> :
+            <div className="Connected">
+              <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
+            </div>
             }
           </Col>
         </Row>
@@ -129,10 +145,10 @@ function App() {
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Swap" bordered={false}>
-                    <Input className="SwapInput" addonBefore={selectBefore} defaultValue="0" />
+                    <Input className="SwapInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>0</strong></p>
-                    <Input className="SwapInput" addonBefore={selectBefore} defaultValue="0" />
+                    <Input className="SwapInput" addonBefore={selectBeforeTo} defaultValue="0" />
                     <br/>
                     <br/>
                     <Button size="large" disabled={!wallet.connected} className="SwapButton" type="ghost">Swap</Button>
@@ -148,7 +164,7 @@ function App() {
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Pool" bordered={false}>
-                    <Input className="PoolInput" addonBefore={selectBefore} defaultValue="0" />
+                    <Input className="PoolInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>0</strong></p>
                     <Button size="large" disabled={!wallet.connected} className="DepositButton" type="ghost">Deposit</Button>
@@ -173,16 +189,16 @@ function App() {
           ) : "" }
         </div>
       </Content>
-      <Footer><code className="CurrentBlock"><small>• 97,826,670</small></code></Footer>
+      <Footer><code className="CurrentBlock"><small>• {blockHeight}</small></code></Footer>
     </Layout>
   );
 }
 
 const AppWithProvider = () => (
-  <ConnectionProvider endpoint="http://127.0.0.1:8899">
+  <ConnectionProvider endpoint={network}>
     <WalletProvider wallets={wallets} autoConnect>
       <WalletModalProvider>
-        <App />
+        <App/>
       </WalletModalProvider>
     </WalletProvider>
   </ConnectionProvider>
