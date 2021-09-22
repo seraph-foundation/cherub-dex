@@ -4,7 +4,7 @@ A Virtual Automated Market Maker (vAMM) for perpetual yield-based futures on Sol
 
 **Features**
 
-- Perpetual futures based on high fidelity XV01 (a take on DV01) indexing
+- Perpetual futures based on high frequency XV01 (a take on DV01) indexing
 - Zero impermanent loss based on next generation AMM technology
 - Deep liquidity with up to 100x leverage
 

@@ -10,6 +10,7 @@ describe("XV01", () => {
 
   const factory = anchor.workspace.Factory;
   const exchange = anchor.workspace.Exchange;
+  const pyth = anchor.workspace.Pyth;
 
   const provider = anchor.getProvider();
 
@@ -35,6 +36,7 @@ describe("XV01", () => {
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
   const traderAccount = anchor.web3.Keypair.generate();
+  const pythAccount = anchor.web3.Keypair.generate();
 
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
@@ -427,6 +429,37 @@ describe("XV01", () => {
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(150)));
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99850)));
   });
+
+  it("Initializes Pyth", async () => {
+    await pyth.rpc.initialize({
+      accounts: {
+        authority: provider.wallet.publicKey,
+        pyth: pythAccount.publicKey,
+        systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      },
+      signers: [pythAccount]
+    });
+
+    assert.ok(true);
+  });
+
+  //it("Get SOL Price", async() => {
+  //  const pythProdKey = new anchor.web3.PublicKey("8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F");
+  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey("BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy");
+  //  await pyth.rpc.getPrice({
+  //    accounts: {
+  //      pyth: pythAccount.publicKey,
+  //      pythProductInfo: pythProdKey,
+  //      pythPriceInfo: pythSOLPriceProgKey
+  //    }
+  //  });
+
+  //  const accountInfo = await provider.connection.getAccountInfo(pythAccount.publicKey);
+  //  console.log('data = ', accountInfo.data);
+
+  //  assert.ok(accountInfo.data);
+  //});
 
   const removeAmountC = 87;
 
