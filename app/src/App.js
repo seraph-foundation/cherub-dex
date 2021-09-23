@@ -1,7 +1,7 @@
 import 'antd/dist/antd.css';
 import './App.css';
 
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, Menu, Row, Select, Typography, message } from 'antd';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, Menu, Radio, Row, Select, Slider, Typography, message } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect } from 'react';
@@ -35,11 +35,18 @@ const selectBeforeTo = (
   </Select>
 );
 
+const tradeOptions = [
+  { label: 'Buy / Long', value: 'long' },
+  { label: 'Sell / Short', value: 'short' },
+];
+
 const lamportsPerSol = 10000000;
 const network = "http://127.0.0.1:8899";
 
 function App() {
   const [menu, setMenu] = useState('swap');
+  const [tradeDirection, setTradeDirection] = useState('long');
+  const [leverage, setLeverage] = useState(1);
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
@@ -83,6 +90,14 @@ function App() {
     window.open("https://www.github.com/xv01-finance", "_blank");
   }
 
+  async function onTradeOptionsChange(e) {
+    setTradeDirection(e.target.value);
+  }
+
+  async function onAfterLeverageChange(e) {
+    setLeverage(e);
+  }
+
   function handleSettingsClick(e) {
     message.info(e.key);
   }
@@ -116,7 +131,7 @@ function App() {
 
   return (
     <Layout className="App Dark">
-      <Alert closable message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
+      <Alert message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
       <Header className="Header Dark">
         <Row>
           <Col span={3}>
@@ -124,7 +139,7 @@ function App() {
           </Col>
           <Col span={13}>
             <Menu className="Menu Dark" onClick={handleMenuClick} selectedKeys={[menu]} mode="horizontal">
-              <Menu.Item key="swap">Swap</Menu.Item>
+              <Menu.Item key="swap">Trade</Menu.Item>
               <Menu.Item key="pool">Pool</Menu.Item>
               <Menu.Item key="charts">Charts</Menu.Item>
             </Menu>
@@ -160,7 +175,7 @@ function App() {
                 </Col>
               </Row>
             </>
-          ) : <Title className="Title Dark" level={2}>Balance: {balance} SOL</Title> }
+          ) : <Title className="Title Dark Balance" level={2}>Balance: {balance} SOL</Title> }
           <br/>
           <br/>
           { menu === "swap" ? (
@@ -168,14 +183,23 @@ function App() {
               <Col span={8}></Col>
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
-                  <Card title="Swap" className="Card Dark" bordered={false}>
-                    <Input className="SwapInput Input Dark" addonBefore={selectBeforeFrom} defaultValue="0" />
+                  <Card title="Trade" className="Card Dark" bordered={false}>
+                    <p><strong>Amount</strong></p>
+                    <Input className="TradeInput Input Dark" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
-                    <Input className="SwapInput Input Dark" addonBefore={selectBeforeTo} defaultValue="0" />
+                    <p><strong>Collateral</strong></p>
+                    <Input className="TradeInput Input Dark" addonBefore={selectBeforeTo} defaultValue="0" />
                     <br/>
                     <br/>
-                    <Button size="large" disabled={!wallet.connected} className="SwapButton Button Dark" type="ghost">Swap</Button>
+                    <Radio.Group options={tradeOptions} onChange={onTradeOptionsChange} className="RadioGroup Dark"
+                      optionType="button" buttonStyle="solid" value={tradeDirection} />
+                    <br/>
+                    <br/>
+                    <p><strong>Leverage</strong></p>
+                    <Slider defaultValue={1} onAfterChange={onAfterLeverageChange} />
+                    <br/>
+                    <Button size="large" disabled={!wallet.connected} className="TradeButton Button Dark" type="ghost">Approve</Button>
                   </Card>
                 </div>
               </Col>
@@ -191,7 +215,7 @@ function App() {
                     <Input className="PoolInput Input Dark" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
-                    <Button size="large" disabled={!wallet.connected} className="DepositButton Button Dark" type="ghost">Deposit</Button>
+                    <Button size="large" disabled={!wallet.connected} className="ApproveButton Button Dark" type="ghost">Approve</Button>
                   </Card>
                 </div>
               </Col>
