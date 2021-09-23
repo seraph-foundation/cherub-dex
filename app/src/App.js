@@ -1,7 +1,8 @@
 import 'antd/dist/antd.css';
 import './App.css';
 
-import { Alert, Button, Card, Col, Input, Layout, Menu, Row, Select, Typography } from 'antd';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, Menu, Row, Select, Typography, message } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
@@ -82,6 +83,21 @@ function App() {
     window.open("https://www.github.com/xv01-finance", "_blank");
   }
 
+  function handleSettingsClick(e) {
+    message.info(e.key);
+  }
+
+  const settingsMenu = (
+    <Menu onClick={handleSettingsClick}>
+      <Menu.Item key="Light mode">
+        Dark mode
+      </Menu.Item>
+      <Menu.Item key="Dark mode">
+        Light mode
+      </Menu.Item>
+    </Menu>
+  );
+
   useEffect(() => {
     if (wallet.connected && !blockHeightInterval) {
       setBlockHeightInterval(true);
@@ -117,7 +133,9 @@ function App() {
             { !wallet.connected ?
             <>
               <WalletMultiButton className="WalletMultiButton"/>
-              <Button onClick={onConnectWalletClick} type="link">Connect Wallet</Button>
+              <Dropdown.Button icon={<SettingOutlined/>} onClick={onConnectWalletClick} type="link" overlay={settingsMenu}>
+                Connect Wallet
+              </Dropdown.Button>
             </> :
             <div className="Connected">
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>

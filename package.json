@@ -5,7 +5,6 @@
         "@solana/wallet-adapter-react": "^0.10.3",
         "@solana/wallet-adapter-react-ui": "^0.2.1",
         "@solana/wallet-adapter-wallets": "^0.8.1",
-        "antd": "^4.16.13",
         "fs": "^0.0.1-security"
     },
     "devDependencies": {
