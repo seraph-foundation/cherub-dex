@@ -113,10 +113,12 @@ function App() {
     </Menu>
   );
 
+  const getProviderCallback = useCallback(getProvider, [getProvider]);
+
   useEffect(() => {
     if (wallet.connected && !blockHeightInterval) {
       setBlockHeightInterval(true);
-      getProvider().then(function(provider) {
+      getProviderCallback().then(function(provider) {
         provider.connection.getBalance(wallet.publicKey).then(function(result) {
           setBalance(result / lamportsPerSol);
         });
@@ -127,7 +129,7 @@ function App() {
         }, 1000);
       });
     }
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProvider]);
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback]);
 
   return (
     <Layout className="App Dark">
