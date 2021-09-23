@@ -4,7 +4,7 @@ import './App.css';
 import { Alert, Button, Card, Col, Dropdown, Input, Layout, Menu, Radio, Row, Select, Slider, Typography, message } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
@@ -127,7 +127,7 @@ function App() {
         }, 1000);
       });
     }
-  });
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProvider]);
 
   return (
     <Layout className="App Dark">
