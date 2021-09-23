@@ -1,7 +1,7 @@
 import 'antd/dist/antd.css';
 import './App.css';
 
-import { Button, Card, Col, Input, Layout, Menu, Row, Select, Typography } from 'antd';
+import { Alert, Button, Card, Col, Input, Layout, Menu, Row, Select, Typography } from 'antd';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect } from 'react';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
@@ -100,6 +100,7 @@ function App() {
 
   return (
     <Layout className="App">
+      <Alert closable message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
       <Header className="Header">
         <Row>
           <Col span={3}>
