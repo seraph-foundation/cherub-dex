@@ -131,7 +131,8 @@ function App() {
 
   return (
     <Layout className="App Dark">
-      <Alert type="info" message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
+      <Alert type="warning" className="Dark" closable
+        message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
       <Header className="Header Dark">
         <Row>
           <Col span={3}>
@@ -164,7 +165,7 @@ function App() {
         <div>
           <br/>
           <br/>
-          <Title className="Title Dark">Perpetual futures and yield-based XV01 pooling protocol</Title>
+          <Title className="Title Dark">Perpetual futures vAMM and yield-based XV01 pooling protocol</Title>
           { !wallet.connected ? (
             <>
               <Row>

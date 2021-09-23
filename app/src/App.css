@@ -18,7 +18,7 @@
 }
 
 .Input.Dark > span > .ant-input-group-addon, .Input.Dark > span > .ant-input {
-    border-color: rgba(255, 255, 255, 0.65);
+    border-color: #262626;
     background-color: #1f1f1f;
     color: rgba(255, 255, 255, 0.65) !important;
 }
@@ -37,7 +37,7 @@
 }
 
 .Card.Dark > div > div > .ant-card-head-title {
-    color: rgba(255, 255, 255, 0.65) !important;
+    color: white !important;
 }
 
 .Card.Dark {
@@ -47,6 +47,10 @@
 
 .Title.Dark {
     color: white;
+}
+
+.Dark.ant-alert-warning {
+    background-color: #faad14;
 }
 
 .Dark.ant-btn-ghost[disabled] {
@@ -64,7 +68,7 @@
 
 .ConnectWallet {
     float: right;
-    width: 30%;
+    width: 25%;
     margin-right: 5px;
     border-radius: 0;
 }
@@ -82,7 +86,7 @@
     border-color: black !important;
     border-radius: 0;
     float: left;
-    width: 30%;
+    width: 25%;
     margin-left: 5px;
 }
 

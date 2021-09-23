@@ -1,6 +1,6 @@
 # XV01 Protocol
 
-Perpetual futures and yield-based XV01 pooling protocol.
+Perpetual futures vAMM and yield-based XV01 pooling protocol.
 
 **Features**
 
