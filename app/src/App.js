@@ -131,7 +131,7 @@ function App() {
 
   return (
     <Layout className="App Dark">
-      <Alert message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
+      <Alert type="info" message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
       <Header className="Header Dark">
         <Row>
           <Col span={3}>
@@ -148,7 +148,8 @@ function App() {
             { !wallet.connected ?
             <>
               <WalletMultiButton className="WalletMultiButton"/>
-              <Dropdown.Button icon={<SettingOutlined/>} onClick={onConnectWalletClick} type="link" overlay={settingsMenu}>
+              <Dropdown.Button className="ConnectWalletButton"
+                icon={<SettingOutlined/>} onClick={onConnectWalletClick} type="link" overlay={settingsMenu}>
                 Connect Wallet
               </Dropdown.Button>
             </> :
@@ -163,9 +164,9 @@ function App() {
         <div>
           <br/>
           <br/>
+          <Title className="Title Dark">Perpetual futures and yield-based XV01 pooling protocol</Title>
           { !wallet.connected ? (
             <>
-              <Title className="Title Dark">Perpetual futures and yield-based XV01 pooling protocol</Title>
               <Row>
                 <Col span={12}>
                   <Button className="ConnectWallet" onClick={onConnectWalletClick} type="primary" size="large">Connect Wallet</Button>
