@@ -4,8 +4,39 @@
     height: 100vh;
 }
 
+.App.Dark {
+    background-color: black;
+}
+
+.Footer {
+    background-color: transparent;
+}
+
 .Menu, .Header {
     background-color: transparent;
+    border-bottom: transparent;
+}
+
+.Header.Dark, .Menu.Dark {
+    color: white;
+}
+
+.LearnMore.Dark {
+    color: white !important;
+    border-color: white !important;
+}
+
+.Card.Dark > div > div > .ant-card-head-title {
+    color: white !important;
+}
+
+.Card.Dark {
+    color: white !important;
+    background-color: #141414 !important;
+}
+
+.Title.Dark {
+    color: white;
 }
 
 .Cards {

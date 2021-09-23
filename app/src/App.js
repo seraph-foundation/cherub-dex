@@ -115,15 +115,15 @@ function App() {
   });
 
   return (
-    <Layout className="App">
+    <Layout className="App Dark">
       <Alert closable message="You are currently using an unaudited piece of software. Use at your own risk." banner/>
-      <Header className="Header">
+      <Header className="Header Dark">
         <Row>
           <Col span={3}>
             <div className="logo"><strong>xv01.fi</strong></div>
           </Col>
           <Col span={13}>
-            <Menu className="Menu" onClick={handleMenuClick} selectedKeys={[menu]} mode="horizontal">
+            <Menu className="Menu Dark" onClick={handleMenuClick} selectedKeys={[menu]} mode="horizontal">
               <Menu.Item key="swap">Swap</Menu.Item>
               <Menu.Item key="pool">Pool</Menu.Item>
               <Menu.Item key="charts">Charts</Menu.Item>
@@ -150,17 +150,17 @@ function App() {
           <br/>
           { !wallet.connected ? (
             <>
-              <Title>Perpetual futures and yield-based XV01 pooling protocol</Title>
+              <Title className="Title Dark">Perpetual futures and yield-based XV01 pooling protocol</Title>
               <Row>
                 <Col span={12}>
                   <Button className="ConnectWallet" onClick={onConnectWalletClick} type="primary" size="large">Connect Wallet</Button>
                 </Col>
                 <Col span={12}>
-                  <Button className="LearnMore" onClick={onLearnMoreClick} ghost size="large">Learn More</Button>
+                  <Button className="LearnMore Dark" onClick={onLearnMoreClick} ghost size="large">Learn More</Button>
                 </Col>
               </Row>
             </>
-          ) : <Title level={2}>Balance: {balance} SOL</Title> }
+          ) : <Title className="Title Dark" level={2}>Balance: {balance} SOL</Title> }
           <br/>
           <br/>
           { menu === "swap" ? (
@@ -168,7 +168,7 @@ function App() {
               <Col span={8}></Col>
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
-                  <Card title="Swap" bordered={false}>
+                  <Card title="Swap" className="Card Dark" bordered={false}>
                     <Input className="SwapInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
@@ -187,7 +187,7 @@ function App() {
               <Col span={8}></Col>
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
-                  <Card title="Pool" bordered={false}>
+                  <Card className="Card Dark" title="Pool" bordered={false}>
                     <Input className="PoolInput" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
@@ -203,7 +203,7 @@ function App() {
               <Col span={2}></Col>
               <Col span={20} className="Cards">
                 <div className="site-card-border-less-wrapper">
-                  <Card title="Charts" bordered={false}>
+                  <Card className="Card Dark" title="Charts" bordered={false}>
                     <p>Coming soon!</p>
                   </Card>
                 </div>
@@ -213,7 +213,7 @@ function App() {
           ) : "" }
         </div>
       </Content>
-      <Footer><code className="CurrentBlock"><small>• {blockHeight}</small></code></Footer>
+      <Footer className="Footer"><code className="CurrentBlock"><small>• {blockHeight}</small></code></Footer>
     </Layout>
   );
 }
