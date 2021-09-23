@@ -120,7 +120,7 @@ function App() {
       <Header className="Header Dark">
         <Row>
           <Col span={3}>
-            <div className="logo"><strong>xv01.fi</strong></div>
+            <div className="Logo Dark"><strong>xv01.fi</strong></div>
           </Col>
           <Col span={13}>
             <Menu className="Menu Dark" onClick={handleMenuClick} selectedKeys={[menu]} mode="horizontal">
@@ -169,13 +169,13 @@ function App() {
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card title="Swap" className="Card Dark" bordered={false}>
-                    <Input className="SwapInput" addonBefore={selectBeforeFrom} defaultValue="0" />
+                    <Input className="SwapInput Input Dark" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
-                    <Input className="SwapInput" addonBefore={selectBeforeTo} defaultValue="0" />
+                    <Input className="SwapInput Input Dark" addonBefore={selectBeforeTo} defaultValue="0" />
                     <br/>
                     <br/>
-                    <Button size="large" disabled={!wallet.connected} className="SwapButton" type="ghost">Swap</Button>
+                    <Button size="large" disabled={!wallet.connected} className="SwapButton Button Dark" type="ghost">Swap</Button>
                   </Card>
                 </div>
               </Col>
@@ -188,10 +188,10 @@ function App() {
               <Col span={8} className="Cards">
                 <div className="site-card-border-less-wrapper">
                   <Card className="Card Dark" title="Pool" bordered={false}>
-                    <Input className="PoolInput" addonBefore={selectBeforeFrom} defaultValue="0" />
+                    <Input className="PoolInput Input Dark" addonBefore={selectBeforeFrom} defaultValue="0" />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
-                    <Button size="large" disabled={!wallet.connected} className="DepositButton" type="ghost">Deposit</Button>
+                    <Button size="large" disabled={!wallet.connected} className="DepositButton Button Dark" type="ghost">Deposit</Button>
                   </Card>
                 </div>
               </Col>

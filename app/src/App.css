@@ -17,26 +17,41 @@
     border-bottom: transparent;
 }
 
+.Input.Dark > span > .ant-input-group-addon, .Input.Dark > span > .ant-input {
+    border-color: rgba(255, 255, 255, 0.65);
+    background-color: #1f1f1f;
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.Input.Dark > span > span > div > div {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
 .Header.Dark, .Menu.Dark {
-    color: white;
+    color: rgba(255, 255, 255, 0.65);
 }
 
 .LearnMore.Dark {
-    color: white !important;
-    border-color: white !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    border-color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .Card.Dark > div > div > .ant-card-head-title {
-    color: white !important;
+    color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .Card.Dark {
-    color: white !important;
+    color: rgba(255, 255, 255, 0.65) !important;
     background-color: #141414 !important;
 }
 
 .Title.Dark {
     color: white;
+}
+
+.Dark.ant-btn-ghost[disabled] {
+    color: rgba(255, 255, 255, 0.65) !important;
+    background-color: transparent;
 }
 
 .Cards {
@@ -95,11 +110,15 @@
     text-align: right;
 }
 
-/* Ant */
-.logo {
+.Logo {
     float: left;
 }
 
+.Logo.Dark {
+    color: white;
+}
+
+/* Ant */
 .ant-card-head {
     border-bottom: none;
 }
