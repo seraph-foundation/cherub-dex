@@ -1,11 +1,11 @@
-const anchor = require("@project-serum/anchor");
-const { TOKEN_PROGRAM_ID, Token } = require("@solana/spl-token");
-const TokenInstructions = require("@project-serum/serum").TokenInstructions;
-const assert = require("assert");
+const anchor = require('@project-serum/anchor');
+const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
+const TokenInstructions = require('@project-serum/serum').TokenInstructions;
+const assert = require('assert');
 
 const { SystemProgram } = anchor.web3;
 
-describe("XV01", () => {
+describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
   const factory = anchor.workspace.Factory;
@@ -49,10 +49,10 @@ describe("XV01", () => {
   let traderTokenAccountB = null;
   let traderTokenAccountC = null;
 
-  it("State initialized", async () => {
+  it('State initialized', async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(payerAccount.publicKey, amountLamports),
-      "confirmed"
+      'confirmed'
     );
 
     mintA = await Token.createMint(
@@ -151,7 +151,7 @@ describe("XV01", () => {
     assert.ok(mintCInfo.supply.toNumber() == 0);
   });
 
-  it("Factory initialized", async () => {
+  it('Factory initialized', async () => {
     const tx = await factory.rpc.initialize(exchangeTemplate.publicKey, {
       accounts: {
         authority: provider.wallet.publicKey,
@@ -161,7 +161,7 @@ describe("XV01", () => {
       signers: [factoryAccount]
     });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let factoryAccountInfo = await factory.account.factory.fetch(factoryAccount.publicKey)
 
@@ -169,9 +169,9 @@ describe("XV01", () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
-  it("Exchange created", async () => {
+  it('Exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode("exchange"))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const fee = new anchor.BN(3);
@@ -193,7 +193,7 @@ describe("XV01", () => {
         instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)]
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
 
@@ -211,7 +211,7 @@ describe("XV01", () => {
   const initialMinLiquidityC = 0;
   const initialLiquidityMinted = 50;
 
-  it("Add initial liquidity", async () => {
+  it('Add initial liquidity', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.addLiquidity(
       new anchor.BN(initialMaxAmountA),
@@ -233,7 +233,7 @@ describe("XV01", () => {
         signers: [provider.wallet.owner]
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
@@ -257,7 +257,7 @@ describe("XV01", () => {
   const additionalMinLiquidityC = 5;
   const additionalLiquidityMinted = 25;
 
-  it("Add additional liquidity", async () => {
+  it('Add additional liquidity', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.addLiquidity(
       new anchor.BN(additionalMaxAmountA),
@@ -279,7 +279,7 @@ describe("XV01", () => {
         signers: [provider.wallet.owner]
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
@@ -301,7 +301,7 @@ describe("XV01", () => {
   const traderInputQuoteAccount = anchor.web3.Keypair.generate();
   const aToBAmount = 10;
 
-  it("Get input price", async () => {
+  it('Get input price', async () => {
     const tx = await exchange.rpc.getBToAInputPrice(
       new anchor.BN(aToBAmount),
       {
@@ -316,7 +316,7 @@ describe("XV01", () => {
         signers: [traderInputQuoteAccount]
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let traderInputAccountQuoteInfo = await exchange.account.quote.fetch(traderInputQuoteAccount.publicKey);
 
@@ -326,7 +326,7 @@ describe("XV01", () => {
   const traderOutputQuoteAccount = anchor.web3.Keypair.generate();
   const bToAAmount = 5;
 
-  it("Get output price", async () => {
+  it('Get output price', async () => {
     const tx = await exchange.rpc.getBToAOutputPrice(
       new anchor.BN(bToAAmount),
       {
@@ -341,7 +341,7 @@ describe("XV01", () => {
         signers: [traderOutputQuoteAccount]
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let traderOutputQuoteAccountInfo = await exchange.account.quote.fetch(traderOutputQuoteAccount.publicKey);
 
@@ -350,9 +350,9 @@ describe("XV01", () => {
 
   const bToAAmountB = 6;
 
-  it("B to A input", async () => {
+  it('B to A input', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode("exchange"))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -374,7 +374,7 @@ describe("XV01", () => {
         }
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
@@ -391,9 +391,9 @@ describe("XV01", () => {
 
   const aToBAmountA = 12;
 
-  it("A to B input", async () => {
+  it('A to B input', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode("exchange"))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -415,7 +415,7 @@ describe("XV01", () => {
         }
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
@@ -430,7 +430,7 @@ describe("XV01", () => {
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99850)));
   });
 
-  it("Initializes Pyth", async () => {
+  it('Initializes Pyth', async () => {
     await pyth.rpc.initialize({
       accounts: {
         authority: provider.wallet.publicKey,
@@ -444,9 +444,9 @@ describe("XV01", () => {
     assert.ok(true);
   });
 
-  //it("Get SOL Price", async() => {
-  //  const pythProdKey = new anchor.web3.PublicKey("8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F");
-  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey("BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy");
+  //it('Get SOL Price', async() => {
+  //  const pythProdKey = new anchor.web3.PublicKey('8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F');
+  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey('BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy');
   //  await pyth.rpc.getPrice({
   //    accounts: {
   //      pyth: pythAccount.publicKey,
@@ -463,9 +463,9 @@ describe("XV01", () => {
 
   const removeAmountC = 87;
 
-  it("Remove liquidity", async () => {
+  it('Remove liquidity', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode("exchange"))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -487,7 +487,7 @@ describe("XV01", () => {
         }
       });
 
-    console.log("Your transaction signature", tx);
+    console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
     let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);

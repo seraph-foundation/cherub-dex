@@ -66,6 +66,10 @@
     float: right;
 }
 
+.Layout {
+    background-color: black;
+}
+
 .ConnectWallet {
     float: right;
     width: 25%;
@@ -139,15 +143,23 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
-.ant-select-arrow {
-    background-color: #1f1f1f;
-    color: rgba(255, 255, 255, 0.65);
-}
-
 /* Ant */
 .ant-radio-button-wrapper {
     text-align: center;
     width: 50%;
+}
+
+.ant-steps-item-title, .ant-steps-item-description {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.ant-steps-item-title {
+    color: white !important;
+}
+
+.ant-select-arrow {
+    background-color: #1f1f1f;
+    color: rgba(255, 255, 255, 0.65);
 }
 
 .ant-card-head {
