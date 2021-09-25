@@ -72,7 +72,7 @@
 
 .ConnectWallet {
     float: right;
-    width: 25%;
+    width: 30%;
     margin-right: 5px;
     border-radius: 0;
 }
@@ -90,7 +90,7 @@
     border-color: black !important;
     border-radius: 0;
     float: left;
-    width: 25%;
+    width: 30%;
     margin-left: 5px;
 }
 
@@ -128,6 +128,7 @@
 
 .Logo {
     float: left;
+    cursor: pointer;
 }
 
 .Logo.Dark {
@@ -143,7 +144,51 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
+.CheckCircleOutlined {
+    color: white;
+}
+
+.CloseCircleOutlined {
+    color: white;
+}
+
+.ClockCircleOutlined {
+    color: white;
+}
+
+.Level4 {
+    text-align: left;
+}
+
 /* Ant */
+.ant-select-dropdown,
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled)
+{
+    background-color: #1f1f1f;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.ant-select-item, .ant-select-item:hover {
+    color: rgba(255, 255, 255, 0.65);
+    background-color: #1f1f1f;
+}
+
+.ant-list-item {
+    border-bottom: 1px solid black !important;
+}
+
+.ant-list-item:last-child {
+    border-bottom: 0 solid black !important;
+}
+
+.ant-list-item-meta-description {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.ant-list-item-meta-title > a {
+    color: white !important;
+}
+
 .ant-radio-button-wrapper {
     text-align: center;
     width: 50%;

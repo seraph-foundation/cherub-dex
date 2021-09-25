@@ -7,7 +7,9 @@
         "@solana/wallet-adapter-react": "^0.10.3",
         "@solana/wallet-adapter-react-ui": "^0.2.1",
         "@solana/wallet-adapter-wallets": "^0.8.1",
-        "fs": "^0.0.1-security"
+        "chart.js": "^3.5.1",
+        "fs": "^0.0.1-security",
+        "react-chartjs-2": "^3.0.5"
     },
     "devDependencies": {
         "chai": "^4.3.4",

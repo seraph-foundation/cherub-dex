@@ -1,10 +1,12 @@
 import 'antd/dist/antd.css';
 import './App.css';
-
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import {
+  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
+} from 'antd';
+import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
+import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
@@ -22,6 +24,21 @@ const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
+
+const chartSteps = [
+  {
+    title: 'Trade',
+    content: 'Long or short perpetual swaps.',
+  },
+  {
+    title: 'Pool',
+    content: 'Use LP tokens to earn yield.',
+  },
+  {
+    title: 'Govern',
+    content: 'Vote where LP resources are allocated.',
+  },
+];
 
 const tradeSteps = [
   {
@@ -53,14 +70,38 @@ const poolSteps = [
   },
 ];
 
-const selectBeforeFrom = (
-  <Select defaultValue='SOL' className='select-before'>
-    <Option value='SOL'>SOL</Option>
+const governanceProposals = [
+  {
+    title: 'Move SOL/COPE pool to SOL/MANGO',
+    description: '4 • September 25th, 2021',
+    icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
+  },
+  {
+    title: 'Contributor Grant: Tim Su',
+    description: '3 • Executed September 12th, 2021',
+    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  },
+  {
+    title: 'Add AAVE, SUSHI, YFI',
+    description: '2 • Executed September 2nd, 2021',
+    icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
+  },
+  {
+    title: 'Set Pause Guardian to Community Multi-Sig',
+    description: '1 • Executed September 1st, 2021',
+    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  }
+];
+
+const poolOptions = (
+  <Select defaultValue='XV01' className='select-before'>
+    <Option value='XV01'>XV01</Option>
   </Select>
 );
 
-const selectBeforeTo = (
+const tradeAssetOptions = (
   <Select defaultValue='BTC' className='select-before'>
+    <Option value='SOL'>SOL</Option>
     <Option value='BTC'>BTC</Option>
     <Option value='ETH'>ETH</Option>
   </Select>
@@ -71,11 +112,41 @@ const tradeOptions = [
   { label: 'Sell / Short', value: 'short' },
 ];
 
+const tvlData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [
+    {
+      data: [0, 5, 10, 33, 35, 51, 54, 76],
+      fill: true,
+      borderColor: '#40a9ff',
+      backgroundColor: '#69c0ff'
+    }
+  ]
+};
+
+const treasuryData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [
+    {
+      data: [0, 7, 6, 10, 24, 51, 54, 176],
+      fill: true,
+      borderColor: '#40a9ff',
+      backgroundColor: '#69c0ff'
+    }
+  ]
+};
+
+const chartOptions = {
+  plugins: {
+    legend: { display: false }
+  }
+}
+
 const lamportsPerSol = 10000000;
 const network = 'http://127.0.0.1:8899';
 
 function App() {
-  const [menu, setMenu] = useState('trade');
+  const [menu, setMenu] = useState('charts');
   const [tradeStep, setTradeStep] = useState(0);
   const [poolStep, setPoolStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
@@ -148,21 +219,36 @@ function App() {
     message.info(e.key);
   }
 
+  function networkErrorMessage() {
+    message.info('Unable to connect to network');
+  }
+
   useEffect(() => {
-    if (wallet.connected && !blockHeightInterval) {
-      setBlockHeightInterval(true);
-      getProviderCallback().then(function(provider) {
-        provider.connection.getBalance(wallet.publicKey).then(function(result) {
-          setBalance(result / lamportsPerSol);
-        });
-        setInterval(function () {
-          provider.connection.getEpochInfo().then(function(epochInfo) {
-            setBlockHeight(epochInfo.blockHeight);
+    getProviderCallback().then(function(provider) {
+      if (wallet.connected && !balance) {
+        try {
+          provider.connection.getBalance(wallet.publicKey).then(function(result) {
+            setBalance(result / lamportsPerSol);
           });
-        }, 1000);
-      });
-    }
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback]);
+        } catch (e) {
+          networkErrorMessage();
+        }
+      }
+
+      if (!blockHeightInterval) {
+        try {
+          setBlockHeightInterval(true);
+          setInterval(function () {
+            provider.connection.getEpochInfo().then(function(epochInfo) {
+              setBlockHeight(epochInfo.blockHeight);
+            });
+          }, 10000);
+        } catch (e) {
+          networkErrorMessage();
+        }
+      }
+    });
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance]);
 
   return (
     <Layout className='App Dark'>
@@ -171,13 +257,14 @@ function App() {
       <Header className='Header Dark'>
         <Row>
           <Col span={3}>
-            <div className='Logo Dark'><strong>xv01.fi</strong></div>
+            <div className='Logo Dark'><strong onClick={onLearnMoreClick}>xv01.finance</strong></div>
           </Col>
           <Col span={13}>
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
+              <Menu.Item key='charts'>Charts</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
               <Menu.Item key='pool'>Pool</Menu.Item>
-              <Menu.Item key='charts'>Charts</Menu.Item>
+              <Menu.Item key='governance'>Governance</Menu.Item>
             </Menu>
           </Col>
           <Col span={8} className='ConnectWalletHeader'>
@@ -201,7 +288,7 @@ function App() {
           <div>
             <br/>
             <br/>
-            { !wallet.connected ? <Title className='Title Dark'>Perpetual futures vAMM and yield-based XV01 pooling protocol</Title> : '' }
+            { !wallet.connected ? <Title className='Title Dark'>Perpetual futures vAMM and XV01 pooling DAO</Title> : '' }
             { !wallet.connected ? (
               <>
                 <Row>
@@ -216,18 +303,49 @@ function App() {
             ) : <Title className='Title Dark Balance' level={2}>Balance: {balance} SOL</Title> }
             <br/>
             <br/>
-            { menu === 'trade'&& wallet.connected ? (
+            { menu === 'charts' ? (
+              <Row>
+                <Col span={4}></Col>
+                <Col span={4}>
+                  <Steps direction='vertical' current={0}>
+                    { chartSteps.map(item => (<Step key={item.title} title={item.title} description={item.content} />)) }
+                  </Steps>
+                </Col>
+                <Col span={1}></Col>
+                <Col span={11} className='Cards'>
+                  <div className='site-card-border-less-wrapper'>
+                    <Card className='Card Dark' title='Charts' bordered={false}>
+                      <Row>
+                        <Col span={24}>
+                          <p>Total Value Locked</p>
+                          <Line height={50} data={tvlData} options={chartOptions}/>
+                        </Col>
+                      </Row>
+                      <br/>
+                      <Row>
+                        <Col span={24}>
+                          <p>Market Value of Treasury Assets</p>
+                          <Line height={50} data={treasuryData} options={chartOptions}/>
+                        </Col>
+                      </Row>
+                    </Card>
+                  </div>
+                </Col>
+                <Col span={4}></Col>
+              </Row>
+            ) : '' }
+            { menu === 'trade' ? (
               <Row>
                 <Col span={6}></Col>
                 <Col span={8} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card title='Trade' className='Card Dark' bordered={false}>
                       <p><strong>Amount</strong></p>
-                      <Input className='TradeInput Input Dark' addonBefore={selectBeforeFrom} defaultValue='0' />
+                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
                       <br/>
                       <p>Your current balance is <strong>{balance}</strong></p>
                       <p><strong>Collateral</strong></p>
-                      <Input className='TradeInput Input Dark' addonBefore={selectBeforeTo} defaultValue='0' />
+                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
                       <br/>
                       <br/>
                       <Radio.Group options={tradeOptions} onChange={onTradeOptionsChange} className='RadioGroup Dark'
@@ -250,7 +368,7 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'pool' && wallet.connected ? (
+            { menu === 'pool' ? (
               <Row>
                 <Col span={6}></Col>
                 <Col span={4}>
@@ -262,7 +380,7 @@ function App() {
                 <Col span={8} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Pool' bordered={false}>
-                      <Input className='PoolInput Input Dark' addonBefore={selectBeforeFrom} defaultValue='0' />
+                      <Input className='PoolInput Input Dark' addonBefore={poolOptions} defaultValue='0' />
                       <br/>
                       <p>Your current balance is <strong>{balance}</strong></p>
                       <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve</Button>
@@ -272,13 +390,25 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'charts' && wallet.connected ? (
+            { menu === 'governance' ? (
               <Row>
                 <Col span={2}></Col>
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Charts' bordered={false}>
-                      <p>Coming soon!</p>
+                    <Card className='Card Dark' title='Governance' bordered={false}>
+                      <List
+                        itemLayout='horizontal'
+                        dataSource={governanceProposals}
+                        renderItem={item => (
+                          <List.Item>
+                            <List.Item.Meta
+                              title={<a href='#'>{item.title}</a>}
+                              description={item.description}
+                            />
+                            {item.icon}
+                          </List.Item>
+                        )}
+                      />
                     </Card>
                   </div>
                 </Col>
