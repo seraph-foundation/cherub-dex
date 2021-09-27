@@ -25,74 +25,6 @@ const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
 
-const chartSteps = [
-  {
-    title: 'Trade',
-    content: 'Long or short perpetual swaps.',
-  },
-  {
-    title: 'Pool',
-    content: 'Use LP tokens to earn yield.',
-  },
-  {
-    title: 'Govern',
-    content: 'Vote where LP resources are allocated.',
-  },
-];
-
-const tradeSteps = [
-  {
-    title: 'Set Amount',
-    content: 'Your order amount.',
-  },
-  {
-    title: 'Set Collateral',
-    content: 'Leverage determines the required amount.',
-  },
-  {
-    title: 'Place Order',
-    content: 'This will be instantly filled.',
-  },
-];
-
-const poolSteps = [
-  {
-    title: 'Set Amount',
-    content: 'Your deposit amount.',
-  },
-  {
-    title: 'Review',
-    content: 'Your deposit will earn 12% APY and you will receive 12 C tokens.',
-  },
-  {
-    title: 'Deposit',
-    content: 'Your deposit will be locked for 5 days',
-  },
-];
-
-const governanceProposals = [
-  {
-    title: 'Move SOL/COPE pool to SOL/MANGO',
-    description: '4 • September 25th, 2021',
-    icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
-  },
-  {
-    title: 'Contributor Grant: Tim Su',
-    description: '3 • Executed September 12th, 2021',
-    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
-  },
-  {
-    title: 'Add AAVE, SUSHI, YFI',
-    description: '2 • Executed September 2nd, 2021',
-    icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
-  },
-  {
-    title: 'Set Pause Guardian to Community Multi-Sig',
-    description: '1 • Executed September 1st, 2021',
-    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
-  }
-];
-
 const poolOptions = (
   <Select defaultValue='XV01' className='select-before'>
     <Option value='XV01'>XV01</Option>
@@ -146,11 +78,13 @@ const lamportsPerSol = 10000000;
 const network = 'http://127.0.0.1:8899';
 
 function App() {
-  const [menu, setMenu] = useState('charts');
+  const [menu, setMenu] = useState('dashboard');
   const [tradeStep, setTradeStep] = useState(0);
   const [poolStep, setPoolStep] = useState(0);
+  const [poolDeposit, setPoolDeposit] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
   const [leverage, setLeverage] = useState(1);
+  const [tradeAmount, setTradeAmount] = useState(0);
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
@@ -158,6 +92,36 @@ function App() {
   const wallet = useWallet()
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
+
+  const showSteps = false;
+
+  const marketCap = '130,000';
+  const circulatingSupply = '1,000,000';
+  const currentIndex = '18.7 XV01';
+  const xv01Price = '33.00';
+
+  const governanceProposals = [
+    {
+      title: 'Move SOL/COPE pool to SOL/MANGO',
+      description: '4 • September 25th, 2021',
+      icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
+    },
+    {
+      title: 'Contributor Grant: Tim Su',
+      description: '3 • Executed September 12th, 2021',
+      icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+    },
+    {
+      title: 'Add AAVE, SUSHI, YFI',
+      description: '2 • Executed September 2nd, 2021',
+      icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
+    },
+    {
+      title: 'Set Pause Guardian to Community Multi-Sig',
+      description: '1 • Executed September 1st, 2021',
+      icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+    }
+  ];
 
   const settingsMenu = (
     <Menu onClick={handleSettingsClick}>
@@ -207,8 +171,18 @@ function App() {
     window.open('https://www.github.com/xv01-finance', '_blank');
   }
 
-  async function onTradeOptionsChange(e) {
+  async function onTradeDirectionChange(e) {
     setTradeDirection(e.target.value);
+  }
+
+  async function onPoolDepositChange(e) {
+    setPoolStep(1);
+    setPoolDeposit(e.target.value);
+  }
+
+  async function onTradeAmountChange(e) {
+    setTradeStep(1);
+    setTradeAmount(e.target.value);
   }
 
   async function onAfterLeverageChange(e) {
@@ -261,7 +235,7 @@ function App() {
           </Col>
           <Col span={13}>
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
-              <Menu.Item key='charts'>Charts</Menu.Item>
+              <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
               <Menu.Item key='pool'>Pool</Menu.Item>
               <Menu.Item key='governance'>Governance</Menu.Item>
@@ -288,7 +262,6 @@ function App() {
           <div>
             <br/>
             <br/>
-            { !wallet.connected ? <Title className='Title Dark'>Perpetual futures vAMM and XV01 pooling DAO</Title> : '' }
             { !wallet.connected ? (
               <>
                 <Row>
@@ -303,35 +276,54 @@ function App() {
             ) : <Title className='Title Dark Balance' level={2}>Balance: {balance} SOL</Title> }
             <br/>
             <br/>
-            { menu === 'charts' ? (
+            { menu === 'dashboard' ? (
               <Row>
-                <Col span={4}></Col>
+                <Col span={2}></Col>
+                { showSteps ? <>
                 <Col span={4}>
                   <Steps direction='vertical' current={0}>
-                    { chartSteps.map(item => (<Step key={item.title} title={item.title} description={item.content} />)) }
+                    <Step key='trade' description='Long or short perpetual swaps' />
+                    <Step key='pool' description='Use LP tokens to earn yield' />
+                    <Step key='govern' description='Vote where LP resources are allocated' />
                   </Steps>
                 </Col>
-                <Col span={1}></Col>
-                <Col span={11} className='Cards'>
+                <Col span={1}></Col> </> : ''
+                }
+                <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Charts' bordered={false}>
+                    <Card className='Card Dark' title='Dashboard' bordered={false}>
                       <Row>
-                        <Col span={24}>
-                          <p>Total Value Locked</p>
-                          <Line height={50} data={tvlData} options={chartOptions}/>
+                        <Col span={6}>
+                          <p>Market Cap</p>
+                          <Title level={2} className='Title Dark'>${marketCap}</Title>
+                        </Col>
+                        <Col span={6}>
+                          <p>XV01 Price</p>
+                          <Title level={2} className='Title Dark'>${xv01Price}</Title>
+                        </Col>
+                        <Col span={6}>
+                          <p>Circulating Supply</p>
+                          <Title level={2} className='Title Dark'>${circulatingSupply}</Title>
+                        </Col>
+                        <Col span={6}>
+                          <p>Current Index</p>
+                          <Title level={2} className='Title Dark'>${currentIndex}</Title>
                         </Col>
                       </Row>
-                      <br/>
                       <Row>
-                        <Col span={24}>
+                        <Col span={12}>
+                          <p>Total Value Locked</p>
+                          <Line height={100} data={tvlData} options={chartOptions}/>
+                        </Col>
+                        <Col span={12}>
                           <p>Market Value of Treasury Assets</p>
-                          <Line height={50} data={treasuryData} options={chartOptions}/>
+                          <Line height={100} data={treasuryData} options={chartOptions}/>
                         </Col>
                       </Row>
                     </Card>
                   </div>
                 </Col>
-                <Col span={4}></Col>
+                <Col span={2}></Col>
               </Row>
             ) : '' }
             { menu === 'trade' ? (
@@ -341,14 +333,15 @@ function App() {
                   <div className='site-card-border-less-wrapper'>
                     <Card title='Trade' className='Card Dark' bordered={false}>
                       <p><strong>Amount</strong></p>
-                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
+                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
+                        value={tradeAmount} />
                       <br/>
                       <p>Your current balance is <strong>{balance}</strong></p>
                       <p><strong>Collateral</strong></p>
                       <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
                       <br/>
                       <br/>
-                      <Radio.Group options={tradeOptions} onChange={onTradeOptionsChange} className='RadioGroup Dark'
+                      <Radio.Group options={tradeOptions} onChange={onTradeDirectionChange} className='RadioGroup Dark'
                         optionType='button' buttonStyle='solid' value={tradeDirection} />
                       <br/>
                       <br/>
@@ -362,8 +355,11 @@ function App() {
                 <Col span={1}></Col>
                 <Col span={3}>
                   <Steps direction='vertical' current={tradeStep}>
-                    { tradeSteps.map(item => (<Step key={item.title} title={item.title} description={item.content} />)) }
-                  </Steps> : '' }
+                    <Step key='set' title='Set Amount'
+                      description=<div>Your order amount of <span className="Currency">${tradeAmount}.00</span></div>/>
+                    <Step key='collateral' title='Collateral' description='Leverage determines the required amount'/>
+                    <Step key='order' title='Place Order' description='Instantly filled'/>
+                  </Steps>
                 </Col>
                 <Col span={6}></Col>
               </Row>
@@ -373,14 +369,18 @@ function App() {
                 <Col span={6}></Col>
                 <Col span={4}>
                   <Steps direction='vertical' current={poolStep}>
-                    { poolSteps.map(item => (<Step key={item.title} title={item.title} description={item.content} />)) }
-                  </Steps> : '' }
+                    <Step key='set' title='Set Amount'
+                      description=<div>Your deposit of <span className='Currency'>${poolDeposit}.00</span> is set to earn <span className='Currency'>12% APY</span></div> />
+                    <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
+                    <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
+                  </Steps>
                 </Col>
                 <Col span={1}></Col>
                 <Col span={8} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Pool' bordered={false}>
-                      <Input className='PoolInput Input Dark' addonBefore={poolOptions} defaultValue='0' />
+                      <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
+                        value={poolDeposit} />
                       <br/>
                       <p>Your current balance is <strong>{balance}</strong></p>
                       <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve</Button>
