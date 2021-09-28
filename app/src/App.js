@@ -1,5 +1,3 @@
-import 'antd/dist/antd.css';
-import './App.css';
 import {
   Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
 } from 'antd';
@@ -13,6 +11,8 @@ import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 import idl from './idl.json';
+import 'antd/dist/antd.css';
+import './App.css';
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
@@ -27,7 +27,6 @@ const programID = new PublicKey(idl.metadata.address);
 const lamportsPerSol = 10000000;
 const network = 'http://127.0.0.1:8899';
 const name = 'bicep';
-const showSteps = false;
 const marketCap = '130,000';
 const price = '33';
 const circulatingSupply = '1000122 / 1239332';
@@ -45,17 +44,6 @@ const tradeAssetOptions = (
     <Option value='BTC'>BTC</Option>
     <Option value='ETH'>ETH</Option>
   </Select>
-);
-
-const settingsMenu = (
-  <Menu>
-    <Menu.Item key='github'>
-      <a href='https://www.github.com/xv01-finance/' target='_blank' rel='noreferrer'>GitHub</a>
-    </Menu.Item>
-    <Menu.Item key='discord'>
-      Discord
-    </Menu.Item>
-  </Menu>
 );
 
 const tradeOptions = [
@@ -118,12 +106,12 @@ const governanceProposals = [
 
 function App() {
   const [menu, setMenu] = useState('dashboard');
-  const [tradeStep, setTradeStep] = useState(0);
   const [poolStep, setPoolStep] = useState(0);
   const [poolDeposit, setPoolDeposit] = useState(0);
+  const [tradeStep, setTradeStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
-  const [leverage, setLeverage] = useState(1);
   const [tradeAmount, setTradeAmount] = useState(0);
+  const [leverage, setLeverage] = useState(1);
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
@@ -131,6 +119,17 @@ function App() {
   const wallet = useWallet()
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
+
+  const settingsMenu = (
+    <Menu>
+      <Menu.Item key='github' onClick={onLearnMoreClick}>
+        GitHub
+      </Menu.Item>
+      <Menu.Item key='discord'>
+        Discord
+      </Menu.Item>
+    </Menu>
+  );
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -271,16 +270,6 @@ function App() {
             { menu === 'dashboard' ? (
               <Row>
                 <Col span={2}></Col>
-                { showSteps ? <>
-                <Col span={4}>
-                  <Steps direction='vertical' current={0}>
-                    <Step key='trade' description='Long or short perpetual swaps' />
-                    <Step key='pool' description='Use LP tokens to earn yield' />
-                    <Step key='govern' description='Vote where LP resources are allocated' />
-                  </Steps>
-                </Col>
-                <Col span={1}></Col> </> : ''
-                }
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Dashboard' bordered={false}>
@@ -348,7 +337,7 @@ function App() {
                 <Col span={3}>
                   <Steps direction='vertical' current={tradeStep}>
                     <Step key='set' title='Set Amount'
-                      description=<div>Your order amount of <span className="Currency">${tradeAmount}.00</span></div>/>
+                      description=<div>Your order amount of <span className='Currency'>${tradeAmount}.00</span></div>/>
                     <Step key='collateral' title='Collateral' description='Leverage determines the required amount'/>
                     <Step key='order' title='Place Order' description='Instantly filled'/>
                   </Steps>
@@ -393,10 +382,7 @@ function App() {
                         dataSource={governanceProposals}
                         renderItem={item => (
                           <List.Item>
-                            <List.Item.Meta
-                              title={<a href='#'>{item.title}</a>}
-                              description={item.description}
-                            />
+                            <List.Item.Meta title={item.title} description={item.description} />
                             {item.icon}
                           </List.Item>
                         )}
