@@ -85,7 +85,7 @@
     color: #00c805;
 }
 
-.ConnectWalletButton > button {
+.ConnectWalletButton {
     color: rgba(255, 255, 255, 0.65) !important;
 }
 
@@ -150,6 +150,10 @@
 
 .CheckCircleOutlined {
     color: white;
+}
+
+.PublicKey {
+    margin-right: 20px;
 }
 
 .CloseCircleOutlined {

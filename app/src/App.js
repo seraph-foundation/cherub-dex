@@ -41,6 +41,17 @@ const tradeAssetOptions = (
   </Select>
 );
 
+const settingsMenu = (
+  <Menu>
+    <Menu.Item key='github'>
+      <a href='https://www.github.com/xv01-finance/' target='_blank' rel='noreferrer'>GitHub</a>
+    </Menu.Item>
+    <Menu.Item key='discord'>
+      Discord
+    </Menu.Item>
+  </Menu>
+);
+
 const tradeOptions = [
   { label: 'Buy / Long', value: 'long' },
   { label: 'Sell / Short', value: 'short' },
@@ -125,17 +136,6 @@ function App() {
     }
   ];
 
-  const settingsMenu = (
-    <Menu onClick={handleSettingsClick}>
-      <Menu.Item key='Light mode'>
-        Dark mode
-      </Menu.Item>
-      <Menu.Item key='Dark mode'>
-        Light mode
-      </Menu.Item>
-    </Menu>
-  );
-
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
     return new Provider(connection, wallet, opts.preflightCommitment);
@@ -191,10 +191,6 @@ function App() {
     setLeverage(e);
   }
 
-  function handleSettingsClick(e) {
-    message.info(e.key);
-  }
-
   function networkErrorMessage() {
     message.info('Unable to connect to network');
   }
@@ -231,11 +227,11 @@ function App() {
       <Alert type='warning' className='Dark Alert' closable
         message='You are currently using an unaudited piece of software. Use at your own risk.' banner/>
       <Header className='Header Dark'>
-        <Row type='flex' style={{alignItems: 'center'}}>
-          <Col span={6}>
+        <Row>
+          <Col span={5}>
             <div className='Logo Dark'><strong onClick={onLearnMoreClick}>{name}.fi</strong></div>
           </Col>
-          <Col span={12} type='flex' style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
+          <Col span={14} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
@@ -243,19 +239,17 @@ function App() {
               <Menu.Item key='governance'>Governance</Menu.Item>
             </Menu>
           </Col>
-          <Col span={6} className='ConnectWalletHeader'>
+          <Col span={5} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
-              <Dropdown.Button className='ConnectWalletButton'
-                icon={<SettingOutlined/>} onClick={onConnectWalletClick} type='link' overlay={settingsMenu}>
-                Connect Wallet
-              </Dropdown.Button>
+              <Button className='ConnectWalletButton' onClick={onConnectWalletClick} type='link'>Connect Wallet</Button>
             </> :
-            <div className='Connected'>
+            <Button className='ConnectWalletButton' type='link'>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
-            </div>
+            </Button>
             }
+            <Dropdown className='Dropdown' overlay={settingsMenu}><SettingOutlined/></Dropdown>
           </Col>
         </Row>
       </Header>
