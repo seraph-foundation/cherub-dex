@@ -106,9 +106,11 @@ function App() {
   const [menu, setMenu] = useState('dashboard');
   const [poolStep, setPoolStep] = useState(0);
   const [poolDeposit, setPoolDeposit] = useState(0);
+  const [poolCard, setPoolCard] = useState('pool');
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
   const [tradeAmount, setTradeAmount] = useState(0);
+  const [tradeCard, setTradeCard] = useState('trade');
   const [leverage, setLeverage] = useState(1);
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
@@ -158,12 +160,20 @@ function App() {
     setMenu(e.key);
   }
 
-  async function onAddLiquidity() {
-
+  async function onManageLiquidity() {
+    setPoolCard('liquidity');
   }
 
-  async function onMore() {
+  async function onPool() {
+    setPoolCard('pool');
+  }
 
+  async function onTrade() {
+    setTradeCard('trade');
+  }
+
+  async function onManagePositions() {
+    setTradeCard('positions');
   }
 
   async function onCreateProposal() {
@@ -320,69 +330,97 @@ function App() {
             { menu === 'trade' ? (
               <Row>
                 <Col span={6}></Col>
-                <Col span={8} className='Cards'>
+                { tradeCard === 'trade' ?
+                <>
+                  <Col span={8} className='Cards'>
+                    <div className='site-card-border-less-wrapper'>
+                      <Card title='Trade' className='Card Dark' bordered={false} extra={<a href='/#'
+                          className='CardLink' onClick={onManagePositions}>Manage Positions</a>}>
+                        <p><strong>Amount</strong></p>
+                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
+                          value={tradeAmount} />
+                        <br/>
+                        <p>Your current balance is <strong>{balance}</strong></p>
+                        <p><strong>Collateral</strong></p>
+                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
+                        <br/>
+                        <br/>
+                        <Radio.Group options={tradeOptions} onChange={onTradeDirectionChange} className='RadioGroup Dark'
+                          optionType='button' buttonStyle='solid' value={tradeDirection} />
+                        <br/>
+                        <br/>
+                        <p><strong>{ leverage }x Leverage</strong></p>
+                        <Slider defaultValue={1} min={1} onAfterChange={onAfterLeverageChange} />
+                        <br/>
+                        <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
+                          Approve
+                        </Button>
+                      </Card>
+                    </div>
+                  </Col>
+                  <Col span={1}></Col>
+                  <Col span={3}>
+                    <Steps direction='vertical' current={tradeStep}>
+                      <Step key='set' title='Set Amount'
+                        description=<div>Your order amount of <span className='Currency'>${tradeAmount}.00</span></div>/>
+                      <Step key='collateral' title='Collateral' description='Leverage determines the required amount'/>
+                      <Step key='order' title='Place Order' description='Instantly filled'/>
+                    </Steps>
+                  </Col>
+                </> :
+                <Col span={12} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card title='Trade' className='Card Dark' bordered={false} extra={<a href='/#' onClick={onMore}>More</a>}>
-                      <p><strong>Amount</strong></p>
-                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
-                        value={tradeAmount} />
-                      <br/>
-                      <p>Your current balance is <strong>{balance}</strong></p>
-                      <p><strong>Collateral</strong></p>
-                      <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
-                      <br/>
-                      <br/>
-                      <Radio.Group options={tradeOptions} onChange={onTradeDirectionChange} className='RadioGroup Dark'
-                        optionType='button' buttonStyle='solid' value={tradeDirection} />
-                      <br/>
-                      <br/>
-                      <p><strong>{ leverage }x Leverage</strong></p>
-                      <Slider defaultValue={1} min={1} onAfterChange={onAfterLeverageChange} />
-                      <br/>
-                      <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
-                        Approve
-                      </Button>
+                    <Card title='Manage Positions' className='Card Dark' bordered={false} extra={<a href='/#'
+                        className='CardLink' onClick={onTrade}>Trade</a>}>
                     </Card>
                   </div>
                 </Col>
-                <Col span={1}></Col>
-                <Col span={3}>
-                  <Steps direction='vertical' current={tradeStep}>
-                    <Step key='set' title='Set Amount'
-                      description=<div>Your order amount of <span className='Currency'>${tradeAmount}.00</span></div>/>
-                    <Step key='collateral' title='Collateral' description='Leverage determines the required amount'/>
-                    <Step key='order' title='Place Order' description='Instantly filled'/>
-                  </Steps>
-                </Col>
+                }
                 <Col span={6}></Col>
               </Row>
             ) : '' }
             { menu === 'pool' ? (
               <Row>
                 <Col span={6}></Col>
-                <Col span={4}>
-                  <Steps direction='vertical' current={poolStep}>
-                    <Step key='set' title='Set Amount'
-                      description=<div>
-                        Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is
-                         set to earn <span className='Currency'>12% APY</span></div> />
-                    <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
-                    <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
-                  </Steps>
+                { poolCard === 'pool' ?
+                <>
+                  <Col span={4}>
+                    <Steps direction='vertical' current={poolStep}>
+                      <Step key='set' title='Set Amount'
+                        description=<div>
+                          Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is
+                          set to earn <span className='Currency'>12% APY</span></div> />
+                      <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
+                      <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
+                    </Steps>
+                  </Col>
+                  <Col span={1}></Col>
+                  <Col span={8} className='Cards'>
+                    <div className='site-card-border-less-wrapper'>
+                      <Card className='Card Dark' title='Pool' bordered={false}
+                        extra={<a href='/#' className='CardLink' onClick={onManageLiquidity}>Manage Liquidity</a>}>
+                        <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
+                          value={poolDeposit} />
+                        <br/>
+                        <p>Your current balance is <strong>{balance}</strong></p>
+                        <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+                          Approve</Button>
+                      </Card>
+                    </div>
+                  </Col>
+                </> :
+                <Col span={12} className='Cards'>
+                  <Card className='Card Dark' title='Manage Liquidity' bordered={false}
+                    extra={<a href='/#' className='CardLink' onClick={onPool}>Pool</a>}>
+                    <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
+                      value={poolDeposit} />
+                    <br/>
+                    <p>Your current balance is <strong>{balance}</strong></p>
+                    <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve
+                    </Button>
+                  </Card>
                 </Col>
-                <Col span={1}></Col>
-                <Col span={8} className='Cards'>
-                  <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Pool' bordered={false}
-                      extra={<a href='/#' onClick={onAddLiquidity}>Add Liquidity</a>}>
-                      <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
-                        value={poolDeposit} />
-                      <br/>
-                      <p>Your current balance is <strong>{balance}</strong></p>
-                      <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve</Button>
-                    </Card>
-                  </div>
-                </Col>
+                }
                 <Col span={6}></Col>
               </Row>
             ) : '' }
@@ -392,7 +430,7 @@ function App() {
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Governance' bordered={false}
-                      extra={<a href='/#' onClick={onCreateProposal}>Create Proposal</a>}>
+                      extra={<a href='/#' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
                         dataSource={governanceProposals}
