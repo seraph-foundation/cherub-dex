@@ -160,6 +160,10 @@
     color: white;
 }
 
+.Dark.Alert {
+    display: none;
+}
+
 .Level4 {
     text-align: left;
 }
@@ -213,6 +217,10 @@
 
 .ant-card-head {
     border-bottom: none;
+}
+
+.ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon {
+    color: #1f1f1f;
 }
 
 /* SOL Wallet */

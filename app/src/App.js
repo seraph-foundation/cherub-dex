@@ -25,9 +25,11 @@ const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
 
+const name = 'bicep';
+
 const poolOptions = (
-  <Select defaultValue='XV01' className='select-before'>
-    <Option value='XV01'>XV01</Option>
+  <Select defaultValue={name.toUpperCase()} className='select-before'>
+    <Option value={name.toUpperCase()}>{name.toUpperCase()}</Option>
   </Select>
 );
 
@@ -96,9 +98,9 @@ function App() {
   const showSteps = false;
 
   const marketCap = '130,000';
-  const circulatingSupply = '1,000,000';
-  const currentIndex = '18.7 XV01';
-  const xv01Price = '33.00';
+  const price = '33';
+  const circulatingSupply = '1000122 / 1239332';
+  const currentIndex = '18.7 ' + name.toUpperCase();
 
   const governanceProposals = [
     {
@@ -226,14 +228,14 @@ function App() {
 
   return (
     <Layout className='App Dark'>
-      <Alert type='warning' className='Dark' closable
+      <Alert type='warning' className='Dark Alert' closable
         message='You are currently using an unaudited piece of software. Use at your own risk.' banner/>
       <Header className='Header Dark'>
-        <Row>
-          <Col span={3}>
-            <div className='Logo Dark'><strong onClick={onLearnMoreClick}>xv01.finance</strong></div>
+        <Row type='flex' style={{alignItems: 'center'}}>
+          <Col span={6}>
+            <div className='Logo Dark'><strong onClick={onLearnMoreClick}>{name}.fi</strong></div>
           </Col>
-          <Col span={13}>
+          <Col span={12} type='flex' style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
@@ -241,7 +243,7 @@ function App() {
               <Menu.Item key='governance'>Governance</Menu.Item>
             </Menu>
           </Col>
-          <Col span={8} className='ConnectWalletHeader'>
+          <Col span={6} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
@@ -295,19 +297,19 @@ function App() {
                       <Row>
                         <Col span={6}>
                           <p>Market Cap</p>
-                          <Title level={2} className='Title Dark'>${marketCap}</Title>
+                          <Title level={3} className='Title Dark'>${marketCap}</Title>
                         </Col>
                         <Col span={6}>
-                          <p>XV01 Price</p>
-                          <Title level={2} className='Title Dark'>${xv01Price}</Title>
+                          <p>{name.toUpperCase()} Price</p>
+                          <Title level={3} className='Title Dark'>${price}</Title>
                         </Col>
                         <Col span={6}>
                           <p>Circulating Supply</p>
-                          <Title level={2} className='Title Dark'>${circulatingSupply}</Title>
+                          <Title level={3} className='Title Dark'>{circulatingSupply}</Title>
                         </Col>
                         <Col span={6}>
                           <p>Current Index</p>
-                          <Title level={2} className='Title Dark'>${currentIndex}</Title>
+                          <Title level={3} className='Title Dark'>{currentIndex}</Title>
                         </Col>
                       </Row>
                       <Row>
@@ -370,7 +372,7 @@ function App() {
                 <Col span={4}>
                   <Steps direction='vertical' current={poolStep}>
                     <Step key='set' title='Set Amount'
-                      description=<div>Your deposit of <span className='Currency'>${poolDeposit}.00</span> is set to earn <span className='Currency'>12% APY</span></div> />
+                      description=<div>Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is set to earn <span className='Currency'>12% APY</span></div> />
                     <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
                     <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
                   </Steps>
