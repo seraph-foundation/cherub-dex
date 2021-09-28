@@ -1,6 +1,4 @@
-import {
-  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
-} from 'antd';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
 import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -160,6 +158,18 @@ function App() {
     setMenu(e.key);
   }
 
+  async function onAddLiquidity() {
+
+  }
+
+  async function onMore() {
+
+  }
+
+  async function onCreateProposal() {
+
+  }
+
   async function onConnectWalletClick(e) {
     document.getElementsByClassName('WalletMultiButton')[0].click();
   }
@@ -312,7 +322,7 @@ function App() {
                 <Col span={6}></Col>
                 <Col span={8} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card title='Trade' className='Card Dark' bordered={false}>
+                    <Card title='Trade' className='Card Dark' bordered={false} extra={<a href='/#' onClick={onMore}>More</a>}>
                       <p><strong>Amount</strong></p>
                       <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
                         value={tradeAmount} />
@@ -329,7 +339,9 @@ function App() {
                       <p><strong>{ leverage }x Leverage</strong></p>
                       <Slider defaultValue={1} min={1} onAfterChange={onAfterLeverageChange} />
                       <br/>
-                      <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>Approve</Button>
+                      <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
+                        Approve
+                      </Button>
                     </Card>
                   </div>
                 </Col>
@@ -351,7 +363,9 @@ function App() {
                 <Col span={4}>
                   <Steps direction='vertical' current={poolStep}>
                     <Step key='set' title='Set Amount'
-                      description=<div>Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is set to earn <span className='Currency'>12% APY</span></div> />
+                      description=<div>
+                        Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is
+                         set to earn <span className='Currency'>12% APY</span></div> />
                     <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
                     <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
                   </Steps>
@@ -359,7 +373,8 @@ function App() {
                 <Col span={1}></Col>
                 <Col span={8} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Pool' bordered={false}>
+                    <Card className='Card Dark' title='Pool' bordered={false}
+                      extra={<a href='/#' onClick={onAddLiquidity}>Add Liquidity</a>}>
                       <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
                         value={poolDeposit} />
                       <br/>
@@ -376,7 +391,8 @@ function App() {
                 <Col span={2}></Col>
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Governance' bordered={false}>
+                    <Card className='Card Dark' title='Governance' bordered={false}
+                      extra={<a href='/#' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
                         dataSource={governanceProposals}

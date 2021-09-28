@@ -31,6 +31,14 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
+.ant-tabs-tab-btn {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #1890ff !important;
+}
+
 .LearnMore.Dark {
     color: rgba(255, 255, 255, 0.65) !important;
     border-color: rgba(255, 255, 255, 0.65) !important;
@@ -51,6 +59,10 @@
 
 .Dark.ant-alert-warning {
     background-color: #faad14;
+}
+
+.Back {
+    color: white;
 }
 
 .Dark.ant-btn-ghost[disabled] {
@@ -225,6 +237,10 @@
 
 .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon {
     color: #1f1f1f;
+}
+
+.ant-list-item-meta-title {
+    color: white;
 }
 
 /* SOL Wallet */
