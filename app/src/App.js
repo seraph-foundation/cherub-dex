@@ -24,8 +24,14 @@ const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
-
+const lamportsPerSol = 10000000;
+const network = 'http://127.0.0.1:8899';
 const name = 'bicep';
+const showSteps = false;
+const marketCap = '130,000';
+const price = '33';
+const circulatingSupply = '1000122 / 1239332';
+const currentIndex = '18.7 ' + name.toUpperCase();
 
 const poolOptions = (
   <Select defaultValue={name.toUpperCase()} className='select-before'>
@@ -87,8 +93,28 @@ const chartOptions = {
   }
 }
 
-const lamportsPerSol = 10000000;
-const network = 'http://127.0.0.1:8899';
+const governanceProposals = [
+  {
+    title: 'Move SOL/COPE pool to SOL/MANGO',
+    description: '4 • September 25th, 2021',
+    icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
+  },
+  {
+    title: 'Contributor Grant: Tim Su',
+    description: '3 • Executed September 12th, 2021',
+    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  },
+  {
+    title: 'Add AAVE, SUSHI, YFI',
+    description: '2 • Executed September 2nd, 2021',
+    icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
+  },
+  {
+    title: 'Set Pause Guardian to Community Multi-Sig',
+    description: '1 • Executed September 1st, 2021',
+    icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  }
+];
 
 function App() {
   const [menu, setMenu] = useState('dashboard');
@@ -105,36 +131,6 @@ function App() {
   const wallet = useWallet()
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
-
-  const showSteps = false;
-
-  const marketCap = '130,000';
-  const price = '33';
-  const circulatingSupply = '1000122 / 1239332';
-  const currentIndex = '18.7 ' + name.toUpperCase();
-
-  const governanceProposals = [
-    {
-      title: 'Move SOL/COPE pool to SOL/MANGO',
-      description: '4 • September 25th, 2021',
-      icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
-    },
-    {
-      title: 'Contributor Grant: Tim Su',
-      description: '3 • Executed September 12th, 2021',
-      icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
-    },
-    {
-      title: 'Add AAVE, SUSHI, YFI',
-      description: '2 • Executed September 2nd, 2021',
-      icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
-    },
-    {
-      title: 'Set Pause Guardian to Community Multi-Sig',
-      description: '1 • Executed September 1st, 2021',
-      icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
-    }
-  ];
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
