@@ -66,22 +66,20 @@ pub mod factory {
 pub struct Initialize<'info> {
     #[account(init, payer = authority, space = 8 + 32 + 8)]
     pub factory: Account<'info, Factory>,
-    #[account(signer)]
-    pub authority: AccountInfo<'info>,
+    pub authority: Signer<'info>,
     #[account(address = system_program::ID)]
-    pub system_program: AccountInfo<'info>,
+    pub system_program: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
 pub struct CreateExchange<'info> {
-    #[account(signer)]
-    pub authority: AccountInfo<'info>,
+    pub authority: Signer<'info>,
     #[account(zero)]
     pub exchange: Account<'info, Exchange>,
     #[account(mut)]
     pub factory: Account<'info, Factory>,
-    pub exchange_program: AccountInfo<'info>,
-    pub token_program: AccountInfo<'info>,
+    pub exchange_program: UncheckedAccount<'info>,
+    pub token_program: UncheckedAccount<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -110,11 +108,11 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
         let cpi_accounts = Create {
             factory: accounts.factory.to_account_info().clone(),
             exchange: accounts.exchange.clone().into(),
-            token_program: accounts.token_program.clone(),
+            token_program: accounts.token_program.to_account_info().clone(),
             exchange_a: accounts.exchange_a.clone(),
             exchange_b: accounts.exchange_b.clone(),
         };
-        CpiContext::new(accounts.exchange_program.clone(), cpi_accounts)
+        CpiContext::new(accounts.exchange_program.to_account_info().clone(), cpi_accounts)
     }
 }
 

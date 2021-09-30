@@ -12,7 +12,7 @@ Perpetual futures vAMM and yield-based XV01 pooling protocol.
 
 **Requirements**
 
-- Anchor 0.15.0
+- Anchor 0.16.2
 - Solana 1.7.11
 - Node 14.15.0
 
