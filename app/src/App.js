@@ -215,6 +215,7 @@ function App() {
       if (wallet.connected && !balance) {
         try {
           provider.connection.getBalance(wallet.publicKey).then(function(result) {
+            console.log(result, wallet.publicKey.toString());
             setBalance(result / lamportsPerSol);
           });
         } catch (e) {

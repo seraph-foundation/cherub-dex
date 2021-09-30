@@ -22,7 +22,11 @@ Make sure cluster is set to `localnet` in `Anchor.toml`.
 
 ```bash
 $ solana-validator-test # Run in a separate tab
+$ rm -rf .anchor
+$ rm -rf target
+$ anchor build
 $ anchor deploy
+$ ANCHOR_PROVIDER_URL=http://127.0.0.1:8899 mocha tests/xv01.js
 $ node copyIdl.js
 $ cd app && yarn start
 ```

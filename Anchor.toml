@@ -1,3 +1,12 @@
+anchor_version = "0.15.0"
+
+[workspace]
+members = ["programs/exchange", "programs/factory", "programs/pyth"]
+
+[provider]
+cluster = "localnet"
+wallet = "/Users/pindaroso/.config/solana/id.json"
+
 [programs.localnet]
 factory = "FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 exchange = "Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -5,10 +14,6 @@ pyth = "Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 
 [registry]
 url = "https://anchor.projectserum.com"
-
-[provider]
-cluster = "localnet"
-wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [scripts]
 test = "mocha -t 1000000 tests/"
