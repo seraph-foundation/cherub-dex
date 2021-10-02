@@ -8,6 +8,8 @@ const { SystemProgram } = anchor.web3;
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
+  // For now, the workspace feature is only available when running the anchor test command,
+  // which will automatically build, deploy, and test all programs against a localnet in one command.
   const factory = anchor.workspace.Factory;
   const exchange = anchor.workspace.Exchange;
   const pyth = anchor.workspace.Pyth;
