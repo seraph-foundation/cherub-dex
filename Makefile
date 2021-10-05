@@ -26,6 +26,9 @@ test-validator:
 set-devnet:
 	@solana config set --url https://api.devnet.solana.com
 
+set-localnet:
+	@solana config set --url http://127.0.0.1:8899
+
 validator:
 	@solana-validator \
 		--identity validator-keypair.json \
