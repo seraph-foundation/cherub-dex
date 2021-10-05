@@ -7,7 +7,9 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
 use anchor_spl::token::TokenAccount;
 
-use exchange::{Create, Exchange};
+use exchange::cpi::accounts::Create;
+use exchange::program::Exchange;
+use exchange::{self, ExchangeData};
 
 declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -75,10 +77,10 @@ pub struct Initialize<'info> {
 pub struct CreateExchange<'info> {
     pub authority: Signer<'info>,
     #[account(zero)]
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub factory: Account<'info, Factory>,
-    pub exchange_program: UncheckedAccount<'info>,
+    pub exchange_program: Program<'info, Exchange>,
     pub token_program: UncheckedAccount<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -107,12 +109,15 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
             factory: accounts.factory.to_account_info().clone(),
-            exchange: accounts.exchange.clone().into(),
+            exchange: accounts.exchange.to_account_info().clone(),
             token_program: accounts.token_program.to_account_info().clone(),
-            exchange_a: accounts.exchange_a.clone(),
-            exchange_b: accounts.exchange_b.clone(),
+            exchange_a: accounts.exchange_a.to_account_info().clone(),
+            exchange_b: accounts.exchange_b.to_account_info().clone(),
         };
-        CpiContext::new(accounts.exchange_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(
+            accounts.exchange_program.to_account_info().clone(),
+            cpi_accounts,
+        )
     }
 }
 

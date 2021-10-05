@@ -233,7 +233,7 @@ pub mod exchange {
 #[derive(Accounts)]
 pub struct Create<'info> {
     #[account(zero)]
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     pub factory: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
@@ -249,7 +249,7 @@ pub struct AddLiquidity<'info> {
     pub token_program: UncheckedAccount<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub mint: Account<'info, Mint>,
     #[account(mut)]
@@ -272,7 +272,7 @@ pub struct RemoveLiquidity<'info> {
     pub clock: Sysvar<'info, Clock>,
     pub pda: UncheckedAccount<'info>,
     #[account(mut)]
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(mut, constraint = mint.supply > 0)]
     pub mint: Account<'info, Mint>,
     #[account(mut)]
@@ -293,7 +293,7 @@ pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
     #[account(address = system_program::ID)]
     pub system_program: UncheckedAccount<'info>,
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
     pub quote: Account<'info, Quote>,
     pub exchange_a: Account<'info, TokenAccount>,
@@ -306,7 +306,7 @@ pub struct Swap<'info> {
     pub clock: Sysvar<'info, Clock>,
     pub token_program: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -421,7 +421,7 @@ impl<'info> Swap<'info> {
 
 /// ABC exchange account state.
 #[account]
-pub struct Exchange {
+pub struct ExchangeData {
     pub factory: Pubkey,
     pub token_a: Pubkey,
     pub token_b: Pubkey,

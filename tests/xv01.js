@@ -11,7 +11,7 @@ describe('XV01', () => {
 
   const provider = anchor.getProvider();
 
-  const localnet = clusterApiUrl() === 'http://localhost:8899';
+  const localnet = true; //clusterApiUrl() === 'http://127.0.0.1:8899';
 
   let factory;
   let exchange;
@@ -66,6 +66,8 @@ describe('XV01', () => {
   let traderTokenAccountA = null;
   let traderTokenAccountB = null;
   let traderTokenAccountC = null;
+
+  console.log('localnet', clusterApiUrl());
 
   it('State initialized', async () => {
     if (localnet) {
