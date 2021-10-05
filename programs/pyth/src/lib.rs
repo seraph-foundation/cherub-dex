@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use pyth_client::{CorpAction, PriceStatus, PriceType};
 
 declare_id!("Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -23,7 +24,7 @@ pub mod pyth {
             return Err(ErrorCode::ValidPythAccount.into());
         }
         if pyth_product.atype != pyth_client::AccountType::Product as u32 {
-            return Err(ErrorCode::ValidProductAccount .into());
+            return Err(ErrorCode::ValidProductAccount.into());
         }
         if pyth_product.ver != pyth_client::VERSION_2 {
             return Err(ErrorCode::PythClientVersion.into());
@@ -37,28 +38,42 @@ pub mod pyth {
             return Err(ErrorCode::ProductPriceAccount.into());
         }
 
-        // Put data in caller's account data
         let pyth_price_data = &pyth_price_info.try_borrow_data()?;
-        msg!("pyth_price_data.len = {}", pyth_price_data.len());
+        let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
 
-        let price_data = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
-
-        let account_data = &ctx.accounts.pyth.try_borrow_mut_data()?;
-        msg!("account_data.len = {}", account_data.len());
-
-        let account_price_data = &mut pyth_client::cast::<pyth_client::Price>(account_data);
-        // Copy semantics
-        *account_price_data = price_data;
-
-        msg!("pyth .. {:?}", ctx.accounts.pyth.key);
-        msg!("    exponent ..... {}", account_price_data.expo);
-        msg!("    price ........ {}", account_price_data.agg.price);
-        msg!("    conf ......... {}", account_price_data.agg.conf);
-        msg!("    valid_slot ... {}", account_price_data.valid_slot);
-        msg!("    publish_slot . {}", account_price_data.agg.pub_slot);
-        msg!("    valid slot:    {}", account_price_data.valid_slot);
+        msg!("price_account\t{:?}", pyth_price_info.key);
+        msg!("  price_type\t{}", get_price_type(&pyth_price.ptype));
+        msg!("  exponent\t{}", pyth_price.expo);
+        msg!("  status\t{}", get_status(&pyth_price.agg.status));
+        msg!("  corp_act\t{}", get_corp_act(&pyth_price.agg.corp_act));
+        msg!("  price\t{}", pyth_price.agg.price);
+        msg!("  conf\t{}", pyth_price.agg.conf);
+        msg!("  valid_slot\t{}", pyth_price.valid_slot);
+        msg!("  publish_slot\t{}", pyth_price.agg.pub_slot);
 
         Ok(())
+    }
+}
+
+fn get_price_type(ptype: &PriceType) -> &'static str {
+    match ptype {
+        PriceType::Unknown => "unknown",
+        PriceType::Price => "price",
+    }
+}
+
+fn get_status(st: &PriceStatus) -> &'static str {
+    match st {
+        PriceStatus::Unknown => "unknown",
+        PriceStatus::Trading => "trading",
+        PriceStatus::Halted => "halted",
+        PriceStatus::Auction => "auction",
+    }
+}
+
+fn get_corp_act(cact: &CorpAction) -> &'static str {
+    match cact {
+        CorpAction::NoCorpAct => "nocorpact",
     }
 }
 
@@ -69,7 +84,7 @@ pub struct Initialize<'info> {
     #[account(init, payer = authority, space = 8 + 8)]
     pub pyth: Account<'info, PythData>,
     pub rent: Sysvar<'info, Rent>,
-    pub system_program: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

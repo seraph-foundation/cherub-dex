@@ -4,10 +4,20 @@ anchor_version = "0.16.2"
 members = ["programs/exchange", "programs/factory", "programs/pyth"]
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [programs.localnet]
+factory = "FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+exchange = "Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+pyth = "Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[programs.devnet]
+factory = "FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+exchange = "Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+pyth = "Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[programs.testnet]
 factory = "FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 exchange = "Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 pyth = "Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"

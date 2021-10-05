@@ -1,5 +1,6 @@
 const anchor = require('@project-serum/anchor');
 const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
+const { clusterApiUrl } = require('@solana/web3.js');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 const assert = require('assert');
 
@@ -8,13 +9,28 @@ const { SystemProgram } = anchor.web3;
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
+  const provider = anchor.getProvider();
+
+  const localnet = clusterApiUrl() === 'http://localhost:8899';
+
+  let factory;
+  let exchange;
+  let pyth;
+
   // For now, the workspace feature is only available when running the anchor test command,
   // which will automatically build, deploy, and test all programs against a localnet in one command.
-  const factory = anchor.workspace.Factory;
-  const exchange = anchor.workspace.Exchange;
-  const pyth = anchor.workspace.Pyth;
-
-  const provider = anchor.getProvider();
+  if (localnet) {
+    factory = anchor.workspace.Factory;
+    exchange = anchor.workspace.Exchange;
+    pyth = anchor.workspace.Pyth;
+  } else {
+    factory = new anchor.Program(JSON.parse(require('fs').readFileSync('./target/idl/factory.json', 'utf8')),
+      new anchor.web3.PublicKey('5Rf4Bgdm9rRsFs4S3hjDqJeeVKQyA52XZsVJAgf7nFdh'));
+    exchange = new anchor.Program(JSON.parse(require('fs').readFileSync('./target/idl/exchange.json', 'utf8')),
+      new anchor.web3.PublicKey('2uqBJbzULvrpCfaZnaZ3CuMbRBSABmJJZehNv5upMqda'));
+    pyth = new anchor.Program(JSON.parse(require('fs').readFileSync('./target/idl/pyth.json', 'utf8')),
+      new anchor.web3.PublicKey('8v3mz7YZjvAenunXuHRyDyDa6Hbh73NfWYb4viXbo8Mw'));
+  }
 
   let mintAuthority = provider.wallet;
   let mintA = null;
@@ -52,10 +68,12 @@ describe('XV01', () => {
   let traderTokenAccountC = null;
 
   it('State initialized', async () => {
-    await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(payerAccount.publicKey, amountLamports),
-      'confirmed'
-    );
+    if (localnet) {
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(payerAccount.publicKey, amountLamports),
+        'confirmed'
+      );
+    }
 
     mintA = await Token.createMint(
       provider.connection,

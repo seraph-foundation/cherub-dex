@@ -6,7 +6,7 @@ import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 
 import idl from './idl.json';
 import 'antd/dist/antd.css';
@@ -23,7 +23,8 @@ const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
 const lamportsPerSol = 10000000;
-const network = 'http://127.0.0.1:8899';
+//const network = 'http://127.0.0.1:8899';
+const network = clusterApiUrl('testnet');
 const name = 'bicep';
 const marketCap = '130,000';
 const price = '33';
