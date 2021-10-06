@@ -171,7 +171,43 @@ describe('XV01', () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
-  it('Exchange created', async () => {
+  //it('Exchange created', async () => {
+  //  const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+  //    [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
+  //    exchange.programId
+  //  );
+  //  const fee = new anchor.BN(3);
+  //  const tx = await exchange.rpc.create(
+  //    mintA.publicKey,
+  //    mintB.publicKey,
+  //    mintC.publicKey,
+  //    fee, {
+  //      accounts: {
+  //        authority: provider.wallet.publicKey,
+  //        exchange: exchangeAccount.publicKey,
+  //        factory: factoryAccount.publicKey,
+  //        systemProgram: SystemProgram.programId,
+  //        tokenProgram: TOKEN_PROGRAM_ID,
+  //        exchangeA: exchangeTokenAccountA,
+  //        exchangeB: exchangeTokenAccountB
+  //      },
+  //      signers: [exchangeAccount]
+  //    });
+
+  //  console.log('Your transaction signature', tx);
+
+  //  let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
+
+  //  assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(0)));
+
+  //  let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+
+  //  assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
+  //  assert.ok(exchangeTokenAccountAInfo.owner.equals(pda));
+  //  assert.ok(exchangeTokenAccountBInfo.owner.equals(pda));
+  //});
+
+  it('Factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
@@ -184,15 +220,15 @@ describe('XV01', () => {
       fee, {
         accounts: {
           authority: provider.wallet.publicKey,
-          exchange: exchangeAccount.publicKey,
+          //exchange: exchangeAccount.publicKey,
           factory: factoryAccount.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
           exchangeProgram: exchange.programId,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB
         },
-        signers: [factoryAccount.owner, exchangeAccount],
-        instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount)]
+        signers: [provider.wallet.owner]
       });
 
     console.log('Your transaction signature', tx);

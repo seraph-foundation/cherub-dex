@@ -4,7 +4,6 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
@@ -232,9 +231,11 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Create<'info> {
-    #[account(zero)]
+    pub authority: Signer<'info>,
+    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8)]
     pub exchange: Account<'info, ExchangeData>,
-    pub factory: AccountInfo<'info>,
+    pub factory: Signer<'info>,
+    pub system_program: Program<'info, System>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -291,8 +292,7 @@ pub struct RemoveLiquidity<'info> {
 #[instruction(amount_b: u64)]
 pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
-    #[account(address = system_program::ID)]
-    pub system_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
     pub exchange: Account<'info, ExchangeData>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
     pub quote: Account<'info, Quote>,
