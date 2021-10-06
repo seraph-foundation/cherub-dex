@@ -8,9 +8,12 @@ import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-r
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-import idl from './idl.json';
 import 'antd/dist/antd.css';
 import './App.css';
+
+import exchangeIdl from './exchange.json';
+import factoryIdl from './factory.json';
+import pythIdl from './pyth.json';
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
@@ -18,16 +21,18 @@ const { Step } = Steps;
 const { Title } = Typography;
 const { SystemProgram, Keypair } = web3;
 
+const factoryPublicKey = new PublicKey('FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS');
+
 const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
-const programID = new PublicKey(idl.metadata.address);
 const network = 'http://127.0.0.1:8899';  // clusterApiUrl('testnet');
 const name = 'xv01';
 const marketCap = '130,000';
 const price = '33';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
+const routes = ['dashboard', 'trade', 'stake', 'govern'];
 
 const stakeOptions = (
   <Select defaultValue={name.toUpperCase()} className='select-before'>
@@ -135,9 +140,22 @@ function App() {
     return new Provider(connection, wallet, opts.preflightCommitment);
   }
 
+  async function fetchExchangeCount() {
+    const provider = await getProviderCallback();
+    const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+    try {
+      const account = await program.account.factoryData.fetch(factoryPublicKey);
+      console.log('account: ', account);
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
+  const fetchExchangeCountCallback = useCallback(fetchExchangeCount, [getProviderCallback]);
+
   async function initialize() {
     const provider = await getProvider();
-    const program = new Program(idl, programID, provider);
+    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       await program.rpc.initialize('Hello World', {
         accounts: {
@@ -236,13 +254,14 @@ function App() {
       }
     });
 
-    const routes = ['dashboard', 'trade', 'stake', 'govern'];
     if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
       setMenu(window.location.href.split('#/')[1]);
     } else {
       window.location.href = '/#/' + routes[0];
     }
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu]);
+
+    //fetchExchangeCountCallback();
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, fetchExchangeCountCallback]);
 
   return (
     <Layout className='App Dark'>
@@ -437,7 +456,7 @@ function App() {
                 <Col span={2}></Col>
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Governance' bordered={false}
+                    <Card className='Card Dark' title='Govern' bordered={false}
                       extra={<a href='/#' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'

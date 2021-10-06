@@ -55,3 +55,6 @@ airdrop-wallet:
 
 airdrop:
 	@while true; do solana airdrop 1; sleep 30; done
+
+copy-idl:
+	@node copyIdl.js

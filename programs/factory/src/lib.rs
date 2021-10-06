@@ -4,14 +4,13 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::system_program;
 use anchor_spl::token::TokenAccount;
 
 use exchange::cpi::accounts::Create;
 use exchange::program::Exchange;
 use exchange::{self, ExchangeData};
 
-declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 /// Factory
 #[program]
@@ -20,9 +19,9 @@ pub mod factory {
 
     /// Initializes the factory account
     pub fn initialize(ctx: Context<Initialize>, template: Pubkey) -> ProgramResult {
-        //let factory = &mut ctx.accounts.factory;
-        //factory.exchange_template = template;
-        //factory.token_count = 0;
+        let factory = &mut ctx.accounts.factory;
+        factory.exchange_template = template;
+        factory.token_count = 0;
         Ok(())
     }
 
@@ -69,8 +68,7 @@ pub struct Initialize<'info> {
     #[account(init, payer = authority, space = 8 + 32 + 8)]
     pub factory: Account<'info, FactoryData>,
     pub authority: Signer<'info>,
-    #[account(address = system_program::ID)]
-    pub system_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -81,7 +79,7 @@ pub struct CreateExchange<'info> {
     #[account(mut)]
     pub factory: Account<'info, FactoryData>,
     pub exchange_program: Program<'info, Exchange>,
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -109,8 +107,8 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
             factory: accounts.factory.to_account_info().clone(),
-            exchange: accounts.exchange.to_account_info().clone().into(),
-            token_program: accounts.token_program.to_account_info().clone(),
+            exchange: accounts.exchange.to_account_info().clone(),
+            token_program: accounts.token_program.clone(),
             exchange_a: accounts.exchange_a.to_account_info().clone(),
             exchange_b: accounts.exchange_b.to_account_info().clone(),
         };

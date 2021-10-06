@@ -165,7 +165,6 @@ describe('XV01', () => {
 
     console.log('Your transaction signature', tx);
 
-    // TODO: Fix
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
 
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
@@ -208,6 +207,8 @@ describe('XV01', () => {
     assert.ok(exchangeTokenAccountAInfo.owner.equals(pda));
     assert.ok(exchangeTokenAccountBInfo.owner.equals(pda));
   });
+
+  return
 
   const initialMaxAmountA = 100;
   const initialAmountB = 50;

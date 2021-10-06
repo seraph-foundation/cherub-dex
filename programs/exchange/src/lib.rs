@@ -8,7 +8,7 @@ use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
-declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 /// Exchange
 #[program]
