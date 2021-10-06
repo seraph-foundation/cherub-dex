@@ -78,6 +78,10 @@
     float: right;
 }
 
+.SolCount {
+    margin-right: 2em;
+}
+
 .Layout {
     background-color: black;
 }

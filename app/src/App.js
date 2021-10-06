@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
+import { Alert, Badge, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
 import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -6,7 +6,7 @@ import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 import idl from './idl.json';
 import 'antd/dist/antd.css';
@@ -22,10 +22,8 @@ const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
 const programID = new PublicKey(idl.metadata.address);
-const lamportsPerSol = 10000000;
-//const network = 'http://127.0.0.1:8899';
-const network = clusterApiUrl('testnet');
-const name = 'bicep';
+const network = 'http://127.0.0.1:8899';  // clusterApiUrl('testnet');
+const name = 'xv01';
 const marketCap = '130,000';
 const price = '33';
 const circulatingSupply = '1000122 / 1239332';
@@ -216,8 +214,7 @@ function App() {
       if (wallet.connected && !balance) {
         try {
           provider.connection.getBalance(wallet.publicKey).then(function(result) {
-            console.log(result, wallet.publicKey.toString());
-            setBalance(result / lamportsPerSol);
+            setBalance(result / LAMPORTS_PER_SOL);
           });
         } catch (e) {
           networkErrorMessage();
@@ -263,6 +260,7 @@ function App() {
               <Button className='ConnectWalletButton' onClick={onConnectWalletClick} type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
+              <code className='SolCount'>{balance} SOL</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
