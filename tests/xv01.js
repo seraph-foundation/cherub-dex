@@ -3,7 +3,7 @@ const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 const assert = require('assert');
 
-const { SystemProgram } = anchor.web3;
+const { SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
 
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
@@ -26,7 +26,6 @@ describe('XV01', () => {
   const traderAmountA = 500;
   const traderAmountB = 500;
 
-  const amountLamports = 1000000000;  // 10,000,000 Lamports in 1 SOL
   const amountAirdrop = 50;
 
   const decimalsA = 18;
@@ -54,7 +53,7 @@ describe('XV01', () => {
 
   it('State initialized', async () => {
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop),
+      await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop * LAMPORTS_PER_SOL),
       'confirmed'
     );
 
@@ -166,7 +165,8 @@ describe('XV01', () => {
 
     console.log('Your transaction signature', tx);
 
-    let factoryAccountInfo = await factory.account.factory.fetch(factoryAccount.publicKey)
+    // TODO: Fix
+    let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
 
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
@@ -193,7 +193,7 @@ describe('XV01', () => {
           exchangeB: exchangeTokenAccountB
         },
         signers: [factoryAccount.owner, exchangeAccount],
-        instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)]
+        instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount)]
       });
 
     console.log('Your transaction signature', tx);

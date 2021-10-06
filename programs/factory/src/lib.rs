@@ -7,7 +7,9 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::system_program;
 use anchor_spl::token::TokenAccount;
 
-use exchange::{Create, Exchange};
+use exchange::cpi::accounts::Create;
+use exchange::program::Exchange;
+use exchange::{self, ExchangeData};
 
 declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -18,9 +20,9 @@ pub mod factory {
 
     /// Initializes the factory account
     pub fn initialize(ctx: Context<Initialize>, template: Pubkey) -> ProgramResult {
-        let factory = &mut ctx.accounts.factory;
-        factory.exchange_template = template;
-        factory.token_count = 0;
+        //let factory = &mut ctx.accounts.factory;
+        //factory.exchange_template = template;
+        //factory.token_count = 0;
         Ok(())
     }
 
@@ -65,7 +67,7 @@ pub mod factory {
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(init, payer = authority, space = 8 + 32 + 8)]
-    pub factory: Account<'info, Factory>,
+    pub factory: Account<'info, FactoryData>,
     pub authority: Signer<'info>,
     #[account(address = system_program::ID)]
     pub system_program: UncheckedAccount<'info>,
@@ -75,10 +77,10 @@ pub struct Initialize<'info> {
 pub struct CreateExchange<'info> {
     pub authority: Signer<'info>,
     #[account(zero)]
-    pub exchange: Account<'info, Exchange>,
+    pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub factory: Account<'info, Factory>,
-    pub exchange_program: UncheckedAccount<'info>,
+    pub factory: Account<'info, FactoryData>,
+    pub exchange_program: Program<'info, Exchange>,
     pub token_program: UncheckedAccount<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -88,17 +90,17 @@ pub struct CreateExchange<'info> {
 
 #[derive(Accounts)]
 pub struct GetExchange<'info> {
-    pub factory: Account<'info, Factory>,
+    pub factory: Account<'info, FactoryData>,
 }
 
 #[derive(Accounts)]
 pub struct GetToken<'info> {
-    pub factory: Account<'info, Factory>,
+    pub factory: Account<'info, FactoryData>,
 }
 
 #[derive(Accounts)]
 pub struct GetTokenWithId<'info> {
-    pub factory: Account<'info, Factory>,
+    pub factory: Account<'info, FactoryData>,
 }
 
 impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
@@ -107,17 +109,17 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
             factory: accounts.factory.to_account_info().clone(),
-            exchange: accounts.exchange.clone().into(),
+            exchange: accounts.exchange.to_account_info().clone().into(),
             token_program: accounts.token_program.to_account_info().clone(),
-            exchange_a: accounts.exchange_a.clone(),
-            exchange_b: accounts.exchange_b.clone(),
+            exchange_a: accounts.exchange_a.to_account_info().clone(),
+            exchange_b: accounts.exchange_b.to_account_info().clone(),
         };
         CpiContext::new(accounts.exchange_program.to_account_info().clone(), cpi_accounts)
     }
 }
 
 #[account]
-pub struct Factory {
+pub struct FactoryData {
     pub exchange_template: Pubkey,
     pub token_count: u64,
 }
