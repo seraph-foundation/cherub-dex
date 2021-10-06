@@ -231,6 +231,7 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Create<'info> {
+    pub authority: AccountInfo<'info>,
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     pub factory: AccountInfo<'info>,
