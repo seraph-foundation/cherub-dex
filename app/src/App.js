@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
 import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -102,7 +102,7 @@ const governanceProposals = [
 ];
 
 function App() {
-  const [menu, setMenu] = useState('dashboard');
+  const [menu, setMenu] = useState('');
   const [poolStep, setPoolStep] = useState(0);
   const [poolDeposit, setPoolDeposit] = useState(0);
   const [poolCard, setPoolCard] = useState('pool');
@@ -156,6 +156,7 @@ function App() {
   }
 
   async function handleMenuClick(e) {
+    window.location.href = '/#/' + e.key;
     setMenu(e.key);
   }
 
@@ -234,7 +235,14 @@ function App() {
         }
       }
     });
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance]);
+
+    const routes = ['dashboard', 'trade', 'pool', 'governance'];
+    if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
+      setMenu(window.location.href.split('#/')[1]);
+    } else {
+      window.location.href = '/#/' + routes[0];
+    }
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu]);
 
   return (
     <Layout className='App Dark'>
