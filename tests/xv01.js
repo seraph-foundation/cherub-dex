@@ -220,15 +220,15 @@ describe('XV01', () => {
       fee, {
         accounts: {
           authority: provider.wallet.publicKey,
-          //exchange: exchangeAccount.publicKey,
+          exchange: exchangeAccount.publicKey,
           factory: factoryAccount.publicKey,
           exchangeProgram: exchange.programId,
-          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB
         },
-        signers: [provider.wallet.owner]
+        signers: [factoryAccount.owner, exchangeAccount],
+        instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount)]
       });
 
     console.log('Your transaction signature', tx);

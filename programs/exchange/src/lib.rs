@@ -39,8 +39,8 @@ pub mod exchange {
         exchange.token_c = token_c;
         exchange.fee = fee;
         let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
-        token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
+        //token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
+        //token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
         // TODO: C authority
         Ok(())
     }
@@ -231,11 +231,9 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Create<'info> {
-    pub authority: Signer<'info>,
-    #[account(init, payer = authority, space = 8 + 32 + 32 + 32 + 32 + 8)]
+    #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
-    pub factory: Signer<'info>,
-    pub system_program: Program<'info, System>,
+    pub factory: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
