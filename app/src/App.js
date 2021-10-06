@@ -29,7 +29,7 @@ const price = '33';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
 
-const poolOptions = (
+const stakeOptions = (
   <Select defaultValue={name.toUpperCase()} className='select-before'>
     <Option value={name.toUpperCase()}>{name.toUpperCase()}</Option>
   </Select>
@@ -78,9 +78,9 @@ const chartOptions = {
   }
 }
 
-const governanceProposals = [
+const governProposals = [
   {
-    title: 'Move SOL/COPE pool to SOL/MANGO',
+    title: 'Move SOL/COPE stake to SOL/MANGO',
     description: '4 • September 25th, 2021',
     icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
   },
@@ -103,9 +103,9 @@ const governanceProposals = [
 
 function App() {
   const [menu, setMenu] = useState('');
-  const [poolStep, setPoolStep] = useState(0);
-  const [poolDeposit, setPoolDeposit] = useState(0);
-  const [poolCard, setPoolCard] = useState('pool');
+  const [stakeStep, setStakeStep] = useState(0);
+  const [stakeDeposit, setStakeDeposit] = useState(0);
+  const [stakeCard, setStakeCard] = useState('stake');
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
   const [tradeAmount, setTradeAmount] = useState(0);
@@ -161,11 +161,11 @@ function App() {
   }
 
   async function onManageLiquidity() {
-    setPoolCard('liquidity');
+    setStakeCard('liquidity');
   }
 
-  async function onPool() {
-    setPoolCard('pool');
+  async function onStake() {
+    setStakeCard('stake');
   }
 
   async function onTrade() {
@@ -192,9 +192,9 @@ function App() {
     setTradeDirection(e.target.value);
   }
 
-  async function onPoolDepositChange(e) {
-    setPoolStep(1);
-    setPoolDeposit(e.target.value);
+  async function onStakeDepositChange(e) {
+    setStakeStep(1);
+    setStakeDeposit(e.target.value);
   }
 
   async function onTradeAmountChange(e) {
@@ -236,7 +236,7 @@ function App() {
       }
     });
 
-    const routes = ['dashboard', 'trade', 'pool', 'governance'];
+    const routes = ['dashboard', 'trade', 'stake', 'govern'];
     if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
       setMenu(window.location.href.split('#/')[1]);
     } else {
@@ -257,8 +257,8 @@ function App() {
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
-              <Menu.Item key='pool'>Pool</Menu.Item>
-              <Menu.Item key='governance'>Governance</Menu.Item>
+              <Menu.Item key='stake'>Stake</Menu.Item>
+              <Menu.Item key='govern'>Govern</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -387,16 +387,16 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'pool' ? (
+            { menu === 'stake' ? (
               <Row>
                 <Col span={6}></Col>
-                { poolCard === 'pool' ?
+                { stakeCard === 'stake' ?
                 <>
                   <Col span={4}>
-                    <Steps direction='vertical' current={poolStep}>
+                    <Steps direction='vertical' current={stakeStep}>
                       <Step key='set' title='Set Amount'
                         description=<div>
-                          Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is
+                          Your deposit of <span className='Currency'>{stakeDeposit}.00 {name.toUpperCase()}</span> is
                           set to earn <span className='Currency'>12% APY</span></div> />
                       <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
                       <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
@@ -405,10 +405,10 @@ function App() {
                   <Col span={1}></Col>
                   <Col span={8} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
-                      <Card className='Card Dark' title='Pool' bordered={false}
+                      <Card className='Card Dark' title='Stake' bordered={false}
                         extra={<a href='/#' className='CardLink' onClick={onManageLiquidity}>Manage Liquidity</a>}>
-                        <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
-                          value={poolDeposit} />
+                        <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
+                          value={stakeDeposit} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
                         <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
@@ -419,9 +419,9 @@ function App() {
                 </> :
                 <Col span={12} className='Cards'>
                   <Card className='Card Dark' title='Manage Liquidity' bordered={false}
-                    extra={<a href='/#' className='CardLink' onClick={onPool}>Pool</a>}>
-                    <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
-                      value={poolDeposit} />
+                    extra={<a href='/#' className='CardLink' onClick={onStake}>Stake</a>}>
+                    <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
+                      value={stakeDeposit} />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
                     <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve
@@ -432,7 +432,7 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'governance' ? (
+            { menu === 'govern' ? (
               <Row>
                 <Col span={2}></Col>
                 <Col span={20} className='Cards'>
@@ -441,7 +441,7 @@ function App() {
                       extra={<a href='/#' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
-                        dataSource={governanceProposals}
+                        dataSource={governProposals}
                         renderItem={item => (
                           <List.Item>
                             <List.Item.Meta title={item.title} description={item.description} />
