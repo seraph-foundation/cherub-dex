@@ -210,7 +210,7 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <strong onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>{name}.fi</strong>
+              <strong onClick={() => window.open('https://www.github.com/xv01-finance/xv01-protocol', '_blank')}>{name}.fi</strong>
             </div>
           </Col>
           <Col span={14} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
@@ -253,7 +253,7 @@ function App() {
                   </Col>
                   <Col span={12}>
                     <Button className='LearnMore Dark' ghost size='large'
-                      onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>Learn More</Button>
+                      onClick={() => window.open('https://www.github.com/xv01-finance/xv01-protocol', '_blank')}>Learn More</Button>
                   </Col>
                 </Row>
               </>
