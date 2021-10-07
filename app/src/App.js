@@ -6,11 +6,14 @@ import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-import idl from './idl.json';
 import 'antd/dist/antd.css';
 import './App.css';
+
+import exchangeIdl from './exchange.json';
+import factoryIdl from './factory.json';
+import pythIdl from './pyth.json';
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
@@ -18,20 +21,20 @@ const { Step } = Steps;
 const { Title } = Typography;
 const { SystemProgram, Keypair } = web3;
 
+const factoryPublicKey = new PublicKey('FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS');
+
 const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
-const programID = new PublicKey(idl.metadata.address);
-const lamportsPerSol = 10000000;
-//const network = 'http://127.0.0.1:8899';
-const network = clusterApiUrl('testnet');
-const name = 'bicep';
+const network = 'http://127.0.0.1:8899';  // clusterApiUrl('testnet');
+const name = 'xv01';
 const marketCap = '130,000';
 const price = '33';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
+const routes = ['dashboard', 'trade', 'stake', 'govern'];
 
-const poolOptions = (
+const stakeOptions = (
   <Select defaultValue={name.toUpperCase()} className='select-before'>
     <Option value={name.toUpperCase()}>{name.toUpperCase()}</Option>
   </Select>
@@ -80,9 +83,9 @@ const chartOptions = {
   }
 }
 
-const governanceProposals = [
+const governProposals = [
   {
-    title: 'Move SOL/COPE pool to SOL/MANGO',
+    title: 'Move SOL/COPE stake to SOL/MANGO',
     description: '4 • September 25th, 2021',
     icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
   },
@@ -104,10 +107,10 @@ const governanceProposals = [
 ];
 
 function App() {
-  const [menu, setMenu] = useState('dashboard');
-  const [poolStep, setPoolStep] = useState(0);
-  const [poolDeposit, setPoolDeposit] = useState(0);
-  const [poolCard, setPoolCard] = useState('pool');
+  const [menu, setMenu] = useState('');
+  const [stakeStep, setStakeStep] = useState(0);
+  const [stakeDeposit, setStakeDeposit] = useState(0);
+  const [stakeCard, setStakeCard] = useState('stake');
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
   const [tradeAmount, setTradeAmount] = useState(0);
@@ -137,9 +140,22 @@ function App() {
     return new Provider(connection, wallet, opts.preflightCommitment);
   }
 
+  async function fetchExchangeCount() {
+    const provider = await getProviderCallback();
+    const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+    try {
+      const account = await program.account.factoryData.fetch(factoryPublicKey);
+      console.log('account: ', account);
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
+  const fetchExchangeCountCallback = useCallback(fetchExchangeCount, [getProviderCallback]);
+
   async function initialize() {
     const provider = await getProvider();
-    const program = new Program(idl, programID, provider);
+    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       await program.rpc.initialize('Hello World', {
         accounts: {
@@ -158,15 +174,16 @@ function App() {
   }
 
   async function handleMenuClick(e) {
+    window.location.href = '/#/' + e.key;
     setMenu(e.key);
   }
 
   async function onManageLiquidity() {
-    setPoolCard('liquidity');
+    setStakeCard('liquidity');
   }
 
-  async function onPool() {
-    setPoolCard('pool');
+  async function onStake() {
+    setStakeCard('stake');
   }
 
   async function onTrade() {
@@ -193,9 +210,9 @@ function App() {
     setTradeDirection(e.target.value);
   }
 
-  async function onPoolDepositChange(e) {
-    setPoolStep(1);
-    setPoolDeposit(e.target.value);
+  async function onStakeDepositChange(e) {
+    setStakeStep(1);
+    setStakeDeposit(e.target.value);
   }
 
   async function onTradeAmountChange(e) {
@@ -216,8 +233,7 @@ function App() {
       if (wallet.connected && !balance) {
         try {
           provider.connection.getBalance(wallet.publicKey).then(function(result) {
-            console.log(result, wallet.publicKey.toString());
-            setBalance(result / lamportsPerSol);
+            setBalance(result / LAMPORTS_PER_SOL);
           });
         } catch (e) {
           networkErrorMessage();
@@ -237,7 +253,15 @@ function App() {
         }
       }
     });
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance]);
+
+    if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
+      setMenu(window.location.href.split('#/')[1]);
+    } else {
+      window.location.href = '/#/' + routes[0];
+    }
+
+    //fetchExchangeCountCallback();
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, fetchExchangeCountCallback]);
 
   return (
     <Layout className='App Dark'>
@@ -252,8 +276,8 @@ function App() {
             <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
-              <Menu.Item key='pool'>Pool</Menu.Item>
-              <Menu.Item key='governance'>Governance</Menu.Item>
+              <Menu.Item key='stake'>Stake</Menu.Item>
+              <Menu.Item key='govern'>Govern</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -263,6 +287,7 @@ function App() {
               <Button className='ConnectWalletButton' onClick={onConnectWalletClick} type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
+              <code className='SolCount'>{balance} SOL</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
@@ -381,16 +406,16 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'pool' ? (
+            { menu === 'stake' ? (
               <Row>
                 <Col span={6}></Col>
-                { poolCard === 'pool' ?
+                { stakeCard === 'stake' ?
                 <>
                   <Col span={4}>
-                    <Steps direction='vertical' current={poolStep}>
+                    <Steps direction='vertical' current={stakeStep}>
                       <Step key='set' title='Set Amount'
                         description=<div>
-                          Your deposit of <span className='Currency'>{poolDeposit}.00 {name.toUpperCase()}</span> is
+                          Your deposit of <span className='Currency'>{stakeDeposit}.00 {name.toUpperCase()}</span> is
                           set to earn <span className='Currency'>12% APY</span></div> />
                       <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
                       <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
@@ -399,10 +424,10 @@ function App() {
                   <Col span={1}></Col>
                   <Col span={8} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
-                      <Card className='Card Dark' title='Pool' bordered={false}
+                      <Card className='Card Dark' title='Stake' bordered={false}
                         extra={<a href='/#' className='CardLink' onClick={onManageLiquidity}>Manage Liquidity</a>}>
-                        <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
-                          value={poolDeposit} />
+                        <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
+                          value={stakeDeposit} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
                         <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
@@ -413,9 +438,9 @@ function App() {
                 </> :
                 <Col span={12} className='Cards'>
                   <Card className='Card Dark' title='Manage Liquidity' bordered={false}
-                    extra={<a href='/#' className='CardLink' onClick={onPool}>Pool</a>}>
-                    <Input className='PoolInput Input Dark' addonBefore={poolOptions} onChange={onPoolDepositChange}
-                      value={poolDeposit} />
+                    extra={<a href='/#' className='CardLink' onClick={onStake}>Stake</a>}>
+                    <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
+                      value={stakeDeposit} />
                     <br/>
                     <p>Your current balance is <strong>{balance}</strong></p>
                     <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve
@@ -426,16 +451,16 @@ function App() {
                 <Col span={6}></Col>
               </Row>
             ) : '' }
-            { menu === 'governance' ? (
+            { menu === 'govern' ? (
               <Row>
                 <Col span={2}></Col>
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Governance' bordered={false}
+                    <Card className='Card Dark' title='Govern' bordered={false}
                       extra={<a href='/#' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
-                        dataSource={governanceProposals}
+                        dataSource={governProposals}
                         renderItem={item => (
                           <List.Item>
                             <List.Item.Meta title={item.title} description={item.description} />

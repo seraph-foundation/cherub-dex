@@ -1,13 +1,13 @@
-anchor_version = "0.17.0"
+anchor_version = "0.16.2"
 
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [programs.localnet]
-factory = "FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-exchange = "Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-pyth = "Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+factory = "GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+exchange = "Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+pyth = "Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 
 [registry]
 url = "https://anchor.projectserum.com"

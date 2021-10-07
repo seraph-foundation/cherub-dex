@@ -4,11 +4,10 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
-declare_id!("Fx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 /// Exchange
 #[program]
@@ -291,8 +290,7 @@ pub struct RemoveLiquidity<'info> {
 #[instruction(amount_b: u64)]
 pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
-    #[account(address = system_program::ID)]
-    pub system_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
     pub exchange: Account<'info, ExchangeData>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
     pub quote: Account<'info, Quote>,
@@ -326,7 +324,7 @@ impl<'info> Create<'info> {
             account_or_mint: self.exchange_a.to_account_info(),
             current_authority: self.exchange.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
@@ -334,7 +332,7 @@ impl<'info> Create<'info> {
             account_or_mint: self.exchange_b.to_account_info(),
             current_authority: self.exchange.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 }
 

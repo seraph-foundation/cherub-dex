@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use pyth_client::{CorpAction, PriceStatus, PriceType};
 
-declare_id!("Fz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod pyth {

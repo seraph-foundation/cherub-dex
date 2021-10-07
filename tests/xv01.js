@@ -9,6 +9,7 @@ describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
   const provider = anchor.getProvider();
+
   // For now, the workspace feature is only available when running the anchor test command,
   // which will automatically build, deploy, and test all programs against a localnet in one command.
   const factory = anchor.workspace.Factory;
@@ -24,6 +25,8 @@ describe('XV01', () => {
 
   const traderAmountA = 500;
   const traderAmountB = 500;
+
+  const amountAirdrop = 50;
 
   const decimalsA = 18;
   const decimalsB = 18;
@@ -48,15 +51,11 @@ describe('XV01', () => {
   let traderTokenAccountB = null;
   let traderTokenAccountC = null;
 
-  console.log('localnet', clusterApiUrl());
-
   it('State initialized', async () => {
-    if (localnet) {
-      await provider.connection.confirmTransaction(
-        await provider.connection.requestAirdrop(payerAccount.publicKey, amountLamports),
-        'confirmed'
-      );
-    }
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop * LAMPORTS_PER_SOL),
+      'confirmed'
+    );
 
     mintA = await Token.createMint(
       provider.connection,
@@ -166,13 +165,13 @@ describe('XV01', () => {
 
     console.log('Your transaction signature', tx);
 
-    let factoryAccountInfo = await factory.account.factory.fetch(factoryAccount.publicKey)
+    let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
 
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
   });
 
-  it('Exchange created', async () => {
+  it('Factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
@@ -184,7 +183,6 @@ describe('XV01', () => {
       mintC.publicKey,
       fee, {
         accounts: {
-          authority: provider.wallet.publicKey,
           exchange: exchangeAccount.publicKey,
           factory: factoryAccount.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -193,7 +191,7 @@ describe('XV01', () => {
           exchangeB: exchangeTokenAccountB
         },
         signers: [factoryAccount.owner, exchangeAccount],
-        instructions: [await exchange.account.exchange.createInstruction(exchangeAccount)]
+        instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount)]
       });
 
     console.log('Your transaction signature', tx);
