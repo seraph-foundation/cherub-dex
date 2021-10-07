@@ -2,7 +2,7 @@ import {
   Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
 } from 'antd';
 import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { Program, Provider, web3 } from '@project-serum/anchor';
+import { Program, Provider } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
@@ -23,7 +23,6 @@ const { Content, Footer, Header } = Layout;
 const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
-const { Keypair } = web3;
 
 const factoryPublicKey = new PublicKey(accounts.factory);
 const exchangePublicKey = new PublicKey(accounts.exchange);
@@ -38,12 +37,6 @@ const price = '33';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
 const routes = ['dashboard', 'trade', 'stake', 'govern'];
-
-const stakeOptions = (
-  <Select defaultValue={name.toUpperCase()} className='select-before'>
-    <Option value={name.toUpperCase()}>{name.toUpperCase()}</Option>
-  </Select>
-);
 
 const tradeOptions = [
   { label: 'Buy / Long', value: 'long' },
@@ -128,13 +121,19 @@ function App() {
 
   const settingsMenu = (
     <Menu>
-      <Menu.Item key='github' onClick={onLearnMoreClick}>
+      <Menu.Item key='github' onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>
         GitHub
       </Menu.Item>
       <Menu.Item key='discord'>
         Discord
       </Menu.Item>
     </Menu>
+  );
+
+  const stakeOptions = (
+    <Select defaultValue={name.toUpperCase()} className='select-before'>
+      {tradeAssets.map((asset, index) => <Option key={asset} value={asset}>{asset}</Option>)}
+    </Select>
   );
 
   const tradeAssetOptions = (
@@ -157,40 +156,6 @@ function App() {
     } catch (err) {
       console.log('Transaction error: ', err);
     }
-  }
-
-  async function handleMenuClick(e) {
-    window.location.href = '/#/' + e.key;
-    setMenu(e.key);
-  }
-
-  async function onCreateProposal() {}
-
-  async function onConnectWalletClick(e) {
-    document.getElementsByClassName('WalletMultiButton')[0].click();
-  }
-
-  async function onLearnMoreClick(e) {
-    window.open('https://www.github.com/xv01-finance', '_blank');
-  }
-
-  async function onTradeDirectionChange(e) {
-    setTradeDirection(e.target.value);
-  }
-
-  async function onStakeDepositChange(e) {
-    setStakeStep(1);
-    setStakeDeposit(e.target.value);
-  }
-
-  async function onTradeAmountChange(e) {
-    setTradeStep(1);
-    setTradeAmount(e.target.value);
-  }
-
-  async function onAfterLeverageChange(e) {
-    setLeverage(e);
-    setTradeStep(2);
   }
 
   function networkErrorMessage() {
@@ -239,10 +204,13 @@ function App() {
       <Header className='Header Dark'>
         <Row>
           <Col span={5}>
-            <div className='Logo Dark'><strong onClick={onLearnMoreClick}>{name}.fi</strong></div>
+            <div className='Logo Dark'>
+              <strong onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>{name}.fi</strong>
+            </div>
           </Col>
           <Col span={14} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
-            <Menu className='Menu Dark' onClick={handleMenuClick} selectedKeys={[menu]} mode='horizontal'>
+            <Menu className='Menu Dark' onClick={(e) => window.location.href = '/#/' + e.key && setMenu(e.key)}
+              selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
@@ -253,7 +221,8 @@ function App() {
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
-              <Button className='ConnectWalletButton' onClick={onConnectWalletClick} type='link'>Connect Wallet</Button>
+              <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
+                type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
               <code className='SolCount'>{balance} SOL</code>
@@ -273,10 +242,13 @@ function App() {
               <>
                 <Row>
                   <Col span={12}>
-                    <Button className='ConnectWallet' onClick={onConnectWalletClick} type='primary' size='large'>Connect Wallet</Button>
+                    <Button className='ConnectWallet'
+                      onClick={() => (e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
+                      type='primary' size='large'>Connect Wallet</Button>
                   </Col>
                   <Col span={12}>
-                    <Button className='LearnMore Dark' onClick={onLearnMoreClick} ghost size='large'>Learn More</Button>
+                    <Button className='LearnMore Dark' ghost size='large'
+                      onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>Learn More</Button>
                   </Col>
                 </Row>
               </>
@@ -333,16 +305,16 @@ function App() {
                       <Card title='Trade' className='Card Dark' bordered={false}
                         extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
                         <p><strong>Amount</strong></p>
-                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
-                          value={tradeAmount} />
+                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions}
+                          onChange={(e) => setTradeStep(1) && setTradeAmount(e.target.value)} value={tradeAmount} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
-                        <Radio.Group options={tradeOptions} onChange={onTradeDirectionChange} className='RadioGroup Dark'
+                        <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)} className='RadioGroup Dark'
                           optionType='button' buttonStyle='solid' value={tradeDirection} />
                         <br/>
                         <br/>
                         <p><strong>{leverage}x Leverage</strong></p>
-                        <Slider defaultValue={1} min={1} onAfterChange={onAfterLeverageChange} />
+                        <Slider defaultValue={1} min={1} onAfterChange={(e) => setLeverage(e) && setTradeStep(2)} />
                         <br/>
                         <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
                           Approve
@@ -391,8 +363,8 @@ function App() {
                     <div className='site-card-border-less-wrapper'>
                       <Card className='Card Dark' title='Stake' bordered={false}
                         extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
-                        <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
-                          value={stakeDeposit} />
+                        <Input className='StakeInput Input Dark' addonBefore={stakeOptions}
+                          onChange={(e) => setStakeStep(1) && setStakeDeposit(e.target.value)} value={stakeDeposit} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
                         <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
@@ -416,7 +388,7 @@ function App() {
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Govern' bordered={false}
-                      extra={<a href='/#/govern' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
+                      extra={<a href='/#/govern' className='CardLink' onClick={(e) => console.log(e)}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
                         dataSource={governProposals}
