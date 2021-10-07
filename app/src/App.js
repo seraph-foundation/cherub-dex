@@ -98,6 +98,8 @@ const governProposals = [
 
 const tradeAssets = ['SOL', 'BTC', 'XV01'];
 
+const live = false;
+
 function App() {
   const [menu, setMenu] = useState('');
   const [stakeStep, setStakeStep] = useState(0);
@@ -204,9 +206,10 @@ function App() {
 
   return (
     <Layout className='App Dark'>
-      { false ?
+      { live ?
       <Alert type='info' className='Dark Alert' closable
-      message='You are currently using an unaudited piece of software. Use at your own risk.' banner/> : ''}
+        message='You are currently using an unaudited piece of software. Use at your own risk.' banner/> : ''
+      }
       <Header className='Header Dark'>
         <Row>
           <Col span={5}>
