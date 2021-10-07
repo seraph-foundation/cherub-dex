@@ -520,4 +520,45 @@ describe('XV01', () => {
 
     assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
+
+  it('Add additional liquidity', async () => {
+    const deadline = new anchor.BN(Date.now() / 1000);
+    const tx = await exchange.rpc.addLiquidity(
+      new anchor.BN(additionalMaxAmountA),
+      new anchor.BN(additionalAmountB),
+      new anchor.BN(additionalMinLiquidityC),
+      deadline, {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          exchange: exchangeAccount.publicKey,
+          mint: mintC.publicKey,
+          userA: walletTokenAccountA,
+          userB: walletTokenAccountB,
+          userC: walletTokenAccountC,
+          exchangeA: exchangeTokenAccountA,
+          exchangeB: exchangeTokenAccountB
+        },
+        signers: [provider.wallet.owner]
+      });
+
+    console.log('Your transaction signature', tx);
+
+    let exchangeTokenAccountAInfo = await mintA.getAccountInfo(exchangeTokenAccountA);
+    let walletTokenAccountAInfo = await mintA.getAccountInfo(walletTokenAccountA);
+
+    assert.ok(exchangeTokenAccountAInfo.amount.eq(new anchor.BN(additionalMaxAmountA)));
+    assert.ok(walletTokenAccountAInfo.amount.eq(new anchor.BN(99850)));
+
+    let exchangeTokenAccountBInfo = await mintB.getAccountInfo(exchangeTokenAccountB);
+    let walletTokenAccountBInfo = await mintB.getAccountInfo(walletTokenAccountB);
+
+    assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(75)));
+    assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99925)));
+
+    let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
+  });
 });

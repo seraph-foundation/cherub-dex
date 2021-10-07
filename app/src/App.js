@@ -23,16 +23,15 @@ const { Content, Footer, Header } = Layout;
 const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
-const { SystemProgram, Keypair } = web3;
+const { Keypair } = web3;
 
 const factoryPublicKey = new PublicKey(accounts.factory);
 const exchangePublicKey = new PublicKey(accounts.exchange);
 const pythPublicKey = new PublicKey(accounts.pyth);
 
 const wallets = [getPhantomWallet()]
-const baseAccount = Keypair.generate();
 const opts = { preflightCommitment: 'processed' };
-const network = 'http://127.0.0.1:8899';  // clusterApiUrl('testnet');
+const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const name = 'xv01';
 const marketCap = '130,000';
 const price = '33';
@@ -43,14 +42,6 @@ const routes = ['dashboard', 'trade', 'stake', 'govern'];
 const stakeOptions = (
   <Select defaultValue={name.toUpperCase()} className='select-before'>
     <Option value={name.toUpperCase()}>{name.toUpperCase()}</Option>
-  </Select>
-);
-
-const tradeAssetOptions = (
-  <Select defaultValue='BTC' className='select-before'>
-    <Option value='SOL'>SOL</Option>
-    <Option value='BTC'>BTC</Option>
-    <Option value='ETH'>ETH</Option>
   </Select>
 );
 
@@ -112,6 +103,8 @@ const governProposals = [
   }
 ];
 
+const tradeAssets = ['SOL', 'BTC', 'XV01'];
+
 function App() {
   const [menu, setMenu] = useState('');
   const [stakeStep, setStakeStep] = useState(0);
@@ -123,12 +116,15 @@ function App() {
   const [tradeCard, setTradeCard] = useState('trade');
   const [leverage, setLeverage] = useState(1);
   const [balance, setBalance] = useState(0);
+  const [tradeAsset, setTradeAsset] = useState(tradeAssets[0]);
   const [blockHeight, setBlockHeight] = useState(0);
+  const [tokenCount, setTokenCount] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
 
   const wallet = useWallet()
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
+  const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
 
   const settingsMenu = (
     <Menu>
@@ -141,48 +137,34 @@ function App() {
     </Menu>
   );
 
+  const tradeAssetOptions = (
+    <Select defaultValue={tradeAssets[0]} onChange={() => setTradeAsset()} className='select-before'>
+      {tradeAssets.map((asset, index) => <Option key={asset} value={asset}>{asset}</Option>)}
+    </Select>
+  );
+
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
     return new Provider(connection, wallet, opts.preflightCommitment);
   }
 
-  async function fetchExchangeCount() {
+  async function getFactoryData() {
     const provider = await getProviderCallback();
     const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
     try {
       const account = await program.account.factoryData.fetch(factoryPublicKey);
-      console.log('tokenCount: ', account.tokenCount.toNumber());
+      setTokenCount(account.tokenCount.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
   }
-
-  const fetchExchangeCountCallback = useCallback(fetchExchangeCount, [getProviderCallback]);
 
   async function handleMenuClick(e) {
     window.location.href = '/#/' + e.key;
     setMenu(e.key);
   }
 
-  async function onManageLiquidity() {
-    setStakeCard('liquidity');
-  }
-
-  async function onStake() {
-    setStakeCard('stake');
-  }
-
-  async function onTrade() {
-    setTradeCard('trade');
-  }
-
-  async function onManagePositions() {
-    setTradeCard('positions');
-  }
-
-  async function onCreateProposal() {
-
-  }
+  async function onCreateProposal() {}
 
   async function onConnectWalletClick(e) {
     document.getElementsByClassName('WalletMultiButton')[0].click();
@@ -208,6 +190,7 @@ function App() {
 
   async function onAfterLeverageChange(e) {
     setLeverage(e);
+    setTradeStep(2);
   }
 
   function networkErrorMessage() {
@@ -246,8 +229,8 @@ function App() {
       window.location.href = '/#/' + routes[0];
     }
 
-    fetchExchangeCountCallback();
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, fetchExchangeCountCallback]);
+    getFactoryDataCallback();
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback]);
 
   return (
     <Layout className='App Dark'>
@@ -347,22 +330,18 @@ function App() {
                 <>
                   <Col span={8} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
-                      <Card title='Trade' className='Card Dark' bordered={false} extra={<a href='/#'
-                          className='CardLink' onClick={onManagePositions}>Manage Positions</a>}>
+                      <Card title='Trade' className='Card Dark' bordered={false}
+                        extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
                         <p><strong>Amount</strong></p>
                         <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} onChange={onTradeAmountChange}
                           value={tradeAmount} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
-                        <p><strong>Collateral</strong></p>
-                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions} defaultValue='0' />
-                        <br/>
-                        <br/>
                         <Radio.Group options={tradeOptions} onChange={onTradeDirectionChange} className='RadioGroup Dark'
                           optionType='button' buttonStyle='solid' value={tradeDirection} />
                         <br/>
                         <br/>
-                        <p><strong>{ leverage }x Leverage</strong></p>
+                        <p><strong>{leverage}x Leverage</strong></p>
                         <Slider defaultValue={1} min={1} onAfterChange={onAfterLeverageChange} />
                         <br/>
                         <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
@@ -374,17 +353,17 @@ function App() {
                   <Col span={1}></Col>
                   <Col span={3}>
                     <Steps direction='vertical' current={tradeStep}>
-                      <Step key='set' title='Set Amount'
-                        description=<div>Your order amount of <span className='Currency'>${tradeAmount}.00</span></div>/>
-                      <Step key='collateral' title='Collateral' description='Leverage determines the required amount'/>
-                      <Step key='order' title='Place Order' description='Instantly filled'/>
+                      <Step key='set' title='Amount'
+                        description=<div>Your order amount of <span className='Currency'>{tradeAmount} {tradeAsset}</span></div>/>
+                      <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
+                      <Step key='order' title='Approve' description='Instantly filled'/>
                     </Steps>
                   </Col>
                 </> :
                 <Col span={12} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
-                    <Card title='Manage Positions' className='Card Dark' bordered={false} extra={<a href='/#'
-                        className='CardLink' onClick={onTrade}>Trade</a>}>
+                    <Card title='Positions' className='Card Dark' bordered={false}
+                      extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
                     </Card>
                   </div>
                 </Col>
@@ -399,19 +378,19 @@ function App() {
                 <>
                   <Col span={4}>
                     <Steps direction='vertical' current={stakeStep}>
-                      <Step key='set' title='Set Amount'
+                      <Step key='set' title='Amount'
                         description=<div>
                           Your deposit of <span className='Currency'>{stakeDeposit}.00 {name.toUpperCase()}</span> is
                           set to earn <span className='Currency'>12% APY</span></div> />
                       <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
-                      <Step key='deposit' title='Deposit' description='Your deposit will be locked for 5 days' />
+                      <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
                     </Steps>
                   </Col>
                   <Col span={1}></Col>
                   <Col span={8} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
                       <Card className='Card Dark' title='Stake' bordered={false}
-                        extra={<a href='/#' className='CardLink' onClick={onManageLiquidity}>Manage Liquidity</a>}>
+                        extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
                         <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
                           value={stakeDeposit} />
                         <br/>
@@ -423,14 +402,8 @@ function App() {
                   </Col>
                 </> :
                 <Col span={12} className='Cards'>
-                  <Card className='Card Dark' title='Manage Liquidity' bordered={false}
-                    extra={<a href='/#' className='CardLink' onClick={onStake}>Stake</a>}>
-                    <Input className='StakeInput Input Dark' addonBefore={stakeOptions} onChange={onStakeDepositChange}
-                      value={stakeDeposit} />
-                    <br/>
-                    <p>Your current balance is <strong>{balance}</strong></p>
-                    <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>Approve
-                    </Button>
+                  <Card className='Card Dark' title='Positions' bordered={false}
+                    extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
                   </Card>
                 </Col>
                 }
@@ -443,7 +416,7 @@ function App() {
                 <Col span={20} className='Cards'>
                   <div className='site-card-border-less-wrapper'>
                     <Card className='Card Dark' title='Govern' bordered={false}
-                      extra={<a href='/#' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
+                      extra={<a href='/#/govern' className='CardLink' onClick={onCreateProposal}>Create Proposal</a>}>
                       <List
                         itemLayout='horizontal'
                         dataSource={governProposals}
