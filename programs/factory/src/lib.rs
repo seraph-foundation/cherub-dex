@@ -4,12 +4,9 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::system_program;
 use anchor_spl::token::TokenAccount;
 
-use exchange::cpi::accounts::Create;
-use exchange::program::Exchange;
-use exchange::{self, ExchangeData};
+use exchange::{self, ExchangeData, Create};
 
 declare_id!("FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -66,22 +63,20 @@ pub mod factory {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    pub authority: Signer<'info>,
     #[account(init, payer = authority, space = 8 + 32 + 8)]
     pub factory: Account<'info, Factory>,
-    pub authority: Signer<'info>,
-    #[account(address = system_program::ID)]
-    pub system_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct CreateExchange<'info> {
-    pub authority: Signer<'info>,
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub factory: Account<'info, Factory>,
-    pub exchange_program: Program<'info, Exchange>,
-    pub token_program: UncheckedAccount<'info>,
+    pub exchange_program: Account<'info, ExchangeData>,
+    pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -109,13 +104,13 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
             factory: accounts.factory.to_account_info().clone(),
-            exchange: accounts.exchange.to_account_info().clone(),
-            token_program: accounts.token_program.to_account_info().clone(),
-            exchange_a: accounts.exchange_a.to_account_info().clone(),
-            exchange_b: accounts.exchange_b.to_account_info().clone(),
+            exchange: accounts.exchange.clone(),
+            token_program: accounts.token_program.clone(),
+            exchange_a: accounts.exchange_a.clone(),
+            exchange_b: accounts.exchange_b.clone(),
         };
         CpiContext::new(
-            accounts.exchange_program.to_account_info().clone(),
+            accounts.exchange_program.to_account_info(),
             cpi_accounts,
         )
     }

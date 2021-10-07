@@ -323,16 +323,16 @@ pub struct Swap<'info> {
 impl<'info> Create<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_a.to_account_info().clone(),
-            current_authority: self.exchange.to_account_info().clone(),
+            account_or_mint: self.exchange_a.to_account_info(),
+            current_authority: self.exchange.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_b.to_account_info().clone(),
-            current_authority: self.exchange.to_account_info().clone(),
+            account_or_mint: self.exchange_b.to_account_info(),
+            current_authority: self.exchange.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
@@ -342,29 +342,29 @@ impl<'info> Create<'info> {
 impl<'info> AddLiquidity<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_a.to_account_info().clone(),
-            to: self.exchange_a.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            from: self.user_a.to_account_info(),
+            to: self.exchange_a.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info().clone(),
-            to: self.exchange_b.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            from: self.user_b.to_account_info(),
+            to: self.exchange_b.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
-            mint: self.mint.to_account_info().clone(),
-            to: self.user_c.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            mint: self.mint.to_account_info(),
+            to: self.user_c.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 }
 
@@ -372,29 +372,29 @@ impl<'info> AddLiquidity<'info> {
 impl<'info> RemoveLiquidity<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info().clone(),
-            to: self.user_a.to_account_info().clone(),
-            authority: self.pda.to_account_info().clone(),
+            from: self.exchange_a.to_account_info(),
+            to: self.user_a.to_account_info(),
+            authority: self.pda.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.exchange_b.to_account_info().clone(),
-            to: self.user_b.to_account_info().clone(),
-            authority: self.pda.to_account_info().clone(),
+            from: self.exchange_b.to_account_info(),
+            to: self.user_b.to_account_info(),
+            authority: self.pda.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
     }
 
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
         let cpi_accounts = Burn {
-            mint: self.mint.to_account_info().clone(),
-            to: self.user_c.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            mint: self.mint.to_account_info(),
+            to: self.user_c.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 }
 
@@ -402,20 +402,20 @@ impl<'info> RemoveLiquidity<'info> {
 impl<'info> Swap<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info().clone(),
-            to: self.recipient.to_account_info().clone(),
-            authority: self.pda.to_account_info().clone(),
+            from: self.exchange_a.to_account_info(),
+            to: self.recipient.to_account_info(),
+            authority: self.pda.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info().clone(),
-            to: self.exchange_b.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            from: self.user_b.to_account_info(),
+            to: self.exchange_b.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 }
 
