@@ -31,7 +31,7 @@ pub mod factory {
         token_c: Pubkey,
         fee: u64,
     ) -> ProgramResult {
-        let factory = &mut ctx.accounts.factory.clone();
+        let factory = &mut ctx.accounts.factory;
         factory.token_count = factory.token_count + 1;
         exchange::cpi::create(ctx.accounts.into(), token_a, token_b, token_c, fee)?;
         Ok(())

@@ -1,7 +1,8 @@
 const anchor = require('@project-serum/anchor');
+const assert = require('assert');
+const fs = require('fs');
 const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
-const assert = require('assert');
 
 const { SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
 
@@ -32,13 +33,22 @@ describe('XV01', () => {
   const decimalsB = 18;
   const decimalsC = 18;
 
-  const exchangeTemplate = anchor.web3.Keypair.generate();
-
   const payerAccount = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
   const traderAccount = anchor.web3.Keypair.generate();
   const pythAccount = anchor.web3.Keypair.generate();
+
+  fs.writeFile('./app/src/accounts-localnet.json', JSON.stringify({
+    factory: factoryAccount.publicKey.toString(),
+    exchange: exchangeAccount.publicKey.toString(),
+    trader: traderAccount.publicKey.toString(),
+    pyth: pythAccount.publicKey.toString(),
+  }), 'utf8', (err) => {
+    if (err) {
+      console.log(`Error writing file: ${err}`);
+    }
+  });
 
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
@@ -154,7 +164,7 @@ describe('XV01', () => {
   });
 
   it('Factory initialized', async () => {
-    const tx = await factory.rpc.initialize(exchangeTemplate.publicKey, {
+    const tx = await factory.rpc.initialize(exchange.programId, {
       accounts: {
         authority: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId,
@@ -166,9 +176,9 @@ describe('XV01', () => {
     console.log('Your transaction signature', tx);
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-
+    console.log(factoryAccountInfo.tokenCount.toNumber());
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
-    assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchangeTemplate.publicKey.toString());
+    assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString());
   });
 
   it('Factory exchange created', async () => {
@@ -205,6 +215,10 @@ describe('XV01', () => {
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(0)));
     assert.ok(exchangeTokenAccountAInfo.owner.equals(pda));
     assert.ok(exchangeTokenAccountBInfo.owner.equals(pda));
+
+    let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
+
+    assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
   const initialMaxAmountA = 100;

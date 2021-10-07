@@ -1,4 +1,6 @@
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message } from 'antd';
+import {
+  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
+} from 'antd';
 import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider, web3 } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -15,13 +17,17 @@ import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
 import pythIdl from './pyth.json';
 
+import accounts from './accounts-localnet.json';
+
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 const { SystemProgram, Keypair } = web3;
 
-const factoryPublicKey = new PublicKey('FyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS');
+const factoryPublicKey = new PublicKey(accounts.factory);
+const exchangePublicKey = new PublicKey(accounts.exchange);
+const pythPublicKey = new PublicKey(accounts.pyth);
 
 const wallets = [getPhantomWallet()]
 const baseAccount = Keypair.generate();
@@ -145,33 +151,13 @@ function App() {
     const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
     try {
       const account = await program.account.factoryData.fetch(factoryPublicKey);
-      console.log('account: ', account);
+      console.log('tokenCount: ', account.tokenCount.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
   }
 
   const fetchExchangeCountCallback = useCallback(fetchExchangeCount, [getProviderCallback]);
-
-  async function initialize() {
-    const provider = await getProvider();
-    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    try {
-      await program.rpc.initialize('Hello World', {
-        accounts: {
-          baseAccount: baseAccount.publicKey,
-          user: provider.wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
-        signers: [baseAccount]
-      });
-
-      const account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-      console.log('account: ', account);
-    } catch (err) {
-      console.log('Transaction error: ', err);
-    }
-  }
 
   async function handleMenuClick(e) {
     window.location.href = '/#/' + e.key;
@@ -260,7 +246,7 @@ function App() {
       window.location.href = '/#/' + routes[0];
     }
 
-    //fetchExchangeCountCallback();
+    fetchExchangeCountCallback();
   }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, fetchExchangeCountCallback]);
 
   return (

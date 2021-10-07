@@ -56,11 +56,9 @@ airdrop-wallet:
 airdrop:
 	@while true; do solana airdrop 1; sleep 30; done
 
-<<<<<<< HEAD
 setup:
 	@cargo install --git https://github.com/project-serum/anchor --tag v0.17.0 anchor-cli --locked
 	@npm i -g @project-serum/anchor-cli
-=======
+
 copy-idl:
 	@node copyIdl.js
->>>>>>> 4fb23416898290e25686f3f474c1fbc04b664876
