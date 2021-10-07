@@ -162,6 +162,11 @@ function App() {
     message.info('Unable to connect to network');
   }
 
+  function onMenuClick(e) {
+    setMenu(e.key);
+    window.location.href = '/#/' + e.key;
+  }
+
   useEffect(() => {
     getProviderCallback().then(function(provider) {
       if (wallet.connected && !balance) {
@@ -209,7 +214,7 @@ function App() {
             </div>
           </Col>
           <Col span={14} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
-            <Menu className='Menu Dark' onClick={(e) => window.location.href = '/#/' + e.key && setMenu(e.key)}
+            <Menu className='Menu Dark' onClick={onMenuClick}
               selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
