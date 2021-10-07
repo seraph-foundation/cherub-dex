@@ -219,11 +219,10 @@ describe('XV01', () => {
       mintC.publicKey,
       fee, {
         accounts: {
-          authority: provider.wallet.publicKey,
           exchange: exchangeAccount.publicKey,
           factory: factoryAccount.publicKey,
-          exchangeProgram: exchange.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
+          exchangeProgram: exchange.programId,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB
         },

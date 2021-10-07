@@ -62,7 +62,6 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct CreateExchange<'info> {
-    pub authority: AccountInfo<'info>,
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
@@ -95,15 +94,14 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
 {
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
-            authority: accounts.authority.to_account_info().clone(),
-            factory: accounts.factory.to_account_info().clone(),
-            exchange: accounts.exchange.to_account_info().clone(),
+            factory: accounts.factory.to_account_info(),
+            exchange: accounts.exchange.to_account_info(),
             token_program: accounts.token_program.clone(),
-            exchange_a: accounts.exchange_a.to_account_info().clone(),
-            exchange_b: accounts.exchange_b.to_account_info().clone(),
+            exchange_a: accounts.exchange_a.to_account_info(),
+            exchange_b: accounts.exchange_b.to_account_info(),
         };
         CpiContext::new(
-            accounts.exchange_program.to_account_info().clone(),
+            accounts.exchange_program.to_account_info(),
             cpi_accounts,
         )
     }

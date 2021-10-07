@@ -39,8 +39,8 @@ pub mod exchange {
         exchange.token_c = token_c;
         exchange.fee = fee;
         let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        //token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
-        //token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
+        token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
+        token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
         // TODO: C authority
         Ok(())
     }
@@ -231,7 +231,6 @@ pub mod exchange {
 
 #[derive(Accounts)]
 pub struct Create<'info> {
-    pub authority: AccountInfo<'info>,
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     pub factory: AccountInfo<'info>,
@@ -322,18 +321,18 @@ pub struct Swap<'info> {
 impl<'info> Create<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_a.to_account_info().clone(),
-            current_authority: self.exchange.to_account_info().clone(),
+            account_or_mint: self.exchange_a.to_account_info(),
+            current_authority: self.exchange.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_b.to_account_info().clone(),
-            current_authority: self.exchange.to_account_info().clone(),
+            account_or_mint: self.exchange_b.to_account_info(),
+            current_authority: self.exchange.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+        CpiContext::new(self.token_program.clone(), cpi_accounts)
     }
 }
 
@@ -341,20 +340,20 @@ impl<'info> Create<'info> {
 impl<'info> AddLiquidity<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_a.to_account_info().clone(),
-            to: self.exchange_a.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            from: self.user_a.to_account_info(),
+            to: self.exchange_a.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info().clone(),
-            to: self.exchange_b.to_account_info().clone(),
-            authority: self.authority.to_account_info().clone(),
+            from: self.user_b.to_account_info(),
+            to: self.exchange_b.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
