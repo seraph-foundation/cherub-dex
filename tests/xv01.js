@@ -4,6 +4,10 @@ const fs = require('fs');
 const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 
+const exchangeIdl = require('../target/idl/exchange.json');
+const factoryIdl = require('../target/idl/factory.json');
+const pythIdl = require('../target/idl/pyth.json');
+
 const { SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
 
 describe('XV01', () => {
@@ -11,8 +15,6 @@ describe('XV01', () => {
 
   const provider = anchor.getProvider();
 
-  // For now, the workspace feature is only available when running the anchor test command,
-  // which will automatically build, deploy, and test all programs against a localnet in one command.
   const factory = anchor.workspace.Factory;
   const exchange = anchor.workspace.Exchange;
   const pyth = anchor.workspace.Pyth;
@@ -39,17 +41,6 @@ describe('XV01', () => {
   const traderAccount = anchor.web3.Keypair.generate();
   const pythAccount = anchor.web3.Keypair.generate();
 
-  fs.writeFile('./app/src/accounts-localnet.json', JSON.stringify({
-    factory: factoryAccount.publicKey.toString(),
-    exchange: exchangeAccount.publicKey.toString(),
-    trader: traderAccount.publicKey.toString(),
-    pyth: pythAccount.publicKey.toString(),
-  }), 'utf8', (err) => {
-    if (err) {
-      console.log(`Error writing file: ${err}`);
-    }
-  });
-
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
 
@@ -60,6 +51,17 @@ describe('XV01', () => {
   let traderTokenAccountA = null;
   let traderTokenAccountB = null;
   let traderTokenAccountC = null;
+
+  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
+  fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
+  fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
+
+  fs.writeFileSync('./app/src/accounts-localnet.json', JSON.stringify({
+    factory: factoryAccount.publicKey.toString(),
+    exchange: exchangeAccount.publicKey.toString(),
+    trader: traderAccount.publicKey.toString(),
+    pyth: pythAccount.publicKey.toString(),
+  }));
 
   it('State initialized', async () => {
     await provider.connection.confirmTransaction(
@@ -176,7 +178,7 @@ describe('XV01', () => {
     console.log('Your transaction signature', tx);
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-    console.log(factoryAccountInfo.tokenCount.toNumber());
+
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString());
   });

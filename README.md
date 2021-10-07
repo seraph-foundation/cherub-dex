@@ -1,18 +1,18 @@
 # XV01 Protocol
 
-Perpetual swaps vAMM with protocol-owned liquidity for high-yield, rebased cryptodollars via XV01
+Perpetual swaps vAMM with protocol-owned liquidity for high-yield, rebased XV01 cryptodollars
 
 **Features**
 
-- 100x leverage perpetual future swaps virtual AMM with 0 impermanent loss and high-fidelity on-chain indexing
-- Provide or access deep, protocol-owned liquidity
-- DAO protocol governance based on high-yield, rebased cryptodollars via XV01
+- Trade 100x leverage perpetual future swaps with zero impermanent loss and high-fidelity on-chain indexing
+- Access or provide deep, protocol-owned liquidity
+- DAO protocol governance based on high-yield, rebased XV01 cryptodollars
 
 ## Development
 
 **Requirements**
 
-- Anchor 0.17.0
+- Anchor 0.16.2
 - Solana 1.7.12
 - Node 14.18.0
 
@@ -22,7 +22,6 @@ Make sure cluster is set to `localnet` in `Anchor.toml`.
 
 ```bash
 anchor test --detach  # Run in a eparate terminal
-node copyIdl.js
 cd app && yarn start
 ```
 
