@@ -204,8 +204,9 @@ function App() {
 
   return (
     <Layout className='App Dark'>
-      <Alert type='warning' className='Dark Alert' closable
-        message='You are currently using an unaudited piece of software. Use at your own risk.' banner/>
+      { false ?
+      <Alert type='info' className='Dark Alert' closable
+      message='You are currently using an unaudited piece of software. Use at your own risk.' banner/> : ''}
       <Header className='Header Dark'>
         <Row>
           <Col span={5}>
@@ -241,23 +242,6 @@ function App() {
       <Layout className='Layout Dark'>
         <Content>
           <div>
-            <br/>
-            <br/>
-            { !wallet.connected ? (
-              <>
-                <Row>
-                  <Col span={12}>
-                    <Button className='ConnectWallet'
-                      onClick={() => (e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
-                      type='primary' size='large'>Connect Wallet</Button>
-                  </Col>
-                  <Col span={12}>
-                    <Button className='LearnMore Dark' ghost size='large'
-                      onClick={() => window.open('https://www.github.com/xv01-finance/xv01-protocol', '_blank')}>Learn More</Button>
-                  </Col>
-                </Row>
-              </>
-            ) : <Title className='Title Dark Balance' level={2}>Balance: {balance} SOL</Title> }
             <br/>
             <br/>
             { menu === 'dashboard' ? (
