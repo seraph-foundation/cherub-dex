@@ -28,7 +28,7 @@ const factoryPublicKey = new PublicKey(accounts.factory);
 const exchangePublicKey = new PublicKey(accounts.exchange);
 const pythPublicKey = new PublicKey(accounts.pyth);
 
-const wallets = [getPhantomWallet()]
+const wallets = [getPhantomWallet()];
 const opts = { preflightCommitment: 'processed' };
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const name = 'xv01';
@@ -98,7 +98,7 @@ const governProposals = [
 
 const tradeAssets = ['SOL', 'BTC', 'XV01'];
 
-const live = false;
+const showBanner = false;
 
 function App() {
   const [balance, setBalance] = useState(0);
@@ -134,21 +134,9 @@ function App() {
   );
 
   const assetTitleModal = (
-    <a className='AssetTitleModal' onClick={() => setIsTradeAssetModalVisible(true)}>
+    <Button className='AssetTitleModal' type='link' onClick={() => setIsTradeAssetModalVisible(true)}>
       {tradeAsset} <DownOutlined/>
-    </a>
-  );
-
-  const stakeOptions = (
-    <Select defaultValue={name.toUpperCase()} className='select-before'>
-      {tradeAssets.map((asset, index) => <Option key={asset} value={asset}>{asset}</Option>)}
-    </Select>
-  );
-
-  const tradeAssetOptions = (
-    <Select defaultValue={tradeAssets[0]} onChange={() => setTradeAsset()} className='select-before'>
-      {tradeAssets.map((asset, index) => <Option key={asset} value={asset}>{asset}</Option>)}
-    </Select>
+    </Button>
   );
 
   const tradeStatsBar = (
@@ -202,11 +190,6 @@ function App() {
     message.info('Unable to connect to network');
   }
 
-  function onMenuClick(e) {
-    setMenu(e.key);
-    window.location.href = '/#/' + e.key;
-  }
-
   useEffect(() => {
     getProviderCallback().then(function(provider) {
       if (wallet.connected && !balance) {
@@ -244,7 +227,7 @@ function App() {
 
   return (
     <Layout className='App Dark'>
-      { live ?
+      { showBanner ?
       <Alert type='info' className='Dark Alert' closable
         message='You are currently using an unaudited piece of software. Use at your own risk.' banner/> : ''
       }
@@ -256,7 +239,8 @@ function App() {
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
-            <Menu className='Menu Dark' onClick={onMenuClick} selectedKeys={[menu]} mode='horizontal'>
+            <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
+              mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
@@ -443,8 +427,17 @@ function App() {
         </Content>
       </Layout>
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
-      <Modal title='Assets' footer={null} visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
-        <p>Some contents...</p>
+      <Modal title='Assets' footer={null}
+        visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
+        <List
+          itemLayout='horizontal'
+          dataSource={tradeAssets}
+          renderItem={asset => (
+            <List.Item>
+              <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); setIsTradeAssetModalVisible(false)}}/>
+            </List.Item>
+          )}
+        />
       </Modal>
     </Layout>
   );
