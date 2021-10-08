@@ -163,9 +163,19 @@
     display: none;
 }
 
-.Dark.ant-radio-button-wrapper, .Dark.ant-radio-button-wrapper:hover {
+.Dark > .ant-radio-button-wrapper {
     background-color: #1f1f1f;
     color: rgba(255, 255, 255, 0.65);
+}
+
+.ColCentered {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.AssetTitleModal {
+    color: white;
 }
 
 .CheckCircleOutlined {
@@ -197,6 +207,23 @@
 }
 
 /* Ant */
+.ant-modal-content, .ant-modal-header {
+    background-color: #1f1f1f;
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.ant-modal-title {
+    color: white !important;
+}
+
+.ant-modal-header {
+    border-bottom: none;
+}
+
+.anticon.anticon-close.ant-modal-close-icon {
+    color: white;
+}
+
 .ant-select-dropdown,
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled)
 {
