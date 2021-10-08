@@ -1,7 +1,7 @@
 import {
   Alert, Button, Card, Col, Dropdown, Input, Layout, List, Menu, Radio, Row, Select, Slider, Steps, Typography, message
 } from 'antd';
-import { SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { DownOutlined, SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
@@ -33,7 +33,7 @@ const opts = { preflightCommitment: 'processed' };
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const name = 'xv01';
 const marketCap = '130,000';
-const price = '33';
+const price = '33.51';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
 const routes = ['dashboard', 'trade', 'stake', 'govern'];
@@ -107,7 +107,7 @@ function App() {
   const [stakeCard, setStakeCard] = useState('stake');
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeDirection, setTradeDirection] = useState('long');
-  const [tradeAmount, setTradeAmount] = useState(0);
+  const [tradeQuantity, setTradeQuantity] = useState(0);
   const [tradeCard, setTradeCard] = useState('trade');
   const [leverage, setLeverage] = useState(1);
   const [balance, setBalance] = useState(0);
@@ -142,6 +142,37 @@ function App() {
     <Select defaultValue={tradeAssets[0]} onChange={() => setTradeAsset()} className='select-before'>
       {tradeAssets.map((asset, index) => <Option key={asset} value={asset}>{asset}</Option>)}
     </Select>
+  );
+
+  const tradeStatsBar = (
+    <Row className='TradeStatsBar'>
+      <Col span={3}></Col>
+      <Col span={3}>
+        <p><small>Market</small></p>
+        <Title level={4} className='Title Dark Green'>55,534.20</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H Change %</small></p>
+        <Title level={4} className='Title Dark Green'>+2.67%</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H High</small></p>
+        <Title level={4} className='Title Dark'>56,238.50</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H Low</small></p>
+        <Title level={4} className='Title Dark'>53,384.50</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H Turnaround</small></p>
+        <Title level={4} className='Title Dark'>64,848.57</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>Funding Rate / Countdown</small></p>
+        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / 04:26:40</Title>
+      </Col>
+      <Col span={3}></Col>
+    </Row>
   );
 
   async function getProvider() {
@@ -218,8 +249,7 @@ function App() {
             </div>
           </Col>
           <Col span={14} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center'}}>
-            <Menu className='Menu Dark' onClick={onMenuClick}
-              selectedKeys={[menu]} mode='horizontal'>
+            <Menu className='Menu Dark' onClick={onMenuClick} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
@@ -288,52 +318,56 @@ function App() {
               </Row>
             ) : '' }
             { menu === 'trade' ? (
-              <Row>
-                <Col span={6}></Col>
-                { tradeCard === 'trade' ?
-                <>
-                  <Col span={8} className='Cards'>
+              <>
+                {tradeStatsBar}
+                <br/>
+                <Row>
+                  <Col span={6}></Col>
+                  { tradeCard === 'trade' ?
+                  <>
+                    <Col span={8} className='Cards'>
+                      <div className='site-card-border-less-wrapper'>
+                        <Card title={<>{tradeAsset} <DownOutlined/></>} className='Card Dark' bordered={false}
+                          extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
+                          <p><strong>Quantity</strong></p>
+                          <Input className='TradeInput Input Dark'
+                            onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} value={tradeQuantity} />
+                          <br/>
+                          <p>Your current balance is <strong>{balance}</strong></p>
+                          <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)}
+                            className='RadioGroup Dark' optionType='button' buttonStyle='solid' value={tradeDirection} />
+                          <br/>
+                          <br/>
+                          <p><strong>{leverage}x Leverage</strong></p>
+                          <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setTradeStep(2)}} />
+                          <br/>
+                          <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
+                            Approve
+                          </Button>
+                        </Card>
+                      </div>
+                    </Col>
+                    <Col span={1}></Col>
+                    <Col span={3}>
+                      <Steps direction='vertical' current={tradeStep}>
+                        <Step key='set' title='Quantity'
+                          description=<div>Your order amount of <span className='Green'>{tradeQuantity} {tradeAsset}</span></div>/>
+                        <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
+                        <Step key='order' title='Approve' description='Instantly filled'/>
+                      </Steps>
+                    </Col>
+                  </> :
+                  <Col span={12} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
-                      <Card title='Trade' className='Card Dark' bordered={false}
-                        extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
-                        <p><strong>Amount</strong></p>
-                        <Input className='TradeInput Input Dark' addonBefore={tradeAssetOptions}
-                          onChange={(e) => setTradeStep(1) && setTradeAmount(e.target.value)} value={tradeAmount} />
-                        <br/>
-                        <p>Your current balance is <strong>{balance}</strong></p>
-                        <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)} className='RadioGroup Dark'
-                          optionType='button' buttonStyle='solid' value={tradeDirection} />
-                        <br/>
-                        <br/>
-                        <p><strong>{leverage}x Leverage</strong></p>
-                        <Slider defaultValue={1} min={1} onAfterChange={(e) => setLeverage(e) && setTradeStep(2)} />
-                        <br/>
-                        <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
-                          Approve
-                        </Button>
+                      <Card title={<>{tradeAsset} <DownOutlined/></>} className='Card Dark' bordered={false}
+                        extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
                       </Card>
                     </div>
                   </Col>
-                  <Col span={1}></Col>
-                  <Col span={3}>
-                    <Steps direction='vertical' current={tradeStep}>
-                      <Step key='set' title='Amount'
-                        description=<div>Your order amount of <span className='Currency'>{tradeAmount} {tradeAsset}</span></div>/>
-                      <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
-                      <Step key='order' title='Approve' description='Instantly filled'/>
-                    </Steps>
-                  </Col>
-                </> :
-                <Col span={12} className='Cards'>
-                  <div className='site-card-border-less-wrapper'>
-                    <Card title='Positions' className='Card Dark' bordered={false}
-                      extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
-                    </Card>
-                  </div>
-                </Col>
-                }
-                <Col span={6}></Col>
-              </Row>
+                  }
+                  <Col span={6}></Col>
+                </Row>
+              </>
             ) : '' }
             { menu === 'stake' ? (
               <Row>
@@ -342,21 +376,21 @@ function App() {
                 <>
                   <Col span={4}>
                     <Steps direction='vertical' current={stakeStep}>
-                      <Step key='set' title='Amount'
+                      <Step key='set' title='Quantity'
                         description=<div>
-                          Your deposit of <span className='Currency'>{stakeDeposit}.00 {name.toUpperCase()}</span> is
-                          set to earn <span className='Currency'>12% APY</span></div> />
+                          Your deposit of <span className='Green'>{stakeDeposit}.00 {name.toUpperCase()}</span> is
+                          set to earn <span className='Green'>12% APY</span></div> />
                       <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
                       <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
                     </Steps>
                   </Col>
                   <Col span={1}></Col>
-                  <Col span={8} className='Cards'>
+                  <Col span={7} className='Cards'>
                     <div className='site-card-border-less-wrapper'>
-                      <Card className='Card Dark' title='Stake' bordered={false}
+                      <Card className='Card Dark' title={<>{tradeAsset} <DownOutlined/></>} bordered={false}
                         extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
-                        <Input className='StakeInput Input Dark' addonBefore={stakeOptions}
-                          onChange={(e) => setStakeStep(1) && setStakeDeposit(e.target.value)} value={stakeDeposit} />
+                        <Input className='StakeInput Input Dark'
+                          onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} value={stakeDeposit} />
                         <br/>
                         <p>Your current balance is <strong>{balance}</strong></p>
                         <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
@@ -366,7 +400,7 @@ function App() {
                   </Col>
                 </> :
                 <Col span={12} className='Cards'>
-                  <Card className='Card Dark' title='Positions' bordered={false}
+                  <Card className='Card Dark' title={<>{tradeAsset} <DownOutlined/></>} bordered={false}
                     extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
                   </Card>
                 </Col>
@@ -400,7 +434,7 @@ function App() {
           </div>
         </Content>
       </Layout>
-      <Footer className='Footer'><code className='CurrentBlock'><small>• {blockHeight}</small></code></Footer>
+      <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
     </Layout>
   );
 }

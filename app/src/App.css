@@ -17,7 +17,7 @@
     border-bottom: transparent;
 }
 
-.Input.Dark > span > .ant-input-group-addon, .Input.Dark > span > .ant-input {
+.Input.Dark > span > .ant-input-group-addon, .ant-input {
     border-color: #262626;
     background-color: #1f1f1f;
     color: rgba(255, 255, 255, 0.65) !important;
@@ -97,8 +97,12 @@
     text-align: right;
 }
 
-.Currency {
-    color: #00c805;
+.Green {
+    color: #00c805 !important;
+}
+
+.Yellow {
+    color: #ffb11a;
 }
 
 .ConnectWalletButton {
@@ -118,12 +122,12 @@
     display: none !important;
 }
 
-.CurrentBlock {
-    color: green;
+.StakeInput {
+    text-align: right;
 }
 
-.PoolInput {
-    text-align: right;
+.BlockHeight {
+    color: white;
 }
 
 .ApproveButton {
@@ -159,7 +163,7 @@
     display: none;
 }
 
-.Dark .ant-radio-button-wrapper, .Dark.ant-radio-button-wrapper:hover {
+.Dark.ant-radio-button-wrapper, .Dark.ant-radio-button-wrapper:hover {
     background-color: #1f1f1f;
     color: rgba(255, 255, 255, 0.65);
 }
@@ -184,6 +188,14 @@
     text-align: left;
 }
 
+.TradeStatsBar {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.CardLink {
+    color: rgba(255, 255, 255, 0.65);
+}
+
 /* Ant */
 .ant-select-dropdown,
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled)
@@ -198,7 +210,7 @@
 }
 
 .ant-list-item {
-    border-bottom: 1px solid black !important;
+    border-bottom: 1px solid #1f1f1f !important;
 }
 
 .ant-list-item:last-child {
@@ -237,10 +249,6 @@
 
 .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon {
     color: #1f1f1f;
-}
-
-.CardLink {
-    color: rgba(255, 255, 255, 0.65);
 }
 
 .ant-list-item-meta-title {
