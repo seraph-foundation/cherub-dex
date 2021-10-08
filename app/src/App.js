@@ -21,19 +21,21 @@ const { Content, Footer, Header } = Layout;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const factoryPublicKey = new PublicKey(accounts.factory);
 const exchangePublicKey = new PublicKey(accounts.exchange);
+const factoryPublicKey = new PublicKey(accounts.factory);
 const pythPublicKey = new PublicKey(accounts.pyth);
 
-const wallets = [getPhantomWallet()];
-const opts = { preflightCommitment: 'processed' };
-const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
-const name = 'xv01';
-const marketCap = '130,000';
-const price = '33.51';
 const circulatingSupply = '1000122 / 1239332';
 const currentIndex = '18.7 ' + name.toUpperCase();
+const marketCap = '130,000';
+const name = 'xv01';
+const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
+const opts = { preflightCommitment: 'processed' };
+const price = '33.51';
 const routes = ['dashboard', 'trade', 'stake', 'govern'];
+const showBanner = false;
+const tradeAssets = ['SOL', 'BTC', 'XV01'];
+const wallets = [getPhantomWallet()];
 
 const tradeOptions = [
   { label: 'Buy / Long', value: 'long' },
@@ -92,10 +94,6 @@ const governProposals = [
     icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
   }
 ];
-
-const tradeAssets = ['SOL', 'BTC', 'XV01'];
-
-const showBanner = false;
 
 function App() {
   const [balance, setBalance] = useState(0);
