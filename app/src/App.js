@@ -1,6 +1,4 @@
-import {
-  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message
-} from 'antd';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Slider, Steps, Typography, message } from 'antd';
 import { DownOutlined, SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -20,7 +18,6 @@ import pythIdl from './pyth.json';
 import accounts from './accounts-localnet.json';
 
 const { Content, Footer, Header } = Layout;
-const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
