@@ -386,7 +386,7 @@ function App() {
     <Layout className='App Dark'>
       { showBanner ?
       <Alert type='info' className='Dark Alert' closable banner
-        message='You are currently using an unaudited piece of software. Use at your own risk.' /> : ''
+        message='You are currently using an unaudited piece of software. Use at your own risk.' /> : null
       }
       <Header className='Header Dark'>
         <Row>
@@ -407,6 +407,7 @@ function App() {
           <Col span={5} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
+              <WalletMultiButton className='WalletMultiButton'/>
               <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
                 type='link'>Connect Wallet</Button>
             </> :
