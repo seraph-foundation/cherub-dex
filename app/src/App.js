@@ -153,19 +153,13 @@ function App() {
 
   const settingsMenu = (
     <Menu>
-      <Menu.Item key='github' onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>
-        GitHub
-      </Menu.Item>
-      <Menu.Item key='discord'>
-        Discord
-      </Menu.Item>
+      <Menu.Item key='github' onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>GitHub</Menu.Item>
+      <Menu.Item key='discord'>Discord</Menu.Item>
     </Menu>
   );
 
   const assetTitleModal = (
-    <Button className='AssetTitleModal' type='link' onClick={() => setIsTradeAssetModalVisible(true)}>
-      {tradeAsset} <DownOutlined/>
-    </Button>
+    <Button className='AssetTitleModal' type='link' onClick={() => setIsTradeAssetModalVisible(true)}>{tradeAsset} <DownOutlined/></Button>
   );
 
   const tradeStatsBar = (
@@ -206,16 +200,10 @@ function App() {
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title='Govern' bordered={false}
             extra={<a href='/#/govern' className='CardLink' onClick={(e) => console.log(e)}>Create Proposal</a>}>
-            <List
-              itemLayout='horizontal'
-              dataSource={governProposals}
+            <List itemLayout='horizontal' dataSource={governProposals}
               renderItem={item => (
-                <List.Item>
-                  <List.Item.Meta title={item.title} description={item.description} />
-                  {item.icon}
-                </List.Item>
-              )}
-            />
+                <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
+              )}/>
           </Card>
         </div>
       </Col>
@@ -419,7 +407,6 @@ function App() {
           <Col span={5} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
-              <WalletMultiButton className='WalletMultiButton'/>
               <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
                 type='link'>Connect Wallet</Button>
             </> :
@@ -437,10 +424,10 @@ function App() {
           <div>
             <br/>
             <br/>
-            { menu === 'dashboard' ? dashboardView : <></> }
-            { menu === 'trade' ? tradeView : <></> }
-            { menu === 'stake' ? stakeView : <></> }
-            { menu === 'govern' ? governView : <></> }
+            { menu === 'dashboard' ? dashboardView : null }
+            { menu === 'trade' ? tradeView : null }
+            { menu === 'stake' ? stakeView : null }
+            { menu === 'govern' ? governView : null }
           </div>
         </Content>
       </Layout>
