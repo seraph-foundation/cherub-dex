@@ -7,6 +7,7 @@ import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-ad
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Token } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
 import './App.css';
@@ -25,18 +26,13 @@ const exchangePublicKey = new PublicKey(accounts.exchange);
 const factoryPublicKey = new PublicKey(accounts.factory);
 const pythPublicKey = new PublicKey(accounts.pyth);
 
-const circulatingSupply = '1000122 / 1239332';
-const marketCap = '130,000';
 const name = 'xv01';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const price = '33.51';
 const routes = ['dashboard', 'trade', 'stake', 'govern'];
 const showBanner = false;
 const tradeAssets = ['SOL', 'BTC', 'XV01'];
 const wallets = [getPhantomWallet()];
-
-const currentIndex = '18.7 ' + name.toUpperCase();
 
 const tradeOptions = [
   { label: 'Buy / Long', value: 'long' },
@@ -100,9 +96,13 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
+  const [circulatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
+  const [marketCap, setMarketCap] = useState(0);
   const [menu, setMenu] = useState('');
+  const [price, setCurrentPrice] = useState(0);
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
@@ -116,7 +116,40 @@ function App() {
   const wallet = useWallet()
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
+
+  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
+
+  async function getProvider() {
+    const connection = new Connection(network, opts.preflightCommitment);
+    return new Provider(connection, wallet, opts.preflightCommitment);
+  }
+
+  async function getFactoryData() {
+    const provider = await getProviderCallback();
+    const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+    try {
+      const account = await program.account.factoryData.fetch(factoryPublicKey);
+      setTokenCount(account.tokenCount.toNumber());
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
+  async function getDashboard() {
+    const provider = await getProviderCallback();
+    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    try {
+      const account = await program.account.exchangeData.fetch(exchangePublicKey);
+      //const tokenCAccount = await account.tokenA.toString());
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
+  function networkErrorMessage() {
+    message.info('Unable to connect to network');
+  }
 
   const settingsMenu = (
     <Menu>
@@ -166,25 +199,163 @@ function App() {
     </Row>
   );
 
-  async function getProvider() {
-    const connection = new Connection(network, opts.preflightCommitment);
-    return new Provider(connection, wallet, opts.preflightCommitment);
-  }
+  const governView = (
+    <Row>
+      <Col span={2}></Col>
+      <Col span={20} className='Cards'>
+        <div className='site-card-border-less-wrapper'>
+          <Card className='Card Dark' title='Govern' bordered={false}
+            extra={<a href='/#/govern' className='CardLink' onClick={(e) => console.log(e)}>Create Proposal</a>}>
+            <List
+              itemLayout='horizontal'
+              dataSource={governProposals}
+              renderItem={item => (
+                <List.Item>
+                  <List.Item.Meta title={item.title} description={item.description} />
+                  {item.icon}
+                </List.Item>
+              )}
+            />
+          </Card>
+        </div>
+      </Col>
+      <Col span={2}></Col>
+    </Row>
+  );
 
-  async function getFactoryData() {
-    const provider = await getProviderCallback();
-    const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
-    try {
-      const account = await program.account.factoryData.fetch(factoryPublicKey);
-      setTokenCount(account.tokenCount.toNumber());
-    } catch (err) {
-      console.log('Transaction error: ', err);
-    }
-  }
+  const dashboardView = (
+    <Row>
+      <Col span={2}></Col>
+      <Col span={20} className='Cards'>
+        <div className='site-card-border-less-wrapper'>
+          <Card className='Card Dark' title='Dashboard' bordered={false}>
+            <Row>
+              <Col span={6}>
+                <p>Market Cap</p>
+                <Title level={3} className='Title Dark'>${marketCap}</Title>
+              </Col>
+              <Col span={6}>
+                <p>{name.toUpperCase()} Price</p>
+                <Title level={3} className='Title Dark'>${price}</Title>
+              </Col>
+              <Col span={6}>
+                <p>Circulating Supply (Total)</p>
+                <Title level={3} className='Title Dark'>{circulatingSupplyTotal}</Title>
+              </Col>
+              <Col span={6}>
+                <p>Current Index</p>
+                <Title level={3} className='Title Dark'>{currentIndex}</Title>
+              </Col>
+            </Row>
+            <Row>
+              <Col span={12}>
+                <p>Total Value Locked</p>
+                <Line height={100} data={tvlData} options={chartOptions}/>
+              </Col>
+              <Col span={12}>
+                <p>Market Value of Treasury Assets</p>
+                <Line height={100} data={treasuryData} options={chartOptions}/>
+              </Col>
+            </Row>
+          </Card>
+        </div>
+      </Col>
+      <Col span={2}></Col>
+    </Row>
+  );
 
-  function networkErrorMessage() {
-    message.info('Unable to connect to network');
-  }
+  const stakeView = (
+    <Row>
+      <Col span={6}></Col>
+      { stakeCard === 'stake' ?
+      <>
+        <Col span={4}>
+          <Steps direction='vertical' current={stakeStep}>
+            <Step key='set' title='Quantity'
+              description=<div>
+                Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
+                set to earn <span className='Green'>12% APY</span></div> />
+            <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
+            <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
+          </Steps>
+        </Col>
+        <Col span={1}></Col>
+        <Col span={7} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title={assetTitleModal} bordered={false}
+              extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
+              <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
+                onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
+              <br/>
+              <p>Your current balance is <strong>{balance}</strong></p>
+              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+                Approve</Button>
+            </Card>
+          </div>
+        </Col>
+      </> :
+      <Col span={12} className='Cards'>
+        <Card className='Card Dark' title={assetTitleModal} bordered={false}
+          extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
+        </Card>
+      </Col>
+      }
+      <Col span={6}></Col>
+    </Row>
+  );
+
+  const tradeView = (
+    <>
+      {tradeStatsBar}
+      <br/>
+      <Row>
+        <Col span={6}></Col>
+        { tradeCard === 'trade' ?
+        <>
+          <Col span={8} className='Cards'>
+            <div className='site-card-border-less-wrapper'>
+              <Card title={assetTitleModal} className='Card Dark' bordered={false}
+                extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
+                <p><strong>Quantity</strong></p>
+                <Input className='TradeInput Input Dark' value={tradeQuantity} placeholder='0'
+                  onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} />
+                <br/>
+                <p>Your current balance is <strong>{balance}</strong></p>
+                <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)} className='RadioGroup Dark'
+                  optionType='button' buttonStyle='solid' value={tradeDirection} />
+                <br/>
+                <br/>
+                <p><strong>{leverage}x Leverage</strong></p>
+                <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setTradeStep(2)}} />
+                <br/>
+                <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
+                  Approve
+                </Button>
+              </Card>
+            </div>
+          </Col>
+          <Col span={1}></Col>
+          <Col span={3}>
+            <Steps direction='vertical' current={tradeStep}>
+              <Step key='set' title='Quantity'
+                description=<div>Your order amount of <span className='Green'>{tradeQuantity} {tradeAsset}</span></div>/>
+              <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
+              <Step key='order' title='Approve' description='Instantly filled'/>
+            </Steps>
+          </Col>
+        </> :
+        <Col span={12} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card title={assetTitleModal} className='Card Dark' bordered={false}
+              extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
+            </Card>
+          </div>
+        </Col>
+        }
+        <Col span={6}></Col>
+      </Row>
+    </>
+  );
 
   useEffect(() => {
     getProviderCallback().then(function(provider) {
@@ -219,13 +390,15 @@ function App() {
     }
 
     getFactoryDataCallback();
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback]);
+    getDashboardCallback();
+  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback,
+    getDashboardCallback]);
 
   return (
     <Layout className='App Dark'>
       { showBanner ?
-      <Alert type='info' className='Dark Alert' closable
-        message='You are currently using an unaudited piece of software. Use at your own risk.' banner/> : ''
+      <Alert type='info' className='Dark Alert' closable banner
+        message='You are currently using an unaudited piece of software. Use at your own risk.' /> : ''
       }
       <Header className='Header Dark'>
         <Row>
@@ -255,7 +428,7 @@ function App() {
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
-            <Dropdown className='Dropdown' overlay={settingsMenu}><SettingOutlined/></Dropdown>
+            <Dropdown className='Dropdown SettingsDropdown' overlay={settingsMenu}><SettingOutlined/></Dropdown>
           </Col>
         </Row>
       </Header>
@@ -264,170 +437,16 @@ function App() {
           <div>
             <br/>
             <br/>
-            { menu === 'dashboard' ? (
-              <Row>
-                <Col span={2}></Col>
-                <Col span={20} className='Cards'>
-                  <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Dashboard' bordered={false}>
-                      <Row>
-                        <Col span={6}>
-                          <p>Market Cap</p>
-                          <Title level={3} className='Title Dark'>${marketCap}</Title>
-                        </Col>
-                        <Col span={6}>
-                          <p>{name.toUpperCase()} Price</p>
-                          <Title level={3} className='Title Dark'>${price}</Title>
-                        </Col>
-                        <Col span={6}>
-                          <p>Circulating Supply</p>
-                          <Title level={3} className='Title Dark'>{circulatingSupply}</Title>
-                        </Col>
-                        <Col span={6}>
-                          <p>Current Index</p>
-                          <Title level={3} className='Title Dark'>{currentIndex}</Title>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col span={12}>
-                          <p>Total Value Locked</p>
-                          <Line height={100} data={tvlData} options={chartOptions}/>
-                        </Col>
-                        <Col span={12}>
-                          <p>Market Value of Treasury Assets</p>
-                          <Line height={100} data={treasuryData} options={chartOptions}/>
-                        </Col>
-                      </Row>
-                    </Card>
-                  </div>
-                </Col>
-                <Col span={2}></Col>
-              </Row>
-            ) : '' }
-            { menu === 'trade' ? (
-              <>
-                {tradeStatsBar}
-                <br/>
-                <Row>
-                  <Col span={6}></Col>
-                  { tradeCard === 'trade' ?
-                  <>
-                    <Col span={8} className='Cards'>
-                      <div className='site-card-border-less-wrapper'>
-                        <Card title={assetTitleModal} className='Card Dark' bordered={false}
-                          extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
-                          <p><strong>Quantity</strong></p>
-                          <Input className='TradeInput Input Dark' value={tradeQuantity}
-                            placeholder='0'
-                            onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} />
-                          <br/>
-                          <p>Your current balance is <strong>{balance}</strong></p>
-                          <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)}
-                            className='RadioGroup Dark' optionType='button' buttonStyle='solid' value={tradeDirection} />
-                          <br/>
-                          <br/>
-                          <p><strong>{leverage}x Leverage</strong></p>
-                          <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setTradeStep(2)}} />
-                          <br/>
-                          <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
-                            Approve
-                          </Button>
-                        </Card>
-                      </div>
-                    </Col>
-                    <Col span={1}></Col>
-                    <Col span={3}>
-                      <Steps direction='vertical' current={tradeStep}>
-                        <Step key='set' title='Quantity'
-                          description=<div>Your order amount of <span className='Green'>{tradeQuantity} {tradeAsset}</span></div>/>
-                        <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
-                        <Step key='order' title='Approve' description='Instantly filled'/>
-                      </Steps>
-                    </Col>
-                  </> :
-                  <Col span={12} className='Cards'>
-                    <div className='site-card-border-less-wrapper'>
-                      <Card title={assetTitleModal} className='Card Dark' bordered={false}
-                        extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
-                      </Card>
-                    </div>
-                  </Col>
-                  }
-                  <Col span={6}></Col>
-                </Row>
-              </>
-            ) : '' }
-            { menu === 'stake' ? (
-              <Row>
-                <Col span={6}></Col>
-                { stakeCard === 'stake' ?
-                <>
-                  <Col span={4}>
-                    <Steps direction='vertical' current={stakeStep}>
-                      <Step key='set' title='Quantity'
-                        description=<div>
-                          Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
-                          set to earn <span className='Green'>12% APY</span></div> />
-                      <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
-                      <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
-                    </Steps>
-                  </Col>
-                  <Col span={1}></Col>
-                  <Col span={7} className='Cards'>
-                    <div className='site-card-border-less-wrapper'>
-                      <Card className='Card Dark' title={assetTitleModal} bordered={false}
-                        extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
-                        <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
-                          onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
-                        <br/>
-                        <p>Your current balance is <strong>{balance}</strong></p>
-                        <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
-                          Approve</Button>
-                      </Card>
-                    </div>
-                  </Col>
-                </> :
-                <Col span={12} className='Cards'>
-                  <Card className='Card Dark' title={assetTitleModal} bordered={false}
-                    extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
-                  </Card>
-                </Col>
-                }
-                <Col span={6}></Col>
-              </Row>
-            ) : '' }
-            { menu === 'govern' ? (
-              <Row>
-                <Col span={2}></Col>
-                <Col span={20} className='Cards'>
-                  <div className='site-card-border-less-wrapper'>
-                    <Card className='Card Dark' title='Govern' bordered={false}
-                      extra={<a href='/#/govern' className='CardLink' onClick={(e) => console.log(e)}>Create Proposal</a>}>
-                      <List
-                        itemLayout='horizontal'
-                        dataSource={governProposals}
-                        renderItem={item => (
-                          <List.Item>
-                            <List.Item.Meta title={item.title} description={item.description} />
-                            {item.icon}
-                          </List.Item>
-                        )}
-                      />
-                    </Card>
-                  </div>
-                </Col>
-                <Col span={2}></Col>
-              </Row>
-            ) : '' }
+            { menu === 'dashboard' ? dashboardView : <></> }
+            { menu === 'trade' ? tradeView : <></> }
+            { menu === 'stake' ? stakeView : <></> }
+            { menu === 'govern' ? governView : <></> }
           </div>
         </Content>
       </Layout>
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
-      <Modal title='Assets' footer={null}
-        visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
-        <List
-          itemLayout='horizontal'
-          dataSource={tradeAssets}
+      <Modal title='Assets' footer={null} visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
+        <List itemLayout='horizontal' dataSource={tradeAssets}
           renderItem={asset => (
             <List.Item>
               <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); setIsTradeAssetModalVisible(false)}}/>
