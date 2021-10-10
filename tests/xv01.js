@@ -15,31 +15,25 @@ describe('XV01', () => {
 
   const provider = anchor.getProvider();
 
-  const factory = anchor.workspace.Factory;
   const exchange = anchor.workspace.Exchange;
+  const factory = anchor.workspace.Factory;
   const pyth = anchor.workspace.Pyth;
 
   let mintAuthority = provider.wallet;
+
   let mintA = null;
   let mintB = null;
-
-  const amountA = 100000;
-  const amountB = 100000;
-
-  const traderAmountA = 500;
-  const traderAmountB = 500;
-
-  const amountAirdrop = 50;
+  let mintC = null;
 
   const decimalsA = 18;
   const decimalsB = 18;
   const decimalsC = 18;
 
-  const payerAccount = anchor.web3.Keypair.generate();
-  const factoryAccount = anchor.web3.Keypair.generate();
   const exchangeAccount = anchor.web3.Keypair.generate();
-  const traderAccount = anchor.web3.Keypair.generate();
+  const factoryAccount = anchor.web3.Keypair.generate();
+  const payerAccount = anchor.web3.Keypair.generate();
   const pythAccount = anchor.web3.Keypair.generate();
+  const traderAccount = anchor.web3.Keypair.generate();
 
   let exchangeTokenAccountA = null;
   let exchangeTokenAccountB = null;
@@ -52,16 +46,17 @@ describe('XV01', () => {
   let traderTokenAccountB = null;
   let traderTokenAccountC = null;
 
-  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
+  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  fs.writeFileSync('./app/src/accounts-localnet.json', JSON.stringify({
-    factory: factoryAccount.publicKey.toString(),
-    exchange: exchangeAccount.publicKey.toString(),
-    trader: traderAccount.publicKey.toString(),
-    pyth: pythAccount.publicKey.toString(),
-  }));
+  const amountA = 100000;
+  const amountB = 100000;
+
+  const traderAmountA = 500;
+  const traderAmountB = 500;
+
+  const amountAirdrop = 50;
 
   it('State initialized', async () => {
     await provider.connection.confirmTransaction(
@@ -133,6 +128,17 @@ describe('XV01', () => {
       [mintAuthority.payer],
       traderAmountB
     );
+
+    // Useful for Anchor CLI and app
+    fs.writeFileSync('./app/src/accounts-localnet.json', JSON.stringify({
+      factory: factoryAccount.publicKey.toString(),
+      exchange: exchangeAccount.publicKey.toString(),
+      trader: traderAccount.publicKey.toString(),
+      pyth: pythAccount.publicKey.toString(),
+      mintA: mintA.publicKey.toString(),
+      mintB: mintB.publicKey.toString(),
+      mintC: mintC.publicKey.toString(),
+    }));
 
     let walletTokenAccountInfoA = await mintA.getAccountInfo(walletTokenAccountA);
     let walletTokenAccountInfoB = await mintB.getAccountInfo(walletTokenAccountB);

@@ -7,13 +7,14 @@ import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-ad
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Token } from '@solana/spl-token';
+import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
 import './App.css';
 
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
+// eslint-disable-next-line
 import pythIdl from './pyth.json';
 
 import accounts from './accounts-localnet.json';
@@ -24,6 +25,7 @@ const { Title } = Typography;
 
 const exchangePublicKey = new PublicKey(accounts.exchange);
 const factoryPublicKey = new PublicKey(accounts.factory);
+// eslint-disable-next-line
 const pythPublicKey = new PublicKey(accounts.pyth);
 
 const name = 'xv01';
@@ -96,16 +98,21 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
+  // eslint-disable-next-line
   const [circulatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  // eslint-disable-next-line
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
+  // eslint-disable-next-line
   const [marketCap, setMarketCap] = useState(0);
   const [menu, setMenu] = useState('');
+  // eslint-disable-next-line
   const [price, setCurrentPrice] = useState(0);
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
+  // eslint-disable-next-line
   const [tokenCount, setTokenCount] = useState(0);
   const [tradeCard, setTradeCard] = useState('trade');
   const [tradeDirection, setTradeDirection] = useState('long');
@@ -138,10 +145,13 @@ function App() {
 
   async function getDashboard() {
     const provider = await getProviderCallback();
-    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    const exchangeProgram = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
-      const account = await program.account.exchangeData.fetch(exchangePublicKey);
-      //const tokenCAccount = await account.tokenA.toString());
+      // eslint-disable-next-line
+      const account = await exchangeProgram.account.exchangeData.fetch(exchangePublicKey);
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
+      const mintCInfo = await tokenC.getMintInfo();
+      setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -199,7 +209,7 @@ function App() {
       <Col span={20} className='Cards'>
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title='Govern' bordered={false}
-            extra={<a href='/#/govern' className='CardLink' onClick={(e) => console.log(e)}>Create Proposal</a>}>
+            extra={<a href='/#/govern' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
             <List itemLayout='horizontal' dataSource={governProposals}
               renderItem={item => (
                 <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
@@ -454,6 +464,6 @@ const AppWithProvider = () => (
       </WalletModalProvider>
     </WalletProvider>
   </ConnectionProvider>
-)
+);
 
 export default AppWithProvider;
