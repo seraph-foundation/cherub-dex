@@ -206,10 +206,8 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        {
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
-        }
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         Ok(())

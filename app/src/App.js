@@ -26,9 +26,8 @@ const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const exchange1PublicKey = new PublicKey(accounts.exchanges[0]);
-  // eslint-disable-next-line
-const exchange2PublicKey = new PublicKey(accounts.exchanges[1]);
+const exchange0PublicKey = new PublicKey(accounts.exchanges[0]);
+const exchange1PublicKey = new PublicKey(accounts.exchanges[1]);
 const factoryPublicKey = new PublicKey(accounts.factory);
 // eslint-disable-next-line
 const pythPublicKey = new PublicKey(accounts.pyth);
@@ -39,7 +38,7 @@ const network = window.location.origin === 'http://localhost:3000' ? 'http://127
 const opts = { preflightCommitment: 'processed' };
 const routes = ['dashboard', 'trade', 'pool', 'stake', 'dao'];
 const showBanner = false;
-const tradeAssets = ['SOL', 'BTC', 'XV01'];
+const tradeAssets = ['XV01', 'SOL'];
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
 const tradeOptions = [
@@ -105,13 +104,15 @@ function App() {
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
   const [cCirculatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  const [cCurrentPrice, setCCurrentPrice] = useState(0);
+  const [cMarketCap, setCMarketCap] = useState(0);
   const [countdown, setCountdown] = useState('00:00:00');
   const [countdownInterval, setCountdownInterval] = useState(false);
+  const [currentExchange, setCurrentExchange] = useState();
+  const [currentMarket, setCurrentMarket] = useState();
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
-  const [cMarketCap, setCMarketCap] = useState(0);
   const [menu, setMenu] = useState('');
-  const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
@@ -127,7 +128,7 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback]);
+  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback, currentMarket]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
 
   async function getProvider() {
@@ -153,10 +154,14 @@ function App() {
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
       setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
+      const exchangeData0Account = await exchangeProgram.account.exchangeData.fetch(exchange0PublicKey);
+      setCCurrentPrice(exchangeData0Account.lastPrice.toNumber());
+      setCMarketCap(exchangeData0Account.lastPrice.toNumber() * exchangeData0Account.lastPrice.toNumber());
 
-      const exchangeData1Account = await exchangeProgram.account.exchangeData.fetch(exchange1PublicKey);
-      setCCurrentPrice(exchangeData1Account.lastPrice.toNumber());
-      setCMarketCap(exchangeData1Account.lastPrice.toNumber() * exchangeData1Account.lastPrice.toNumber());
+      if (currentMarket === undefined) {
+        // First exchange is always XV01
+        setCurrentMarket(exchangeData0Account.lastPrice.toNumber());
+      }
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -164,6 +169,23 @@ function App() {
 
   function networkErrorMessage() {
     message.info('Unable to connect to network');
+  }
+
+  async function getTrade(asset) {
+    let exchangePublicKey;
+    if (asset === tradeAssets[0]) {
+      exchangePublicKey = exchange0PublicKey;
+    } else {
+      exchangePublicKey = exchange1PublicKey;
+    }
+    const provider = await getProviderCallback();
+    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    try {
+      const account = await program.account.exchangeData.fetch(exchangePublicKey);
+      console.log(account);
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
   }
 
   function calculateCountdown() {
@@ -232,7 +254,7 @@ function App() {
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market</small></p>
-        <Title level={4} className='Title Dark Green'>55,534.20</Title>
+        <Title level={4} className='Title Dark Green'>{currentMarket}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change %</small></p>
@@ -427,10 +449,15 @@ function App() {
       window.location.href = '/#/' + routes[0];
     }
 
+    if (currentExchange === undefined) {
+      // First exchange is always XV01
+      setCurrentExchange(accounts.exchanges[0]);
+    }
+
     getFactoryDataCallback();
     getDashboardCallback();
   }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback,
-    getDashboardCallback, countdownInterval]);
+    getDashboardCallback, countdownInterval, currentExchange, setCurrentExchange]);
 
   return (
     <Layout className='App Dark'>
@@ -489,7 +516,7 @@ function App() {
         <List itemLayout='horizontal' dataSource={tradeAssets} forceRender={true}
           renderItem={asset => (
             <List.Item className='Asset ListItem'>
-              <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); setIsTradeAssetModalVisible(false)}}/>
+              <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); getTrade(asset); setIsTradeAssetModalVisible(false)}}/>
             </List.Item>
           )}
         />
