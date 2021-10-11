@@ -233,7 +233,7 @@ describe('XV01', () => {
 
   it('Factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode(mint0A.publicKey))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const fee = new anchor.BN(3);
