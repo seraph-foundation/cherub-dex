@@ -180,10 +180,10 @@ function App() {
 
   function setDummyTradeData(lastPrice) {
     setCurrentMarket(lastPrice);
-    setHigh24H((lastPrice * (Math.random() / 100 + 1)).toFixed(2));
-    setLow24H((lastPrice * (Math.random() / 100 + 1)).toFixed(2));
-    setTurnaround24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
-    setChange24H((Math.random() / 100 + 2).toFixed(2));
+    setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
+    setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
+    setTurnaround24H((lastPrice * (Math.random() / 100 + 1.3)).toFixed(2));
+    setChange24H('+' + (Math.random() / 100 + 2).toFixed(2) + '%');
     setFundingRate((Math.random() / 100).toFixed(4));
   }
 
@@ -199,9 +199,7 @@ function App() {
     const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       const account = await program.account.exchangeData.fetch(exchangePublicKey);
-      setCurrentMarket(account.lastPrice.toNumber());
-      setHigh24H(account.lastPrice.toNumber() * (Math.random() / 100 + 1));
-      setLow24H(account.lastPrice.toNumber() * (Math.random() / 100 + 1));
+      setDummyTradeData(account.lastPrice.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -276,7 +274,7 @@ function App() {
         <Title level={4} className='Title Dark Green'>{currentMarket}</Title>
       </Col>
       <Col span={3}>
-        <p><small>24H Change %</small></p>
+        <p><small>24H Change</small></p>
         <Title level={4} className='Title Dark Green'>{change24H}</Title>
       </Col>
       <Col span={3}>
