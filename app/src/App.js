@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { getPhantomWallet } from '@solana/wallet-adapter-wallets';
+import { getPhantomWallet, getSolletWallet, getSlopeWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
@@ -34,7 +34,7 @@ const opts = { preflightCommitment: 'processed' };
 const routes = ['dashboard', 'trade', 'pool', 'stake', 'dao'];
 const showBanner = false;
 const tradeAssets = ['SOL', 'BTC', 'XV01'];
-const wallets = [getPhantomWallet()];
+const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
 const tradeOptions = [
   { label: 'Buy / Long', value: 'long' },

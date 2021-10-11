@@ -55,6 +55,7 @@
 .Card.Dark {
     color: rgba(255, 255, 255, 0.65) !important;
     background-color: #141414 !important;
+    border-radius: 10px;
 }
 
 .Title.Dark {
