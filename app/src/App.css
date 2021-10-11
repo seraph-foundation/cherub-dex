@@ -233,6 +233,9 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
+.ant-radio-button-wrapper:hover {
+    border-color: #1890ff;
+}
 
 .ant-select-dropdown,
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
