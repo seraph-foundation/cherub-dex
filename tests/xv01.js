@@ -23,7 +23,6 @@ describe('XV01', () => {
 
   let mint0A = null;
   let mint0B = null;
-
   let mint1A = null;
   let mint1B = null;
 
@@ -31,7 +30,6 @@ describe('XV01', () => {
 
   const decimals0A = 18;
   const decimals0B = 18;
-
   const decimals1A = 0;
   const decimals1B = 0;
 
@@ -67,11 +65,14 @@ describe('XV01', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const amountA = 100000;
-  const amountB = 100000;
+  const amount0A = 100000;
+  const amount0B = 100000;
 
-  const traderAmountA = 500;
-  const traderAmountB = 500;
+  const amount1A = 900000;
+  const amount1B = 900000;
+
+  const traderAmount0A = 500;
+  const traderAmount0B = 500;
 
   const amountAirdrop = 50;
 
@@ -132,7 +133,6 @@ describe('XV01', () => {
 
     exchangeTokenAccount0A = await mint0A.createAccount(exchange0Account.publicKey);
     exchangeTokenAccount0B = await mint0B.createAccount(exchange0Account.publicKey);
-
     exchangeTokenAccount1A = await mint1A.createAccount(exchange1Account.publicKey);
     exchangeTokenAccount1B = await mint1B.createAccount(exchange1Account.publicKey);
 
@@ -143,28 +143,28 @@ describe('XV01', () => {
       walletTokenAccount0A,
       mintAuthority.publicKey,
       [mintAuthority.payer],
-      amountA
+      amount0A
     );
 
     await mint0B.mintTo(
       walletTokenAccount0B,
       mintAuthority.publicKey,
       [mintAuthority.payer],
-      amountB
+      amount0B
     );
 
     await mint0A.mintTo(
       traderTokenAccount0A,
       mintAuthority.publicKey,
       [mintAuthority.payer],
-      traderAmountA
+      traderAmount0A
     );
 
     await mint0B.mintTo(
       traderTokenAccount0B,
       mintAuthority.publicKey,
       [mintAuthority.payer],
-      traderAmountB
+      traderAmount0B
     );
 
     // Useful for Anchor CLI and app
@@ -177,15 +177,15 @@ describe('XV01', () => {
       trader: traderAccount.publicKey.toString(),
       pyth: pythAccount.publicKey.toString(),
       mintA: mint0A.publicKey.toString(),
-      mint0B: mint0B.publicKey.toString(),
+      mintB: mint0B.publicKey.toString(),
       mintC: mintC.publicKey.toString(),
     }));
 
     let walletTokenAccountInfoA = await mint0A.getAccountInfo(walletTokenAccount0A);
     let walletTokenAccountInfoB = await mint0B.getAccountInfo(walletTokenAccount0B);
 
-    assert.ok(walletTokenAccountInfoA.amount.toNumber() == amountA);
-    assert.ok(walletTokenAccountInfoB.amount.toNumber() == amountB);
+    assert.ok(walletTokenAccountInfoA.amount.toNumber() == amount0A);
+    assert.ok(walletTokenAccountInfoB.amount.toNumber() == amount0B);
 
     let exchangeTokenAccountInfoA = await mint0A.getAccountInfo(exchangeTokenAccount0A);
     let exchangeTokenAccountInfoB = await mint0B.getAccountInfo(exchangeTokenAccount0B);
@@ -196,16 +196,16 @@ describe('XV01', () => {
     let traderTokenAccountInfoA = await mint0A.getAccountInfo(traderTokenAccount0A);
     let traderTokenAccountInfoB = await mint0B.getAccountInfo(traderTokenAccount0B);
 
-    assert.ok(traderTokenAccountInfoA.amount.toNumber() == traderAmountA);
-    assert.ok(traderTokenAccountInfoB.amount.toNumber() == traderAmountB);
+    assert.ok(traderTokenAccountInfoA.amount.toNumber() == traderAmount0A);
+    assert.ok(traderTokenAccountInfoB.amount.toNumber() == traderAmount0B);
 
     let mint0AInfo = await mint0A.getMintInfo();
 
-    assert.ok(mint0AInfo.supply.toNumber() == traderAmountA + amountA);
+    assert.ok(mint0AInfo.supply.toNumber() == traderAmount0A + amount0A);
 
     let mint0BInfo = await mint0B.getMintInfo();
 
-    assert.ok(mint0BInfo.supply.toNumber() == traderAmountB + amountB);
+    assert.ok(mint0BInfo.supply.toNumber() == traderAmount0B + amount0B);
 
     let mintCInfo = await mintC.getMintInfo();
 
@@ -303,13 +303,13 @@ describe('XV01', () => {
     let walletTokenAccount0AInfo = await mint0A.getAccountInfo(walletTokenAccount0A);
 
     assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(initialMaxAmountA)));
-    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amountA - initialMaxAmountA)));
+    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amount0A - initialMaxAmountA)));
 
     let exchangeTokenAccount0BInfo = await mint0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await mint0B.getAccountInfo(walletTokenAccount0B);
 
     assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(initialAmountB)));
-    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amountB - initialAmountB)));
+    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amount0B - initialAmountB)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
@@ -319,7 +319,7 @@ describe('XV01', () => {
   const additionalMaxAmountA = 150;
   const additionalAmountB = 75;
   const additionalMinLiquidityC = 5;
-  const additionalLiquidityMinted = 25;
+  const additionalLiquidityMinted = 37;
 
   it('Add additional liquidity', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -348,18 +348,18 @@ describe('XV01', () => {
     let exchangeTokenAccount0AInfo = await mint0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccount0AInfo = await mint0A.getAccountInfo(walletTokenAccount0A);
 
-    assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(250)));
-    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(99750)));
+    assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(initialMaxAmountA + additionalMaxAmountA)));
+    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amount0A - initialMaxAmountA - additionalMaxAmountA)));
 
     let exchangeTokenAccount0BInfo = await mint0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await mint0B.getAccountInfo(walletTokenAccount0B);
 
-    assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(125)));
-    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(99875)));
+    assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(initialAmountB + additionalAmountB)));
+    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amount0B - initialAmountB - additionalAmountB)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(87)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialLiquidityMinted + additionalLiquidityMinted)));
   });
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate();
@@ -565,13 +565,13 @@ describe('XV01', () => {
     let walletTokenAccount0AInfo = await mint0A.getAccountInfo(walletTokenAccount0A);
 
     assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(0)));
-    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amountA)));
+    assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amount0A)));
 
     let exchangeTokenAccount0BInfo = await mint0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await mint0B.getAccountInfo(walletTokenAccount0B);
 
     assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(0)));
-    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amountB)));
+    assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amount0B)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
