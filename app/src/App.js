@@ -106,14 +106,18 @@ function App() {
   const [cCirculatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
-  const [countdown, setCountdown] = useState('00:00:00');
+  const [change24H, setChange24H] = useState();
+  const [countdown, setCountdown] = useState('');
   const [countdownInterval, setCountdownInterval] = useState(false);
   const [currentExchange, setCurrentExchange] = useState();
   const [currentMarket, setCurrentMarket] = useState();
+  const [fundingRate, setFundingRate] = useState();
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState();
+  const [high24H, setHigh24H] = useState();
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
+  const [low24H, setLow24H] = useState();
   const [menu, setMenu] = useState('');
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
@@ -125,6 +129,7 @@ function App() {
   const [tradeQuantity, setTradeQuantity] = useState();
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeAsset, setTradeAsset] = useState(tradeAssets[0]);
+  const [turnaround24H, setTurnaround24H] = useState();
 
   const wallet = useWallet();
 
@@ -160,9 +165,9 @@ function App() {
       setCCurrentPrice(exchangeData0Account.lastPrice.toNumber());
       setCMarketCap(exchangeData0Account.lastPrice.toNumber() * exchangeData0Account.lastPrice.toNumber());
 
+      // First exchange is always XV01
       if (currentMarket === undefined) {
-        // First exchange is always XV01
-        setCurrentMarket(exchangeData0Account.lastPrice.toNumber());
+        setDummyTradeData(exchangeData0Account.lastPrice.toNumber());
       }
     } catch (err) {
       console.log('Transaction error: ', err);
@@ -171,6 +176,15 @@ function App() {
 
   function networkErrorMessage() {
     message.info('Unable to connect to network');
+  }
+
+  function setDummyTradeData(lastPrice) {
+    setCurrentMarket(lastPrice);
+    setHigh24H((lastPrice * (Math.random() / 100 + 1)).toFixed(2));
+    setLow24H((lastPrice * (Math.random() / 100 + 1)).toFixed(2));
+    setTurnaround24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
+    setChange24H((Math.random() / 100 + 2).toFixed(2));
+    setFundingRate((Math.random() / 100).toFixed(4));
   }
 
   async function getTrade(asset) {
@@ -186,6 +200,8 @@ function App() {
     try {
       const account = await program.account.exchangeData.fetch(exchangePublicKey);
       setCurrentMarket(account.lastPrice.toNumber());
+      setHigh24H(account.lastPrice.toNumber() * (Math.random() / 100 + 1));
+      setLow24H(account.lastPrice.toNumber() * (Math.random() / 100 + 1));
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -261,23 +277,23 @@ function App() {
       </Col>
       <Col span={3}>
         <p><small>24H Change %</small></p>
-        <Title level={4} className='Title Dark Green'>+2.67%</Title>
+        <Title level={4} className='Title Dark Green'>{change24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
-        <Title level={4} className='Title Dark'>56,238.50</Title>
+        <Title level={4} className='Title Dark'>{high24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Low</small></p>
-        <Title level={4} className='Title Dark'>53,384.50</Title>
+        <Title level={4} className='Title Dark'>{low24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Turnaround</small></p>
-        <Title level={4} className='Title Dark'>64,848.57</Title>
+        <Title level={4} className='Title Dark'>{turnaround24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>Funding Rate / Countdown</small></p>
-        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / {countdown}</Title>
+        <Title level={4} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
       </Col>
       <Col span={3}></Col>
     </Row>
