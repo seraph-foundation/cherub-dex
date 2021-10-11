@@ -219,7 +219,15 @@ body {
     cursor: pointer;
 }
 
+.White {
+    color: white;
+}
+
 /* Ant */
+.ant-steps-vertical > .ant-steps-item .ant-steps-item-icon {
+    background-color: #1f1f1f;
+}
+
 .ant-modal-content, .ant-modal-header {
     background-color: #1f1f1f;
     color: rgba(255, 255, 255, 0.65) !important;
@@ -284,7 +292,6 @@ body {
 }
 
 .ant-steps-item-title {
-    color: white !important;
 }
 
 .ant-select-arrow {
@@ -297,7 +304,7 @@ body {
 }
 
 .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon {
-    color: #1f1f1f;
+    color: white;
 }
 
 .ant-list-item-meta-title {

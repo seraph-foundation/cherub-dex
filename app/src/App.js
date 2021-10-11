@@ -110,6 +110,8 @@ function App() {
   const [countdownInterval, setCountdownInterval] = useState(false);
   const [currentExchange, setCurrentExchange] = useState();
   const [currentMarket, setCurrentMarket] = useState();
+  // eslint-disable-next-line
+  const [gasFee, setGasFee] = useState();
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
   const [menu, setMenu] = useState('');
@@ -178,11 +180,12 @@ function App() {
     } else {
       exchangePublicKey = exchange1PublicKey;
     }
+    setCurrentExchange(exchangePublicKey.toString());
     const provider = await getProviderCallback();
     const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       const account = await program.account.exchangeData.fetch(exchangePublicKey);
-      console.log(account);
+      setCurrentMarket(account.lastPrice.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -280,6 +283,24 @@ function App() {
     </Row>
   );
 
+  const tradeQuantityDescription = (
+    <small>
+      Your order amount of <span className='White'>{tradeQuantity > 0 ? (tradeQuantity / 1).toFixed(2) : 0} USD</span> equals <span
+        className='White'>{tradeQuantity > 0 ? (tradeQuantity / currentMarket).toFixed(2) : 0} {tradeAsset}</span>
+    </small>
+  );
+
+  const approveDescription = (
+    <small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>
+  );
+
+  const leverageDescription = (
+    <small>
+      At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
+        {tradeQuantity > 0 ? (tradeQuantity / currentMarket * leverage).toFixed(2) : 0} {tradeAsset}</span>
+    </small>
+  );
+
   const tradeView = (
     <>
       {tradeStatsBar}
@@ -315,10 +336,9 @@ function App() {
           <Col span={1}></Col>
           <Col span={3}>
             <Steps direction='vertical' current={tradeStep}>
-              <Step key='set' title='Quantity'
-                description=<div>Your order amount of <span className='Green'>{tradeQuantity} {tradeAsset}</span></div>/>
-              <Step key='collateral' title='Leverage' description='Leverage determines the required amount'/>
-              <Step key='order' title='Approve' description='Instantly filled'/>
+              <Step key='set' title='Quantity' description={tradeQuantityDescription}/>
+              <Step key='collateral' title='Leverage' description={leverageDescription}/>
+              <Step key='order' title='Approve' description={approveDescription}/>
             </Steps>
           </Col>
         </> :
@@ -349,6 +369,13 @@ function App() {
     </Row>
   );
 
+  const stakeDescription = (
+    <small>
+      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {name.toUpperCase()}</span> is
+      set to earn <span className='White'>12% APY</span>
+    </small>
+  );
+
   const stakeView = (
     <Row>
       <Col span={6}></Col>
@@ -356,11 +383,8 @@ function App() {
       <>
         <Col span={4}>
           <Steps direction='vertical' current={stakeStep}>
-            <Step key='set' title='Quantity' description=<div>
-                Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
-                set to earn <span className='Green'>12% APY</span></div> />
-            <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
-            <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
+            <Step key='set' title='Quantity' description={stakeDescription} />
+            <Step key='deposit' title='Approve' description={approveDescription} />
           </Steps>
         </Col>
         <Col span={1}></Col>
@@ -469,7 +493,7 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.fi</strong>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.finance</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
