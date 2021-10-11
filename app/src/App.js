@@ -41,7 +41,7 @@ const tradeOptions = [
   { label: 'Sell / Short', value: 'short' },
 ];
 
-const tvlData = {
+const tvdData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [
     {
@@ -150,7 +150,7 @@ function App() {
     const exchangeProgram = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       // eslint-disable-next-line
-      const account = await exchangeProgram.account.exchangeData.fetch(exchangePublicKey);
+      const exchangeDataAccount = await exchangeProgram.account.exchangeData.fetch(exchangePublicKey);
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
       setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
@@ -166,7 +166,7 @@ function App() {
   function calculateCountdown() {
     // TODO: Use 8 hours funding cycles instead of midnight
     const today = new Date();
-    const midnight = new Date()
+    const midnight = new Date();
     midnight.setHours(24, 0, 0, 0);
     const t = (midnight.getTime() - today.getTime());
     const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -212,8 +212,8 @@ function App() {
             </Row>
             <Row>
               <Col span={12}>
-                <p>Total Value Locked</p>
-                <Line height={100} data={tvlData} options={chartOptions}/>
+                <p>Total Value Deposited</p>
+                <Line height={100} data={tvdData} options={chartOptions}/>
               </Col>
               <Col span={12}>
                 <p>Market Value of Treasury Assets</p>
@@ -282,9 +282,7 @@ function App() {
                 <p><strong>{leverage}x Leverage</strong></p>
                 <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setTradeStep(2)}} />
                 <br/>
-                <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>
-                  Approve
-                </Button>
+                <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>Approve</Button>
               </Card>
             </div>
           </Col>
@@ -332,8 +330,7 @@ function App() {
       <>
         <Col span={4}>
           <Steps direction='vertical' current={stakeStep}>
-            <Step key='set' title='Quantity'
-              description=<div>
+            <Step key='set' title='Quantity' description=<div>
                 Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
                 set to earn <span className='Green'>12% APY</span></div> />
             <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
