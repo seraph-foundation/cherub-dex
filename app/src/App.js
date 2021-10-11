@@ -145,9 +145,9 @@ function App() {
 
   async function getFactoryData() {
     const provider = await getProviderCallback();
-    const program = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+    const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
     try {
-      const account = await program.account.factoryData.fetch(factoryPublicKey);
+      const account = await factory.account.factoryData.fetch(factoryPublicKey);
       setTokenCount(account.tokenCount.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
@@ -156,12 +156,12 @@ function App() {
 
   async function getDashboard() {
     const provider = await getProviderCallback();
-    const exchangeProgram = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
       setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
-      const exchangeData0Account = await exchangeProgram.account.exchangeData.fetch(exchange0PublicKey);
+      const exchangeData0Account = await exchange.account.exchangeData.fetch(exchange0PublicKey);
       setCCurrentPrice(exchangeData0Account.lastPrice.toNumber());
       setCMarketCap(exchangeData0Account.lastPrice.toNumber() * exchangeData0Account.lastPrice.toNumber());
 
