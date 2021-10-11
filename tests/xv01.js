@@ -129,7 +129,6 @@ describe('XV01', () => {
 
     walletTokenAccount0A = await mint0A.createAccount(provider.wallet.publicKey);
     walletTokenAccount0B = await mint0B.createAccount(provider.wallet.publicKey);
-    walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
 
     exchangeTokenAccount0A = await mint0A.createAccount(exchange0Account.publicKey);
     exchangeTokenAccount0B = await mint0B.createAccount(exchange0Account.publicKey);
@@ -138,6 +137,8 @@ describe('XV01', () => {
 
     traderTokenAccount0A = await mint0A.createAccount(traderAccount.publicKey);
     traderTokenAccount0B = await mint0B.createAccount(traderAccount.publicKey);
+
+    walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
 
     await mint0A.mintTo(
       walletTokenAccount0A,
@@ -232,7 +233,7 @@ describe('XV01', () => {
 
   it('Factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode(mint0A.publicKey))],
       exchange.programId
     );
     const fee = new anchor.BN(3);
