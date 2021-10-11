@@ -1,4 +1,6 @@
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Slider, Steps, Typography, message } from 'antd';
+import {
+  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message
+} from 'antd';
 import { DownOutlined, SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { Program, Provider } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
@@ -20,15 +22,19 @@ import pythIdl from './pyth.json';
 import accounts from './accounts-localnet.json';
 
 const { Content, Footer, Header } = Layout;
+const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const exchangePublicKey = new PublicKey(accounts.exchange);
+const exchange1PublicKey = new PublicKey(accounts.exchanges[0]);
+  // eslint-disable-next-line
+const exchange2PublicKey = new PublicKey(accounts.exchanges[1]);
 const factoryPublicKey = new PublicKey(accounts.factory);
 // eslint-disable-next-line
 const pythPublicKey = new PublicKey(accounts.pyth);
 
 const name = 'xv01';
+const githubUrl = 'https://www.github.com/xv01-finance/xv01-protocol';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
 const routes = ['dashboard', 'trade', 'pool', 'stake', 'dao'];
@@ -98,19 +104,14 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
-  // eslint-disable-next-line
-  const [circulatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  const [cCirculatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
   const [countdown, setCountdown] = useState('00:00:00');
   const [countdownInterval, setCountdownInterval] = useState(false);
-  // eslint-disable-next-line
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
   const [leverage, setLeverage] = useState(1);
-  // eslint-disable-next-line
-  const [marketCap, setMarketCap] = useState(0);
+  const [cMarketCap, setCMarketCap] = useState(0);
   const [menu, setMenu] = useState('');
-  // eslint-disable-next-line
-  const [price, setCurrentPrice] = useState(0);
+  const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
@@ -122,7 +123,7 @@ function App() {
   const [tradeStep, setTradeStep] = useState(0);
   const [tradeAsset, setTradeAsset] = useState(tradeAssets[0]);
 
-  const wallet = useWallet()
+  const wallet = useWallet();
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
@@ -149,11 +150,13 @@ function App() {
     const provider = await getProviderCallback();
     const exchangeProgram = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
-      // eslint-disable-next-line
-      const exchangeDataAccount = await exchangeProgram.account.exchangeData.fetch(exchangePublicKey);
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
       setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
+
+      const exchangeData1Account = await exchangeProgram.account.exchangeData.fetch(exchange1PublicKey);
+      setCCurrentPrice(exchangeData1Account.lastPrice.toNumber());
+      setCMarketCap(exchangeData1Account.lastPrice.toNumber() * exchangeData1Account.lastPrice.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -177,7 +180,7 @@ function App() {
 
   const settingsMenu = (
     <Menu>
-      <Menu.Item key='github' onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>GitHub</Menu.Item>
+      <Menu.Item key='github' onClick={() => window.open(githubUrl, '_blank')}>GitHub</Menu.Item>
       <Menu.Item key='discord'>Discord</Menu.Item>
     </Menu>
   );
@@ -193,23 +196,20 @@ function App() {
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title='Dashboard' bordered={false}>
             <Row>
-              <Col span={6}>
+              <Col span={8}>
                 <p>Market Cap</p>
-                <Title level={3} className='Title Dark'>${marketCap}</Title>
+                <Title level={3} className='Title Dark'>${cMarketCap}</Title>
               </Col>
-              <Col span={6}>
-                <p>{name.toUpperCase()} Price</p>
-                <Title level={3} className='Title Dark'>${price}</Title>
+              <Col span={8}>
+                <p>Price</p>
+                <Title level={3} className='Title Dark'>${cCurrentPrice}</Title>
               </Col>
-              <Col span={6}>
+              <Col span={8}>
                 <p>Circulating Supply (Total)</p>
-                <Title level={3} className='Title Dark'>{circulatingSupplyTotal}</Title>
-              </Col>
-              <Col span={6}>
-                <p>Current Index</p>
-                <Title level={3} className='Title Dark'>{currentIndex}</Title>
+                <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {name.toUpperCase()}</Title>
               </Col>
             </Row>
+            <br/>
             <Row>
               <Col span={12}>
                 <p>Total Value Deposited</p>
@@ -272,7 +272,11 @@ function App() {
                 extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
                 <p><strong>Quantity</strong></p>
                 <Input className='TradeInput Input Dark' value={tradeQuantity} placeholder='0'
-                  onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} />
+                  addonAfter={
+                    <Select defaultValue='USD' className='select-after'>
+                      <Option value='USD'>USD</Option>
+                    </Select>
+                  } onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} />
                 <br/>
                 <p>Your current balance is <strong>{balance}</strong></p>
                 <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)} className='RadioGroup Dark'
@@ -438,7 +442,7 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <strong onClick={() => window.open('https://www.github.com/xv01-finance/xv01-protocol', '_blank')}>{name}.fi</strong>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.fi</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
@@ -482,9 +486,9 @@ function App() {
       </Layout>
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
       <Modal title='Assets' footer={null} visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
-        <List itemLayout='horizontal' dataSource={tradeAssets}
+        <List itemLayout='horizontal' dataSource={tradeAssets} forceRender={true}
           renderItem={asset => (
-            <List.Item>
+            <List.Item className='Asset ListItem'>
               <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); setIsTradeAssetModalVisible(false)}}/>
             </List.Item>
           )}

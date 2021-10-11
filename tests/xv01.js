@@ -29,7 +29,8 @@ describe('XV01', () => {
   const decimalsB = 18;
   const decimalsC = 18;
 
-  const exchangeAccount = anchor.web3.Keypair.generate();
+  const exchange1Account = anchor.web3.Keypair.generate();
+  const exchange2Account = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
   const payerAccount = anchor.web3.Keypair.generate();
   const pythAccount = anchor.web3.Keypair.generate();
@@ -95,8 +96,8 @@ describe('XV01', () => {
     walletTokenAccountB = await mintB.createAccount(provider.wallet.publicKey);
     walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
 
-    exchangeTokenAccountA = await mintA.createAccount(exchangeAccount.publicKey);
-    exchangeTokenAccountB = await mintB.createAccount(exchangeAccount.publicKey);
+    exchangeTokenAccountA = await mintA.createAccount(exchange1Account.publicKey);
+    exchangeTokenAccountB = await mintB.createAccount(exchange1Account.publicKey);
 
     traderTokenAccountA = await mintA.createAccount(traderAccount.publicKey);
     traderTokenAccountB = await mintB.createAccount(traderAccount.publicKey);
@@ -132,7 +133,10 @@ describe('XV01', () => {
     // Useful for Anchor CLI and app
     fs.writeFileSync('./app/src/accounts-localnet.json', JSON.stringify({
       factory: factoryAccount.publicKey.toString(),
-      exchange: exchangeAccount.publicKey.toString(),
+      exchanges: [
+        exchange1Account.publicKey.toString(),
+        exchange2Account.publicKey.toString()
+      ],
       trader: traderAccount.publicKey.toString(),
       pyth: pythAccount.publicKey.toString(),
       mintA: mintA.publicKey.toString(),
@@ -201,15 +205,15 @@ describe('XV01', () => {
       mintC.publicKey,
       fee, {
         accounts: {
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           factory: factoryAccount.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           exchangeProgram: exchange.programId,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB
         },
-        signers: [factoryAccount.owner, exchangeAccount],
-        instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount)]
+        signers: [factoryAccount.owner, exchange1Account],
+        instructions: [await exchange.account.exchangeData.createInstruction(exchange1Account)]
       });
 
     console.log('Your transaction signature', tx);
@@ -245,7 +249,7 @@ describe('XV01', () => {
           authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           mint: mintC.publicKey,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
@@ -291,7 +295,7 @@ describe('XV01', () => {
           authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           mint: mintC.publicKey,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
@@ -331,7 +335,7 @@ describe('XV01', () => {
         accounts: {
           authority: provider.wallet.publicKey,
           systemProgram: SystemProgram.programId,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           quote: traderInputQuoteAccount.publicKey,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB,
@@ -356,7 +360,7 @@ describe('XV01', () => {
         accounts: {
           authority: provider.wallet.publicKey,
           systemProgram: SystemProgram.programId,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           quote: traderOutputQuoteAccount.publicKey,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB,
@@ -387,7 +391,7 @@ describe('XV01', () => {
           authority: provider.wallet.publicKey,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           pda: pda,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
@@ -410,6 +414,10 @@ describe('XV01', () => {
 
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(131)));
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99869)));
+
+    let exchange1AccountInfo = await exchange.account.exchangeData.fetch(exchange1Account.publicKey)
+
+    assert.ok(exchange1AccountInfo.lastPrice.eq(new anchor.BN(6)));
   });
 
   const aToBAmountA = 12;
@@ -428,7 +436,7 @@ describe('XV01', () => {
           authority: provider.wallet.publicKey,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           pda,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,
@@ -451,6 +459,10 @@ describe('XV01', () => {
 
     assert.ok(exchangeTokenAccountBInfo.amount.eq(new anchor.BN(150)));
     assert.ok(walletTokenAccountBInfo.amount.eq(new anchor.BN(99850)));
+
+    let exchange1AccountInfo = await exchange.account.exchangeData.fetch(exchange1Account.publicKey)
+
+    assert.ok(exchange1AccountInfo.lastPrice.eq(new anchor.BN(19)));
   });
 
   it('Initializes Pyth', async () => {
@@ -501,7 +513,7 @@ describe('XV01', () => {
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           mint: mintC.publicKey,
           pda,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           exchangeA: exchangeTokenAccountA,
           exchangeB: exchangeTokenAccountB,
           userA: walletTokenAccountA,
@@ -540,7 +552,7 @@ describe('XV01', () => {
           authority: provider.wallet.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-          exchange: exchangeAccount.publicKey,
+          exchange: exchange1Account.publicKey,
           mint: mintC.publicKey,
           userA: walletTokenAccountA,
           userB: walletTokenAccountB,

@@ -38,6 +38,7 @@ pub mod exchange {
         exchange.token_b = token_b;
         exchange.token_c = token_c;
         exchange.fee = fee;
+        exchange.last_price = 0;
         let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
         token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
@@ -158,6 +159,8 @@ pub mod exchange {
             amount_a,
         )?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
         Ok(())
     }
 
@@ -181,6 +184,8 @@ pub mod exchange {
             amount_a,
         )?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
         Ok(())
     }
 
@@ -201,8 +206,12 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
+        {
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        }
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
         Ok(())
     }
 
@@ -225,6 +234,8 @@ pub mod exchange {
         assert!(amount_b >= 1);
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
         Ok(())
     }
 }
@@ -304,6 +315,7 @@ pub struct Swap<'info> {
     pub clock: Sysvar<'info, Clock>,
     pub token_program: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
+    #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
@@ -424,7 +436,7 @@ pub struct ExchangeData {
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
-    //pub price: u64,
+    pub last_price: u64,
     pub fee: u64,
 }
 
