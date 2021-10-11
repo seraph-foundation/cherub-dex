@@ -444,9 +444,21 @@ pub struct Quote {
     pub price: u64,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub enum Direction {
+    Long,
+    Short,
+}
+
+/// User account state for input and output price quotes.
+#[account]
+pub struct Position {
+    pub direction: Direction,
+}
+
 #[error]
 pub enum ErrorCode {
-    #[msg("Adding or removing liquidity must be done in the present or future time")]
+    #[msg("Adding or removing liquidity must be done in the present or at a future time")]
     FutureDeadline,
     #[msg("Incorrect tokens")]
     CorrectTokens,
