@@ -31,7 +31,7 @@ const pythPublicKey = new PublicKey(accounts.pyth);
 const name = 'xv01';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dashboard', 'trade', 'stake', 'govern'];
+const routes = ['dashboard', 'trade', 'pool', 'stake', 'dao'];
 const showBanner = false;
 const tradeAssets = ['SOL', 'BTC', 'XV01'];
 const wallets = [getPhantomWallet()];
@@ -71,7 +71,7 @@ const chartOptions = {
   }
 }
 
-const governProposals = [
+const daoProposals = [
   {
     title: 'Move SOL/COPE stake to SOL/MANGO',
     description: '4 • September 25th, 2021',
@@ -100,6 +100,8 @@ function App() {
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
   // eslint-disable-next-line
   const [circulatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  const [countdown, setCountdown] = useState('00:00:00');
+  const [countdownInterval, setCountdownInterval] = useState(false);
   // eslint-disable-next-line
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
@@ -161,6 +163,17 @@ function App() {
     message.info('Unable to connect to network');
   }
 
+  function secondsToTime() {
+    // TODO: Finish
+    const endDate = new Date('Oct 11, 2021 24:00:00').getTime();
+    let now = new Date().getTime();
+    let t = endDate - now;
+    let hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let mins = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+    let secs = Math.floor((t % (1000 * 60)) / 1000);
+    setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
+  }
+
   const settingsMenu = (
     <Menu>
       <Menu.Item key='github' onClick={() => window.open('https://www.github.com/xv01-finance', '_blank')}>GitHub</Menu.Item>
@@ -197,20 +210,20 @@ function App() {
       </Col>
       <Col span={3}>
         <p><small>Funding Rate / Countdown</small></p>
-        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / 04:26:40</Title>
+        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / {countdown}</Title>
       </Col>
       <Col span={3}></Col>
     </Row>
   );
 
-  const governView = (
+  const daoView = (
     <Row>
       <Col span={2}></Col>
       <Col span={20} className='Cards'>
         <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title='Govern' bordered={false}
-            extra={<a href='/#/govern' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
-            <List itemLayout='horizontal' dataSource={governProposals}
+          <Card className='Card Dark' title='Dao' bordered={false}
+            extra={<a href='/#/dao' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
+            <List itemLayout='horizontal' dataSource={daoProposals}
               renderItem={item => (
                 <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
               )}/>
@@ -381,6 +394,17 @@ function App() {
       }
     });
 
+    if (!countdownInterval) {
+      try {
+        setCountdownInterval(true);
+        setInterval(function () {
+          secondsToTime();
+        }, 1000);
+      } catch (e) {
+        networkErrorMessage();
+      }
+    }
+
     if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
       setMenu(window.location.href.split('#/')[1]);
     } else {
@@ -390,7 +414,7 @@ function App() {
     getFactoryDataCallback();
     getDashboardCallback();
   }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback,
-    getDashboardCallback]);
+    getDashboardCallback, countdownInterval]);
 
   return (
     <Layout className='App Dark'>
@@ -410,8 +434,9 @@ function App() {
               mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
+              <Menu.Item key='poll'>Pool</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
-              <Menu.Item key='govern'>Govern</Menu.Item>
+              <Menu.Item key='dao'>DAO</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -438,7 +463,7 @@ function App() {
             { menu === 'dashboard' ? dashboardView : null }
             { menu === 'trade' ? tradeView : null }
             { menu === 'stake' ? stakeView : null }
-            { menu === 'govern' ? governView : null }
+            { menu === 'dao' ? daoView : null }
           </div>
         </Content>
       </Layout>

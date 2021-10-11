@@ -424,6 +424,7 @@ pub struct ExchangeData {
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
+    //pub price: u64,
     pub fee: u64,
 }
 

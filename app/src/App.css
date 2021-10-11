@@ -31,6 +31,10 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
+.Menu.Dark {
+    width: 28.7em;
+}
+
 .ant-tabs-tab-btn {
     color: rgba(255, 255, 255, 0.65) !important;
 }
