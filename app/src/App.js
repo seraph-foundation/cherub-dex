@@ -166,8 +166,9 @@ function App() {
   function secondsToTime() {
     // TODO: Finish
     const today = new Date();
-    const tomorrow = new Date(today.getDate() + 1);
-    const t = tomorrow.getTime() - today.getTime();
+    const midnight = new Date()
+    midnight.setHours(24, 0, 0, 0);
+    const t = (midnight.getTime() - today.getTime());
     const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const mins = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
     const secs = Math.floor((t % (1000 * 60)) / 1000);
