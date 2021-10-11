@@ -165,12 +165,12 @@ function App() {
 
   function secondsToTime() {
     // TODO: Finish
-    const endDate = new Date('Oct 11, 2021 24:00:00').getTime();
-    let now = new Date().getTime();
-    let t = endDate - now;
-    let hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    let mins = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
-    let secs = Math.floor((t % (1000 * 60)) / 1000);
+    const today = new Date();
+    const tomorrow = new Date(today.getDate() + 1);
+    const t = tomorrow.getTime() - today.getTime();
+    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((t % (1000 * 60)) / 1000);
     setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
   }
 
@@ -183,55 +183,6 @@ function App() {
 
   const assetTitleModal = (
     <Button className='AssetTitleModal' type='link' onClick={() => setIsTradeAssetModalVisible(true)}>{tradeAsset} <DownOutlined/></Button>
-  );
-
-  const tradeStatsBar = (
-    <Row className='TradeStatsBar'>
-      <Col span={3}></Col>
-      <Col span={3}>
-        <p><small>Market</small></p>
-        <Title level={4} className='Title Dark Green'>55,534.20</Title>
-      </Col>
-      <Col span={3}>
-        <p><small>24H Change %</small></p>
-        <Title level={4} className='Title Dark Green'>+2.67%</Title>
-      </Col>
-      <Col span={3}>
-        <p><small>24H High</small></p>
-        <Title level={4} className='Title Dark'>56,238.50</Title>
-      </Col>
-      <Col span={3}>
-        <p><small>24H Low</small></p>
-        <Title level={4} className='Title Dark'>53,384.50</Title>
-      </Col>
-      <Col span={3}>
-        <p><small>24H Turnaround</small></p>
-        <Title level={4} className='Title Dark'>64,848.57</Title>
-      </Col>
-      <Col span={3}>
-        <p><small>Funding Rate / Countdown</small></p>
-        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / {countdown}</Title>
-      </Col>
-      <Col span={3}></Col>
-    </Row>
-  );
-
-  const daoView = (
-    <Row>
-      <Col span={2}></Col>
-      <Col span={20} className='Cards'>
-        <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title='Dao' bordered={false}
-            extra={<a href='/#/dao' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
-            <List itemLayout='horizontal' dataSource={daoProposals}
-              renderItem={item => (
-                <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
-              )}/>
-          </Card>
-        </div>
-      </Col>
-      <Col span={2}></Col>
-    </Row>
   );
 
   const dashboardView = (
@@ -275,43 +226,34 @@ function App() {
     </Row>
   );
 
-  const stakeView = (
-    <Row>
-      <Col span={6}></Col>
-      { stakeCard === 'stake' ?
-      <>
-        <Col span={4}>
-          <Steps direction='vertical' current={stakeStep}>
-            <Step key='set' title='Quantity'
-              description=<div>
-                Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
-                set to earn <span className='Green'>12% APY</span></div> />
-            <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
-            <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
-          </Steps>
-        </Col>
-        <Col span={1}></Col>
-        <Col span={7} className='Cards'>
-          <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={assetTitleModal} bordered={false}
-              extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
-              <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
-                onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
-              <br/>
-              <p>Your current balance is <strong>{balance}</strong></p>
-              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
-                Approve</Button>
-            </Card>
-          </div>
-        </Col>
-      </> :
-      <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={assetTitleModal} bordered={false}
-          extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
-        </Card>
+  const tradeStatsBar = (
+    <Row className='TradeStatsBar'>
+      <Col span={3}></Col>
+      <Col span={3}>
+        <p><small>Market</small></p>
+        <Title level={4} className='Title Dark Green'>55,534.20</Title>
       </Col>
-      }
-      <Col span={6}></Col>
+      <Col span={3}>
+        <p><small>24H Change %</small></p>
+        <Title level={4} className='Title Dark Green'>+2.67%</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H High</small></p>
+        <Title level={4} className='Title Dark'>56,238.50</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H Low</small></p>
+        <Title level={4} className='Title Dark'>53,384.50</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>24H Turnaround</small></p>
+        <Title level={4} className='Title Dark'>64,848.57</Title>
+      </Col>
+      <Col span={3}>
+        <p><small>Funding Rate / Countdown</small></p>
+        <Title level={4} className='Title Dark'><span className='Yellow'>0.0135</span> / {countdown}</Title>
+      </Col>
+      <Col span={3}></Col>
     </Row>
   );
 
@@ -366,6 +308,78 @@ function App() {
         <Col span={6}></Col>
       </Row>
     </>
+  );
+
+  const poolView = (
+    <Row>
+      <Col span={6}></Col>
+      <Col span={12} className='Cards'>
+        <div className='site-card-border-less-wrapper'>
+          <Card className='Card Dark' title={assetTitleModal} bordered={false}
+            extra={<a href='/#/pool' className='CardLink' onClick={(e) => {}}>Positions</a>}>
+          </Card>
+        </div>
+      </Col>
+      <Col span={6}></Col>
+    </Row>
+  );
+
+  const stakeView = (
+    <Row>
+      <Col span={6}></Col>
+      { stakeCard === 'stake' ?
+      <>
+        <Col span={4}>
+          <Steps direction='vertical' current={stakeStep}>
+            <Step key='set' title='Quantity'
+              description=<div>
+                Your deposit of <span className='Green'>{stakeDeposit} {name.toUpperCase()}</span> is
+                set to earn <span className='Green'>12% APY</span></div> />
+            <Step key='review' title='Review' description='Your deposit will earn 12% APY and you will receive 12 C tokens' />
+            <Step key='deposit' title='Approve' description='Your deposit will be locked for 5 days' />
+          </Steps>
+        </Col>
+        <Col span={1}></Col>
+        <Col span={7} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title={assetTitleModal} bordered={false}
+              extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
+              <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
+                onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
+              <br/>
+              <p>Your current balance is <strong>{balance}</strong></p>
+              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+                Approve</Button>
+            </Card>
+          </div>
+        </Col>
+      </> :
+      <Col span={12} className='Cards'>
+        <Card className='Card Dark' title={assetTitleModal} bordered={false}
+          extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
+        </Card>
+      </Col>
+      }
+      <Col span={6}></Col>
+    </Row>
+  );
+
+  const daoView = (
+    <Row>
+      <Col span={2}></Col>
+      <Col span={20} className='Cards'>
+        <div className='site-card-border-less-wrapper'>
+          <Card className='Card Dark' title='Dao' bordered={false}
+            extra={<a href='/#/dao' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
+            <List itemLayout='horizontal' dataSource={daoProposals}
+              renderItem={item => (
+                <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
+              )}/>
+          </Card>
+        </div>
+      </Col>
+      <Col span={2}></Col>
+    </Row>
   );
 
   useEffect(() => {
@@ -434,7 +448,7 @@ function App() {
               mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
               <Menu.Item key='trade'>Trade</Menu.Item>
-              <Menu.Item key='poll'>Pool</Menu.Item>
+              <Menu.Item key='pool'>Pool</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
               <Menu.Item key='dao'>DAO</Menu.Item>
             </Menu>
@@ -462,6 +476,7 @@ function App() {
             <br/>
             { menu === 'dashboard' ? dashboardView : null }
             { menu === 'trade' ? tradeView : null }
+            { menu === 'pool' ? poolView : null }
             { menu === 'stake' ? stakeView : null }
             { menu === 'dao' ? daoView : null }
           </div>
