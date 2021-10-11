@@ -163,8 +163,8 @@ function App() {
     message.info('Unable to connect to network');
   }
 
-  function secondsToTime() {
-    // TODO: Finish
+  function calculateCountdown() {
+    // TODO: Use 8 hours funding cycles instead of midnight
     const today = new Date();
     const midnight = new Date()
     midnight.setHours(24, 0, 0, 0);
@@ -413,7 +413,7 @@ function App() {
       try {
         setCountdownInterval(true);
         setInterval(function () {
-          secondsToTime();
+          calculateCountdown();
         }, 1000);
       } catch (e) {
         networkErrorMessage();
