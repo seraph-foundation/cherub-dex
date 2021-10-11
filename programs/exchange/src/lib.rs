@@ -14,6 +14,8 @@ declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod exchange {
     use super::*;
 
+    const EXCHANGE_PDA_SEED: &[u8] = b"exchange"; // TODO: This should use token pk for exchange PDAs
+
     /// This function acts as a contract constructor which is not currently
     /// supported in contracts deployed using `initialize()` which is called
     /// once by the factory during contract creation.
@@ -37,7 +39,7 @@ pub mod exchange {
         exchange.token_c = token_c;
         exchange.fee = fee;
         exchange.last_price = 0;
-        let (pda, _bump_seed) = Pubkey::find_program_address(&[token_a], ctx.program_id);
+        let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
         token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
         // TODO: C authority
@@ -87,8 +89,8 @@ pub mod exchange {
     ) -> ProgramResult {
         let amount_a = amount_c * ctx.accounts.exchange_a.amount / ctx.accounts.mint.supply;
         let amount_b = amount_c * ctx.accounts.exchange_b.amount / ctx.accounts.mint.supply;
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[ctx.accounts.exchange.token_a.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_a.as_ref()[..], &[bump_seed]];
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(
             ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
             amount_a,
@@ -150,8 +152,8 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_a >= 1);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[ctx.accounts.exchange.token_a.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_a.as_ref()[..], &[bump_seed]];
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(
             ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
             amount_a,
@@ -175,8 +177,8 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         ) as u64;
         assert!(amount_b >= 1);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[ctx.accounts.exchange.token_a.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_a.as_ref()[..], &[bump_seed]];
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(
             ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
             amount_a,
