@@ -13,7 +13,7 @@ const { LAMPORTS_PER_SOL, PublicKey, SystemProgram } = anchor.web3;
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
-  const browserWallet = new PublicKey('7ADLt8RQX6W5v7L4voBxY9WcT7xRVis9rgbaUTpvEQ4w');
+  const browserWallet = new PublicKey('BnvwAZTNTPQYo6j3Yv5v3HozjV2MkEoh4oQfDwMqbno8');
 
   const provider = anchor.getProvider();
 

@@ -328,7 +328,7 @@ function App() {
                     </Select>
                   } onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
                 <br/>
-                <p>Your current balance is <strong>{balance} {inverseAsset}</strong></p>
+                <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0} {inverseAsset}</strong></p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark'
                   optionType='button' buttonStyle='solid' value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
@@ -405,7 +405,7 @@ function App() {
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
               <br/>
-              <p>Your current balance is <strong>{balance}</strong></p>
+              <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
                 Approve</Button>
             </Card>
@@ -529,7 +529,7 @@ function App() {
                 type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
-              <code className='SolCount'>{balance} SOL</code>
+              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } SOL</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
