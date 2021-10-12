@@ -17,8 +17,8 @@ describe('XV01', () => {
 
   const provider = anchor.getProvider();
 
-  const localnet = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
-  const accountsFile = localnet ? './app/src/accounts-localnet.json' : 'accounts.json';
+  const isLocalnet = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
+  const accountsFile = isLocalnet ? './app/src/accounts-localnet.json' : 'accounts.json';
 
   const exchange = anchor.workspace.Exchange;
   const factory = anchor.workspace.Factory;
@@ -92,7 +92,7 @@ describe('XV01', () => {
       'confirmed'
     );
 
-    if (localnet) {
+    if (isLocalnet) {
       await provider.connection.confirmTransaction(
         await provider.connection.requestAirdrop(browserWallet, 100 * LAMPORTS_PER_SOL),
         'confirmed'
@@ -146,6 +146,8 @@ describe('XV01', () => {
 
     walletTokenAccount0A = await mint0A.createAccount(provider.wallet.publicKey);
     walletTokenAccount0B = await mint0B.createAccount(provider.wallet.publicKey);
+    walletTokenAccount1A = await mint1A.createAccount(provider.wallet.publicKey);
+    walletTokenAccount1B = await mint1B.createAccount(provider.wallet.publicKey);
 
     exchangeTokenAccount0A = await mint0A.createAccount(exchange0Account.publicKey);
     exchangeTokenAccount0B = await mint0B.createAccount(exchange0Account.publicKey);
@@ -189,17 +191,25 @@ describe('XV01', () => {
     fs.writeFileSync(accountsFile, JSON.stringify({
       factory: factoryAccount.publicKey.toString(),
       exchanges: [{
-        index: 0,
-        name: 'SOL',
         exchange: exchange0Account.publicKey.toString(),
+        index: 0,
         mintA: mint0A.publicKey.toString(),
-        mintB: mint0B.publicKey.toString()
+        mintB: mint0B.publicKey.toString(),
+        name: 'SOL',
+        tokenA: exchangeTokenAccount0A.toString(),
+        tokenB: exchangeTokenAccount0B.toString(),
+        walletA: walletTokenAccount0A.toString(),
+        walletB: walletTokenAccount0B.toString()
       }, {
-        index: 1,
-        name: 'XV01',
         exchange: exchange1Account.publicKey.toString(),
+        index: 1,
         mintA: mint1A.publicKey.toString(),
         mintB: mint1B.publicKey.toString(),
+        name: 'XV01',
+        tokenA: exchangeTokenAccount1A.toString(),
+        tokenB: exchangeTokenAccount1B.toString(),
+        walletA: walletTokenAccount1A.toString(),
+        walletB: walletTokenAccount1B.toString()
       }],
       trader: traderAccount.publicKey.toString(),
       pyth: pythAccount.publicKey.toString(),

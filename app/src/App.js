@@ -1,14 +1,15 @@
 import {
-  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message
+  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message,
+  notification
 } from 'antd';
 import { DownOutlined, SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { Program, Provider } from '@project-serum/anchor';
+import { BN, Program, Provider, utils } from '@project-serum/anchor';
 import { useState, useEffect, useCallback } from 'react';
 import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet, getSolletWallet, getSlopeWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, PublicKey, clusterApiUrl, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, Keypair, SystemProgram, PublicKey, clusterApiUrl, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
@@ -16,8 +17,6 @@ import './App.css';
 
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
-// eslint-disable-next-line
-import pythIdl from './pyth.json';
 
 import accounts from './accounts-localnet.json';
 
@@ -81,6 +80,11 @@ const daoProposals = [{
   icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
 }];
 
+const Direction = {
+  Long: { long: {} },
+  Short: { short: {} },
+};
+
 function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
@@ -105,7 +109,6 @@ function App() {
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
-  // eslint-disable-next-line
   const [tokenCount, setTokenCount] = useState(0);
   const [inverseAsset, setInverseAsset] = useState(accounts.exchanges[0].name);
   const [inverseCard, setInverseCard] = useState('inverse');
@@ -173,13 +176,15 @@ function App() {
   async function getInverseData(asset) {
     const provider = await getProviderCallback();
     const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.name === asset).exchange);
-    const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+
     try {
-      const exchangeAccount = await program.account.exchangeData.fetch(exchangePublicKey);
+      const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
       const mintAPublicKey = accounts.exchanges.find((x) => x.name === asset).mintA;
       const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
       const mintAInfo = await tokenA.getMintInfo();
       const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
+
       setDummyInverseData(lastPrice);
       setExchangeRate(lastPrice);
     } catch (err) {
@@ -187,8 +192,72 @@ function App() {
     }
   }
 
+  async function approveInverse() {
+    const provider = await getProviderCallback();
+
+    const currentInverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+
+    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    const exchangePublicKey = new PublicKey(currentInverseExchange.exchange);
+
+    const tokenA = new Token(provider.connection, new PublicKey(currentInverseExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const mintAInfo = await tokenA.getMintInfo();
+    const exchangeTokenAccountA = currentInverseExchange.tokenA;
+    const exchangeTokenAccountB = currentInverseExchange.tokenB;
+
+    // TODO: These should be PDAs on the front and back end
+    const walletTokenAccountA = currentInverseExchange.walletA;
+    const walletTokenAccountB = currentInverseExchange.walletB;
+
+    // eslint-disable-next-line
+    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
+    const aToBAmountA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    const exchangePositionAccount = Keypair.generate();
+
+    try {
+      const tx = await exchange.rpc.aToBInput(
+        aToBAmountA,
+        inverseDirection === 'long' ? Direction.Long : Direction.Short,
+        new BN(Date.now() + 5000 / 1000),
+        {
+          accounts: {
+            authority: provider.wallet.publicKey,
+            clock: SYSVAR_CLOCK_PUBKEY,
+            exchange: exchangePublicKey,
+            exchangeA: exchangeTokenAccountA,
+            exchangeB: exchangeTokenAccountB,
+            pda,
+            position: exchangePositionAccount.publicKey,
+            recipient: walletTokenAccountA,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            userA: walletTokenAccountA,
+            userB: walletTokenAccountB
+          },
+          signers: [exchangePositionAccount]
+        });
+
+      const link = 'https://explorer.solana.com/tx/' + tx;
+
+      notification.open({
+        message: 'Order Successfully Placed',
+        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
+        duration: 0,
+        placement: 'bottomLeft'
+      });
+
+      setInverseStep(0);
+      setLeverage(1);
+      setInverseQuantity();
+
+      getInverseDataCallback(currentInverseExchange.name);
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
   function calculateCountdown() {
-    // TODO: Use 8 hours funding cycles instead of midnight
+    // TODO: Use 8 hour funding cycles instead of midnight
     const today = new Date();
     const midnight = new Date();
     midnight.setHours(24, 0, 0, 0);
@@ -333,7 +402,8 @@ function App() {
                 <p><strong>{leverage}x Leverage</strong></p>
                 <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setInverseStep(2)}} />
                 <br/>
-                <Button size='large' disabled={!wallet.connected} className='InverseButton Button Dark' type='ghost'>Approve</Button>
+                <Button size='large' disabled={!wallet.connected} onClick={approveInverse} className='InverseButton Button Dark'
+                  type='ghost'>Approve</Button>
               </Card>
             </div>
           </Col>
@@ -498,7 +568,7 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.finance</strong>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.fi</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
