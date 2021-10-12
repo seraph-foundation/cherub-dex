@@ -503,7 +503,7 @@ function App() {
       getInverseDataCallback(inverseAssets[0]);
     }
   }, [balance, blockHeightInterval, countdownInterval, currentExchange, getDashboardCallback, getFactoryDataCallback, getProviderCallback,
-    getInverseDataCallback, isInverseSet, setCurrentExchange, setMenu, wallet.connected, wallet.publicKey]);
+    getInverseDataCallback, inverseAsset, isInverseSet, setCurrentExchange, setMenu, wallet.connected, wallet.publicKey]);
 
   return (
     <Layout className='App Dark'>
