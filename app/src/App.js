@@ -186,7 +186,7 @@ function App() {
     } else {
       exchangePublicKey = exchange1PublicKey;
     }
-    //setCurrentExchange(exchangePublicKey.toString());
+    setCurrentExchange(exchangePublicKey.toString());
     const provider = await getProviderCallback();
     const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
@@ -217,7 +217,8 @@ function App() {
   );
 
   const assetTitleModal = (
-    <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
+    <Button className='AssetTitleModal' type='link'
+      onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
   );
 
   const dashboardView = (
