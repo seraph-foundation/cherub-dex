@@ -21,13 +21,14 @@ import pythIdl from './pyth.json';
 
 import accounts from './accounts-localnet.json';
 
+// Exchange accounts may be out of order
+accounts.exchanges.sort((x) => x.index);
+
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const exchange0PublicKey = new PublicKey(accounts.exchanges[0]);
-const exchange1PublicKey = new PublicKey(accounts.exchanges[1]);
 const factoryPublicKey = new PublicKey(accounts.factory);
 // eslint-disable-next-line
 const pythPublicKey = new PublicKey(accounts.pyth);
@@ -98,7 +99,7 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
-  const [cCirculatingSupplyTotal, setCirculatingSupplyTotal] = useState('0 / 0');
+  const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
@@ -106,6 +107,7 @@ function App() {
   const [countdownInterval, setCountdownInterval] = useState(false);
   const [currentExchange, setCurrentExchange] = useState();
   const [currentMarket, setCurrentMarket] = useState();
+  const [exchangeRate, setExchangeRate] = useState(0);
   const [fundingRate, setFundingRate] = useState();
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState();
@@ -133,7 +135,7 @@ function App() {
 
   const getDashboardCallback = useCallback(getDashboard, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
-  const getInverseCallback = useCallback(getInverse, [getProviderCallback]);
+  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -157,10 +159,14 @@ function App() {
     try {
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
-      setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
-      const exchangeData1Account = await exchange.account.exchangeData.fetch(exchange1PublicKey);
-      setCCurrentPrice(exchangeData1Account.lastPrice.toNumber());
-      setCMarketCap(exchangeData1Account.lastPrice.toNumber() * exchangeData1Account.lastPrice.toNumber());
+      const supply = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
+      const total = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
+      setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
+      // Second exchange is always C
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(accounts.exchanges[1].exchange));
+      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (mintCInfo.decimals * 10)).toFixed(2);
+      setCCurrentPrice(lastPrice.toFixed(0));
+      setCMarketCap(lastPrice.toFixed(0));
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -179,19 +185,19 @@ function App() {
     setTurnaround24H((lastPrice * (Math.random() / 100 + 1.3)).toFixed(2));
   }
 
-  async function getInverse(asset) {
-    let exchangePublicKey;
-    if (asset === inverseAssets[0]) {
-      exchangePublicKey = exchange0PublicKey;
-    } else {
-      exchangePublicKey = exchange1PublicKey;
-    }
-    setCurrentExchange(exchangePublicKey.toString());
+  async function getInverseData(asset) {
     const provider = await getProviderCallback();
+    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.name === asset).exchange);
+    setCurrentExchange(exchangePublicKey.toString());
     const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
-      const account = await program.account.exchangeData.fetch(exchangePublicKey);
-      setDummyInverseData(account.lastPrice.toNumber());
+      const exchangeAccount = await program.account.exchangeData.fetch(exchangePublicKey);
+      const mintAPublicKey = accounts.exchanges.find((x) => x.name === asset).mintA;
+      const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
+      const mintAInfo = await tokenA.getMintInfo();
+      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
+      setDummyInverseData(lastPrice);
+      setExchangeRate(lastPrice);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -230,11 +236,11 @@ function App() {
             <Row>
               <Col span={8}>
                 <p>Market Cap</p>
-                <Title level={3} className='Title Dark'>${cMarketCap}</Title>
+                <Title level={3} className='Title Dark'>{cMarketCap}</Title>
               </Col>
               <Col span={8}>
                 <p>Price</p>
-                <Title level={3} className='Title Dark'>${cCurrentPrice}</Title>
+                <Title level={3} className='Title Dark'>{cCurrentPrice}</Title>
               </Col>
               <Col span={8}>
                 <p>Circulating Supply (Total)</p>
@@ -328,7 +334,7 @@ function App() {
                     </Select>
                   } onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
                 <br/>
-                <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0} {inverseAsset}</strong></p>
+                <p>Current exchange rate at 1 USD = {exchangeRate} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark'
                   optionType='button' buttonStyle='solid' value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
@@ -442,13 +448,14 @@ function App() {
 
   useEffect(() => {
     getProviderCallback().then(function(provider) {
-      if (wallet.connected && !balance) {
-        try {
+      if (wallet.connected) {
+        if (inverseAsset === 'SOL') {
           provider.connection.getBalance(wallet.publicKey).then(function(result) {
             setBalance(result / LAMPORTS_PER_SOL);
           });
-        } catch (e) {
-          networkErrorMessage();
+        } else {
+          // TODO: Get wallet balance for asset
+          setBalance(0);
         }
       }
 
@@ -493,10 +500,10 @@ function App() {
 
     if (!isInverseSet) {
       setIsInverseSet(true);
-      getInverseCallback(inverseAssets[0]);
+      getInverseDataCallback(inverseAssets[0]);
     }
   }, [balance, blockHeightInterval, countdownInterval, currentExchange, getDashboardCallback, getFactoryDataCallback, getProviderCallback,
-    getInverseCallback, isInverseSet, setCurrentExchange, setMenu, wallet.connected, wallet.publicKey]);
+    getInverseDataCallback, isInverseSet, setCurrentExchange, setMenu, wallet.connected, wallet.publicKey]);
 
   return (
     <Layout className='App Dark'>
@@ -529,7 +536,7 @@ function App() {
                 type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
-              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } SOL</code>
+              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
@@ -556,7 +563,7 @@ function App() {
           renderItem={asset => (
             <List.Item className='Asset ListItem'>
               <List.Item.Meta title={asset}
-                onClick={() => {setInverseAsset(asset); getInverse(asset); setIsInverseAssetModalVisible(false)}}/>
+                onClick={() => {setInverseAsset(asset); getInverseData(asset); setIsInverseAssetModalVisible(false)}}/>
             </List.Item>
           )}
         />

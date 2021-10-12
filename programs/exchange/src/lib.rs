@@ -117,7 +117,7 @@ pub mod exchange {
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange_a.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         Ok(())
     }
 
@@ -135,14 +135,19 @@ pub mod exchange {
             ctx.accounts.exchange_a.amount,
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         Ok(())
     }
 
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
-    pub fn b_to_a_input(ctx: Context<Swap>, amount_b: u64, deadline: Option<i64>) -> ProgramResult {
+    pub fn b_to_a_input(
+        ctx: Context<Swap>,
+        amount_b: u64,
+        direction: Direction,
+        deadline: Option<i64>,
+    ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_a = get_input_price(
@@ -150,7 +155,7 @@ pub mod exchange {
             ctx.accounts.exchange_b.amount - amount_b,
             ctx.accounts.exchange_a.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         assert!(amount_a >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
@@ -159,6 +164,11 @@ pub mod exchange {
             amount_a,
         )?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let position = &mut ctx.accounts.position;
+        position.direction = direction;
+        position.entry = amount_b;
+        position.quantity = amount_b;
+        position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         Ok(())
@@ -167,7 +177,12 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
-    pub fn a_to_b_input(ctx: Context<Swap>, amount_a: u64, deadline: Option<i64>) -> ProgramResult {
+    pub fn a_to_b_input(
+        ctx: Context<Swap>,
+        amount_a: u64,
+        direction: Direction,
+        deadline: Option<i64>,
+    ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_b = get_input_price(
@@ -175,7 +190,7 @@ pub mod exchange {
             ctx.accounts.exchange_a.amount - amount_a,
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         assert!(amount_b >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
@@ -184,6 +199,11 @@ pub mod exchange {
             amount_a,
         )?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let position = &mut ctx.accounts.position;
+        position.direction = direction;
+        position.entry = amount_b;
+        position.quantity = amount_b;
+        position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         Ok(())
@@ -204,7 +224,7 @@ pub mod exchange {
             ctx.accounts.exchange_b.amount - amount_b,
             ctx.accounts.exchange_a.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
@@ -228,7 +248,7 @@ pub mod exchange {
             ctx.accounts.exchange_a.amount - amount_a,
             ctx.accounts.exchange_b.amount,
             ctx.accounts.exchange.fee,
-        ) as u64;
+        );
         assert!(amount_b >= 1);
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
@@ -311,8 +331,6 @@ pub struct GetBToAOutputPrice<'info> {
 pub struct Swap<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
-    pub token_program: UncheckedAccount<'info>,
-    pub pda: UncheckedAccount<'info>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
@@ -320,11 +338,16 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
+    pub recipient: UncheckedAccount<'info>,
+    pub pda: UncheckedAccount<'info>,
+    #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8)]
+    pub position: Account<'info, Position>,
+    pub system_program: Program<'info, System>,
+    pub token_program: UncheckedAccount<'info>,
+    #[account(mut)]
     pub user_a: UncheckedAccount<'info>,
     #[account(mut)]
     pub user_b: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub recipient: UncheckedAccount<'info>,
 }
 
 /// Implements creation accounts
@@ -450,10 +473,13 @@ pub enum Direction {
     Short,
 }
 
-/// User account state for input and output price quotes.
+/// User position account state
 #[account]
 pub struct Position {
     pub direction: Direction,
+    pub entry: u64,
+    pub quantity: u64,
+    pub unix_timestamp: i64,
 }
 
 #[error]
@@ -531,12 +557,12 @@ pub fn get_input_price(
     input_reserve: u64,
     output_reserve: u64,
     fee: u64,
-) -> f64 {
+) -> u64 {
     assert!(input_reserve > 0 && output_reserve > 0);
     let input_amount_with_fee = input_amount as f64 * (fee as f64 * 1.00001);
     let numerator = input_amount_with_fee * output_reserve as f64;
     let demonominator = input_reserve as f64 + input_amount_with_fee;
-    numerator / demonominator
+    (numerator / demonominator) as u64
 }
 
 /// Pricing function for converting between B and A.
@@ -551,9 +577,9 @@ pub fn get_output_price(
     input_reserve: u64,
     output_reserve: u64,
     fee: u64,
-) -> f64 {
+) -> u64 {
     assert!(input_reserve > 0 && output_reserve > 0);
     let numerator = input_reserve as f64 * output_amount as f64;
     let denominator = (output_reserve - output_amount) as f64 * (fee as f64 * 1.0001);
-    numerator / denominator + 1.0
+    (numerator / denominator + 1.0) as u64
 }
