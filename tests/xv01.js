@@ -8,12 +8,16 @@ const exchangeIdl = require('../target/idl/exchange.json');
 const factoryIdl = require('../target/idl/factory.json');
 const pythIdl = require('../target/idl/pyth.json');
 
-const { SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
+const { LAMPORTS_PER_SOL, PublicKey, SystemProgram } = anchor.web3;
 
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
+  const browserWallet = new PublicKey('7ADLt8RQX6W5v7L4voBxY9WcT7xRVis9rgbaUTpvEQ4w');
+
   const provider = anchor.getProvider();
+
+  const localnet = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
 
   const exchange = anchor.workspace.Exchange;
   const factory = anchor.workspace.Factory;
@@ -81,6 +85,13 @@ describe('XV01', () => {
       await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop * LAMPORTS_PER_SOL),
       'confirmed'
     );
+
+    if (localnet) {
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(browserWallet, 100 * LAMPORTS_PER_SOL),
+        'confirmed'
+      );
+    }
 
     mint0A = await Token.createMint(
       provider.connection,
@@ -627,7 +638,7 @@ describe('XV01', () => {
     );
     const fee = new anchor.BN(3);
     const tx = await factory.rpc.createExchange(
-      mint1A.publicKey,
+      mintC.publicKey,
       mint1B.publicKey,
       mintC.publicKey,
       fee, {

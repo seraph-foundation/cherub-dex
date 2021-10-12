@@ -36,15 +36,10 @@ const name = 'xv01';
 const githubUrl = 'https://www.github.com/xv01-finance/xv01-protocol';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dashboard', 'trade', 'pool', 'stake', 'dao'];
+const routes = ['dashboard', 'inverse', 'pool', 'stake', 'dao'];
 const showBanner = false;
-const tradeAssets = ['XV01', 'SOL'];
+const inverseAssets = ['SOL', 'XV01'];
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
-
-const tradeOptions = [
-  { label: 'Buy / Long', value: 'long' },
-  { label: 'Sell / Short', value: 'short' },
-];
 
 const tvdData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -115,7 +110,8 @@ function App() {
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState();
   const [high24H, setHigh24H] = useState();
-  const [isTradeAssetModalVisible, setIsTradeAssetModalVisible] = useState(false);
+  const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
+  const [isInverseSet, setIsInverseSet] = useState(false);
   const [leverage, setLeverage] = useState(1);
   const [low24H, setLow24H] = useState();
   const [menu, setMenu] = useState('');
@@ -124,19 +120,20 @@ function App() {
   const [stakeStep, setStakeStep] = useState(0);
   // eslint-disable-next-line
   const [tokenCount, setTokenCount] = useState(0);
-  const [tradeCard, setTradeCard] = useState('trade');
-  const [tradeDirection, setTradeDirection] = useState('long');
-  const [tradeQuantity, setTradeQuantity] = useState();
-  const [tradeStep, setTradeStep] = useState(0);
-  const [tradeAsset, setTradeAsset] = useState(tradeAssets[0]);
+  const [inverseCard, setInverseCard] = useState('inverse');
+  const [inverseDirection, setInverseDirection] = useState('long');
+  const [inverseQuantity, setInverseQuantity] = useState();
+  const [inverseStep, setInverseStep] = useState(0);
+  const [inverseAsset, setInverseAsset] = useState(inverseAssets[0]);
   const [turnaround24H, setTurnaround24H] = useState();
 
   const wallet = useWallet();
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback, currentMarket]);
+  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
+  const getInverseCallback = useCallback(getInverse, [getProviderCallback]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -161,14 +158,9 @@ function App() {
       const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
       const mintCInfo = await tokenC.getMintInfo();
       setCirculatingSupplyTotal(mintCInfo.supply.toNumber() + ' / ' + mintCInfo.supply.toNumber());
-      const exchangeData0Account = await exchange.account.exchangeData.fetch(exchange0PublicKey);
-      setCCurrentPrice(exchangeData0Account.lastPrice.toNumber());
-      setCMarketCap(exchangeData0Account.lastPrice.toNumber() * exchangeData0Account.lastPrice.toNumber());
-
-      // First exchange is always XV01
-      if (currentMarket === undefined) {
-        setDummyTradeData(exchangeData0Account.lastPrice.toNumber());
-      }
+      const exchangeData1Account = await exchange.account.exchangeData.fetch(exchange1PublicKey);
+      setCCurrentPrice(exchangeData1Account.lastPrice.toNumber());
+      setCMarketCap(exchangeData1Account.lastPrice.toNumber() * exchangeData1Account.lastPrice.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -178,28 +170,28 @@ function App() {
     message.info('Unable to connect to network');
   }
 
-  function setDummyTradeData(lastPrice) {
+  function setDummyInverseData(lastPrice) {
+    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0) + '%');
     setCurrentMarket(lastPrice);
+    setFundingRate(lastPrice > 0 ? (Math.random() / 100).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
     setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
     setTurnaround24H((lastPrice * (Math.random() / 100 + 1.3)).toFixed(2));
-    setChange24H('+' + (Math.random() / 100 + 2).toFixed(2) + '%');
-    setFundingRate((Math.random() / 100).toFixed(4));
   }
 
-  async function getTrade(asset) {
+  async function getInverse(asset) {
     let exchangePublicKey;
-    if (asset === tradeAssets[0]) {
+    if (asset === inverseAssets[0]) {
       exchangePublicKey = exchange0PublicKey;
     } else {
       exchangePublicKey = exchange1PublicKey;
     }
-    setCurrentExchange(exchangePublicKey.toString());
+    //setCurrentExchange(exchangePublicKey.toString());
     const provider = await getProviderCallback();
     const program = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
       const account = await program.account.exchangeData.fetch(exchangePublicKey);
-      setDummyTradeData(account.lastPrice.toNumber());
+      setDummyInverseData(account.lastPrice.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -225,7 +217,7 @@ function App() {
   );
 
   const assetTitleModal = (
-    <Button className='AssetTitleModal' type='link' onClick={() => setIsTradeAssetModalVisible(true)}>{tradeAsset} <DownOutlined/></Button>
+    <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
   );
 
   const dashboardView = (
@@ -266,8 +258,8 @@ function App() {
     </Row>
   );
 
-  const tradeStatsBar = (
-    <Row className='TradeStatsBar'>
+  const inverseStatsBar = (
+    <Row className='InverseStatsBar'>
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market</small></p>
@@ -297,10 +289,10 @@ function App() {
     </Row>
   );
 
-  const tradeQuantityDescription = (
+  const inverseQuantityDescription = (
     <small>
-      Your order amount of <span className='White'>{tradeQuantity > 0 ? (tradeQuantity / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{tradeQuantity > 0 ? (tradeQuantity / currentMarket).toFixed(2) : 0} {tradeAsset}</span>
+      Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
+        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarket).toFixed(2) : 0} {inverseAsset}</span>
     </small>
   );
 
@@ -311,46 +303,49 @@ function App() {
   const leverageDescription = (
     <small>
       At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {tradeQuantity > 0 ? (tradeQuantity / currentMarket * leverage).toFixed(2) : 0} {tradeAsset}</span>
+        {inverseQuantity > 0 ? (inverseQuantity / currentMarket * leverage).toFixed(2) : 0} {inverseAsset}</span>
     </small>
   );
 
-  const tradeView = (
+  const inverseView = (
     <>
-      {tradeStatsBar}
+      {inverseStatsBar}
       <br/>
       <Row>
         <Col span={6}></Col>
-        { tradeCard === 'trade' ?
+        { inverseCard === 'inverse' ?
         <>
           <Col span={8} className='Cards'>
             <div className='site-card-border-less-wrapper'>
               <Card title={assetTitleModal} className='Card Dark' bordered={false}
-                extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('positions')}>Positions</a>}>
+                extra={<a href='/#/inverse' className='CardLink' onClick={() => setInverseCard('positions')}>Positions</a>}>
                 <p><strong>Quantity</strong></p>
-                <Input className='TradeInput Input Dark' value={tradeQuantity} placeholder='0'
+                <Input className='InverseInput Input Dark' value={inverseQuantity} placeholder='0'
                   addonAfter={
                     <Select defaultValue='USD' className='select-after'>
                       <Option value='USD'>USD</Option>
                     </Select>
-                  } onChange={(e) => {setTradeQuantity(e.target.value); setTradeStep(1)}} />
+                  } onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
                 <br/>
-                <p>Your current balance is <strong>{balance}</strong></p>
-                <Radio.Group options={tradeOptions} onChange={(e) => setTradeDirection(e.target.value)} className='RadioGroup Dark'
-                  optionType='button' buttonStyle='solid' value={tradeDirection} />
+                <p>Your current balance is <strong>{balance} {inverseAsset}</strong></p>
+                <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark'
+                  optionType='button' buttonStyle='solid' value={inverseDirection}>
+                  <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
+                  <Radio.Button className='SellButton' value='short'>Sell / Short</Radio.Button>
+                </Radio.Group>
                 <br/>
                 <br/>
                 <p><strong>{leverage}x Leverage</strong></p>
-                <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setTradeStep(2)}} />
+                <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setInverseStep(2)}} />
                 <br/>
-                <Button size='large' disabled={!wallet.connected} className='TradeButton Button Dark' type='ghost'>Approve</Button>
+                <Button size='large' disabled={!wallet.connected} className='InverseButton Button Dark' type='ghost'>Approve</Button>
               </Card>
             </div>
           </Col>
           <Col span={1}></Col>
           <Col span={3}>
-            <Steps direction='vertical' current={tradeStep}>
-              <Step key='set' title='Quantity' description={tradeQuantityDescription}/>
+            <Steps direction='vertical' current={inverseStep}>
+              <Step key='set' title='Quantity' description={inverseQuantityDescription}/>
               <Step key='collateral' title='Leverage' description={leverageDescription}/>
               <Step key='order' title='Approve' description={approveDescription}/>
             </Steps>
@@ -359,7 +354,7 @@ function App() {
         <Col span={12} className='Cards'>
           <div className='site-card-border-less-wrapper'>
             <Card title={assetTitleModal} className='Card Dark' bordered={false}
-              extra={<a href='/#/trade' className='CardLink' onClick={() => setTradeCard('trade')}>Trade</a>}>
+              extra={<a href='/#/inverse' className='CardLink' onClick={() => setInverseCard('inverse')}>Inverse</a>}>
             </Card>
           </div>
         </Col>
@@ -488,14 +483,19 @@ function App() {
     }
 
     if (currentExchange === undefined) {
-      // First exchange is always XV01
-      setCurrentExchange(accounts.exchanges[0]);
+      // Second exchange is always XV01
+      setCurrentExchange(accounts.exchanges[1]);
     }
 
     getFactoryDataCallback();
     getDashboardCallback();
-  }, [wallet.connected, wallet.publicKey, blockHeightInterval, getProviderCallback, balance, setMenu, getFactoryDataCallback,
-    getDashboardCallback, countdownInterval, currentExchange, setCurrentExchange]);
+
+    if (!isInverseSet) {
+      setIsInverseSet(true);
+      getInverseCallback(inverseAssets[0]);
+    }
+  }, [balance, blockHeightInterval, countdownInterval, currentExchange, getDashboardCallback, getFactoryDataCallback, getProviderCallback,
+    getInverseCallback, isInverseSet, setCurrentExchange, setMenu, wallet.connected, wallet.publicKey]);
 
   return (
     <Layout className='App Dark'>
@@ -514,7 +514,7 @@ function App() {
             <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
               mode='horizontal'>
               <Menu.Item key='dashboard'>Dashboard</Menu.Item>
-              <Menu.Item key='trade'>Trade</Menu.Item>
+              <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='pool'>Pool</Menu.Item>
               <Menu.Item key='stake'>Stake</Menu.Item>
               <Menu.Item key='dao'>DAO</Menu.Item>
@@ -542,7 +542,7 @@ function App() {
             <br/>
             <br/>
             { menu === 'dashboard' ? dashboardView : null }
-            { menu === 'trade' ? tradeView : null }
+            { menu === 'inverse' ? inverseView : null }
             { menu === 'pool' ? poolView : null }
             { menu === 'stake' ? stakeView : null }
             { menu === 'dao' ? daoView : null }
@@ -550,11 +550,12 @@ function App() {
         </Content>
       </Layout>
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
-      <Modal title='Assets' footer={null} visible={isTradeAssetModalVisible} onCancel={() => {setIsTradeAssetModalVisible(false)}}>
-        <List itemLayout='horizontal' dataSource={tradeAssets} forceRender={true}
+      <Modal title='Assets' footer={null} visible={isInverseAssetModalVisible} onCancel={() => {setIsInverseAssetModalVisible(false)}}>
+        <List itemLayout='horizontal' dataSource={inverseAssets} forceRender={true}
           renderItem={asset => (
             <List.Item className='Asset ListItem'>
-              <List.Item.Meta title={asset} onClick={() => {setTradeAsset(asset); getTrade(asset); setIsTradeAssetModalVisible(false)}}/>
+              <List.Item.Meta title={asset}
+                onClick={() => {setInverseAsset(asset); getInverse(asset); setIsInverseAssetModalVisible(false)}}/>
             </List.Item>
           )}
         />

@@ -36,7 +36,7 @@ body {
 }
 
 .Menu.Dark {
-    width: 28.7em;
+    width: 34.55em;
 }
 
 .ant-tabs-tab-btn {
@@ -145,7 +145,7 @@ body {
     border-color: #1890ff;
 }
 
-.TradeButton {
+.InverseButton {
     width: 100%;
     color: #1890ff;
     border-color: #1890ff;
@@ -155,7 +155,7 @@ body {
     width: 100%;
 }
 
-.TradeInput {
+.InverseInput {
     text-align: right;
 }
 
@@ -203,7 +203,7 @@ body {
     text-align: left;
 }
 
-.TradeStatsBar {
+.InverseStatsBar {
     color: rgba(255, 255, 255, 0.65) !important;
 }
 
@@ -223,7 +223,45 @@ body {
     color: white;
 }
 
+.BuyButton > .ant-radio-button-checked {
+    border-right-color: #24ae64 !important;
+    background-color: #24ae64 !important;
+    color: white !important;
+}
+
+.BuyButton {
+    border-color: #33b56f !important;
+    color: #24ae64 !important;
+}
+
+.BuyButton > .ant-radio-button {
+    color: white !important;
+}
+
+.SellButton > .ant-radio-button-checked {
+    border-right-color: #d73e3d !important;
+    background-color: #d73e3d !important;
+    color: white !important;
+}
+
+.SellButton {
+    border-color: #d73e3d !important;
+    color: #d73e3d !important;
+}
+
+.SellButton > .ant-radio-button {
+    color: white !important;
+}
+
 /* Ant */
+.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
+    background-color: #d73e3d !important;
+}
+
+.ant-radio-group-solid .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)  {
+    color: white !important;
+}
+
 .ant-steps-vertical > .ant-steps-item .ant-steps-item-icon {
     background-color: #1f1f1f;
 }
@@ -292,6 +330,11 @@ body {
 }
 
 .ant-steps-item-title {
+    color: white !important;
+}
+
+.ant-steps-item-process .ant-steps-item-icon {
+    border-color: white;
 }
 
 .ant-select-arrow {
