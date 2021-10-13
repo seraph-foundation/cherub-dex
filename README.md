@@ -1,12 +1,12 @@
-# Cherub Finance
+# Cherub
 
 Inverse Perpetuals DAO
 
 **Features**
 
-- **Build** by accessing deep, protocol-owned liquidity
+- **Build** Access deep, protocol-owned liquidity
 - **Trade** 100x leverage with zero impermanent loss using vAMM technology
-- **Invest** via DAO protocol governance based on a high-yield, rebased bonding token
+- **Invest** DAO protocol governance based on a high-yield, rebased bonding token
 
 ## Development
 
