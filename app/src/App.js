@@ -2,15 +2,15 @@ import {
   Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message,
   notification
 } from 'antd';
-import { DownOutlined, SettingOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
 import { BN, Program, Provider, utils } from '@project-serum/anchor';
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { Line } from 'react-chartjs-2';
-import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
+import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { getPhantomWallet, getSolletWallet, getSlopeWallet } from '@solana/wallet-adapter-wallets';
+import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
 import './App.css';
@@ -28,34 +28,19 @@ const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const name = 'Cherub';
+const Direction = {
+  Long: { long: {} },
+  Short: { short: {} },
+};
+
 const cSymbol = 'CHRB';
 const githubUrl = 'https://www.github.com/xv01-finance/xv01-protocol';
+const name = 'Cherub';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
 const routes = ['dao', 'inverse', 'pool', 'stake'];
 const showBanner = false;
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
-
-const tvdData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  datasets: [{
-    data: [0, 5, 10, 33, 35, 51, 54, 76],
-    fill: true,
-    borderColor: '#40a9ff',
-    backgroundColor: '#69c0ff'
-  }]
-};
-
-const treasuryData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  datasets: [{
-    data: [0, 7, 6, 10, 24, 51, 54, 176],
-    fill: true,
-    borderColor: '#40a9ff',
-    backgroundColor: '#69c0ff'
-  }]
-};
 
 const chartOptions = {
   plugins: {
@@ -81,9 +66,24 @@ const daoProposals = [{
   icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
 }];
 
-const Direction = {
-  Long: { long: {} },
-  Short: { short: {} },
+const treasuryData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [{
+    data: [0, 7, 6, 10, 24, 51, 54, 176],
+    fill: true,
+    borderColor: '#40a9ff',
+    backgroundColor: '#69c0ff'
+  }]
+};
+
+const tvdData = {
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  datasets: [{
+    data: [0, 5, 10, 33, 35, 51, 54, 76],
+    fill: true,
+    borderColor: '#40a9ff',
+    backgroundColor: '#69c0ff'
+  }]
 };
 
 function App() {
