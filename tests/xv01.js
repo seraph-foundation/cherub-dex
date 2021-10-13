@@ -13,7 +13,8 @@ const { LAMPORTS_PER_SOL, PublicKey, SystemProgram } = anchor.web3;
 describe('XV01', () => {
   anchor.setProvider(anchor.Provider.env());
 
-  const browserWallet = new PublicKey('BnvwAZTNTPQYo6j3Yv5v3HozjV2MkEoh4oQfDwMqbno8');
+  const browserWalletPublicKey = new PublicKey('292g43tSj4jVq7VKJLZ51DKvxTT5RxQkZ1YwryqgRvN2');
+  const solMintPublicKey = new PublicKey('So11111111111111111111111111111111111111112');
 
   const provider = anchor.getProvider();
 
@@ -94,7 +95,7 @@ describe('XV01', () => {
 
     if (isLocalnet) {
       await provider.connection.confirmTransaction(
-        await provider.connection.requestAirdrop(browserWallet, 100 * LAMPORTS_PER_SOL),
+        await provider.connection.requestAirdrop(browserWalletPublicKey, amountAirdrop),
         'confirmed'
       );
     }
@@ -199,17 +200,19 @@ describe('XV01', () => {
         tokenA: exchangeTokenAccount0A.toString(),
         tokenB: exchangeTokenAccount0B.toString(),
         walletA: walletTokenAccount0A.toString(),
-        walletB: walletTokenAccount0B.toString()
+        walletB: walletTokenAccount0B.toString(),
+        token: solMintPublicKey.toString()
       }, {
         exchange: exchange1Account.publicKey.toString(),
         index: 1,
         mintA: mint1A.publicKey.toString(),
         mintB: mint1B.publicKey.toString(),
-        name: 'XV01',
+        name: 'CHRB',
         tokenA: exchangeTokenAccount1A.toString(),
         tokenB: exchangeTokenAccount1B.toString(),
         walletA: walletTokenAccount1A.toString(),
-        walletB: walletTokenAccount1B.toString()
+        walletB: walletTokenAccount1B.toString(),
+        token: mintC.publicKey.toString()
       }],
       trader: traderAccount.publicKey.toString(),
       pyth: pythAccount.publicKey.toString(),
@@ -278,14 +281,14 @@ describe('XV01', () => {
       fee, {
         accounts: {
           exchange: exchange0Account.publicKey,
-          factory: factoryAccount.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          exchangeProgram: exchange.programId,
           exchangeA: exchangeTokenAccount0A,
-          exchangeB: exchangeTokenAccount0B
+          exchangeB: exchangeTokenAccount0B,
+          exchangeProgram: exchange.programId,
+          factory: factoryAccount.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID
         },
-        signers: [factoryAccount.owner, exchange0Account],
-        instructions: [await exchange.account.exchangeData.createInstruction(exchange0Account)]
+        instructions: [await exchange.account.exchangeData.createInstruction(exchange0Account)],
+        signers: [factoryAccount.owner, exchange0Account]
       });
 
     console.log('Your transaction signature', tx);
@@ -671,7 +674,7 @@ describe('XV01', () => {
     );
     const fee = new anchor.BN(3);
     const tx = await factory.rpc.createExchange(
-      mintC.publicKey,
+      mint1A.publicKey,
       mint1B.publicKey,
       mintC.publicKey,
       fee, {
@@ -683,8 +686,8 @@ describe('XV01', () => {
           factory: factoryAccount.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID
         },
-        signers: [factoryAccount.owner, exchange1Account],
-        instructions: [await exchange.account.exchangeData.createInstruction(exchange1Account)]
+        instructions: [await exchange.account.exchangeData.createInstruction(exchange1Account)],
+        signers: [factoryAccount.owner, exchange1Account]
       });
 
     console.log('Your transaction signature', tx);

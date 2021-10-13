@@ -9,7 +9,7 @@ import { Line } from 'react-chartjs-2';
 import { useWallet, WalletProvider, ConnectionProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet, getSolletWallet, getSlopeWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, Keypair, SystemProgram, PublicKey, clusterApiUrl, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
@@ -28,11 +28,12 @@ const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const name = 'xv01';
+const name = 'Cherub';
+const cSymbol = 'CHRB';
 const githubUrl = 'https://www.github.com/xv01-finance/xv01-protocol';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dashboard', 'inverse', 'pool', 'stake', 'dao'];
+const routes = ['dao', 'inverse', 'pool', 'stake'];
 const showBanner = false;
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
@@ -102,10 +103,11 @@ function App() {
   const [gasFee, setGasFee] = useState();
   const [high24H, setHigh24H] = useState();
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
-  const [isInverseSet, setIsInverseSet] = useState(false);
+  const [isInverseDataSet, setIsInverseSet] = useState(false);
   const [leverage, setLeverage] = useState(1);
   const [low24H, setLow24H] = useState();
   const [menu, setMenu] = useState('');
+  const [daoCard, setDAOCard] = useState('statistics');
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
@@ -121,13 +123,31 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getDashboardCallback = useCallback(getDashboard, [getProviderCallback]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, inverseAsset, wallet.connected, wallet.publicKey]);
+  const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
     return new Provider(connection, wallet, opts.preflightCommitment);
+  }
+
+  async function getBalance() {
+    const provider = await getProviderCallback();
+    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+    if (wallet.connected) {
+      // First exchange is always SOL
+      if (inverseExchange.token === accounts.exchanges[0].token) {
+        const balance = await provider.connection.getBalance(wallet.publicKey);
+        setBalance(balance / LAMPORTS_PER_SOL);
+      } else {
+        const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.token), TOKEN_PROGRAM_ID);
+        const mintAInfo = await tokenA.getMintInfo();
+        const balance = await provider.connection.getBalance(new PublicKey(inverseExchange.token));
+        setBalance((balance / (10 ** mintAInfo.decimals)).toFixed(2));
+      }
+    }
   }
 
   async function getFactoryData() {
@@ -141,7 +161,7 @@ function App() {
     }
   }
 
-  async function getDashboard() {
+  async function getDashboardData() {
     const provider = await getProviderCallback();
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
@@ -190,24 +210,27 @@ function App() {
     } catch (err) {
       console.log('Transaction error: ', err);
     }
+
+    setInverseStep(0);
+    setInverseQuantity();
   }
 
   async function approveInverse() {
     const provider = await getProviderCallback();
 
-    const currentInverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const exchangePublicKey = new PublicKey(currentInverseExchange.exchange);
+    const exchangePublicKey = new PublicKey(inverseExchange.exchange);
 
-    const tokenA = new Token(provider.connection, new PublicKey(currentInverseExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID, null);
     const mintAInfo = await tokenA.getMintInfo();
-    const exchangeTokenAccountA = currentInverseExchange.tokenA;
-    const exchangeTokenAccountB = currentInverseExchange.tokenB;
+    const exchangeTokenAccountA = inverseExchange.tokenA;
+    const exchangeTokenAccountB = inverseExchange.tokenB;
 
     // TODO: These should be PDAs on the front and back end
-    const walletTokenAccountA = currentInverseExchange.walletA;
-    const walletTokenAccountB = currentInverseExchange.walletB;
+    const walletTokenAccountA = inverseExchange.walletA;
+    const walletTokenAccountB = inverseExchange.walletB;
 
     // eslint-disable-next-line
     const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
@@ -250,7 +273,7 @@ function App() {
       setLeverage(1);
       setInverseQuantity();
 
-      getInverseDataCallback(currentInverseExchange.name);
+      getInverseDataCallback(inverseExchange.name);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -259,12 +282,12 @@ function App() {
   function calculateCountdown() {
     // TODO: Use 8 hour funding cycles instead of midnight
     const today = new Date();
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    const t = (midnight.getTime() - today.getTime());
-    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((t % (1000 * 60)) / 1000);
+    const deadline = new Date();
+    deadline.setHours(24, 0, 0, 0);
+    const delta = deadline.getTime() - today.getTime();
+    const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((delta % (1000 * 60)) / 1000);
     setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
   }
 
@@ -280,74 +303,32 @@ function App() {
       onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
   );
 
-  const dashboardView = (
-    <Row>
-      <Col span={2}></Col>
-      <Col span={20} className='Cards'>
-        <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title='Dashboard' bordered={false}>
-            <Row>
-              <Col span={6}>
-                <p>Market Cap</p>
-                <Title level={3} className='Title Dark'>{cMarketCap}</Title>
-              </Col>
-              <Col span={6}>
-                <p>Price</p>
-                <Title level={3} className='Title Dark'>{cCurrentPrice}</Title>
-              </Col>
-              <Col span={6}>
-                <p>Circulating Supply (Total)</p>
-                <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {name.toUpperCase()}</Title>
-              </Col>
-              <Col span={6}>
-                <p>Markets</p>
-                <Title level={3} className='Title Dark'>{tokenCount}</Title>
-              </Col>
-            </Row>
-            <br/>
-            <Row>
-              <Col span={12}>
-                <p>Total Value Deposited</p>
-                <Line height={100} data={tvdData} options={chartOptions}/>
-              </Col>
-              <Col span={12}>
-                <p>Market Value of Treasury Assets</p>
-                <Line height={100} data={treasuryData} options={chartOptions}/>
-              </Col>
-            </Row>
-          </Card>
-        </div>
-      </Col>
-      <Col span={2}></Col>
-    </Row>
-  );
-
   const inverseStatsBar = (
     <Row className='InverseStatsBar'>
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market</small></p>
-        <Title level={4} className='Title Dark Green'>{currentMarket}</Title>
+        <Title level={5} className='Title Dark Green'>{currentMarket}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change</small></p>
-        <Title level={4} className='Title Dark Green'>{change24H}</Title>
+        <Title level={5} className='Title Dark Green'>{change24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
-        <Title level={4} className='Title Dark'>{high24H}</Title>
+        <Title level={5} className='Title Dark'>{high24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Low</small></p>
-        <Title level={4} className='Title Dark'>{low24H}</Title>
+        <Title level={5} className='Title Dark'>{low24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>24H Turnaround</small></p>
-        <Title level={4} className='Title Dark'>{turnaround24H}</Title>
+        <Title level={5} className='Title Dark'>{turnaround24H}</Title>
       </Col>
       <Col span={3}>
         <p><small>Funding Rate / Countdown</small></p>
-        <Title level={4} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
+        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
       </Col>
       <Col span={3}></Col>
     </Row>
@@ -391,7 +372,7 @@ function App() {
                     </Select>
                   } onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
                 <br/>
-                <p>Current exchange rate at 1 USD = {exchangeRate} {inverseAsset}</p>
+                <p>Your current exchange rate is 1 USD = {exchangeRate} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark'
                   optionType='button' buttonStyle='solid' value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
@@ -431,15 +412,21 @@ function App() {
 
   const poolView = (
     <Row>
-      <Col span={6}></Col>
-      <Col span={12} className='Cards'>
+      <Col span={8}></Col>
+      <Col span={8} className='Cards'>
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
             extra={<a href='/#/pool' className='CardLink' onClick={(e) => {}}>Positions</a>}>
+            <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
+              onChange={(e) => setStakeDeposit(e.target.value)} />
+            <br/>
+            <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
+            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+              Approve</Button>
           </Card>
         </div>
       </Col>
-      <Col span={6}></Col>
+      <Col span={8}></Col>
     </Row>
   );
 
@@ -487,36 +474,90 @@ function App() {
   );
 
   const daoView = (
-    <Row>
-      <Col span={2}></Col>
-      <Col span={20} className='Cards'>
-        <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title='DAO' bordered={false}
-            extra={<a href='/#/dao' className='CardLink' onClick={(e) => {}}>Create Proposal</a>}>
-            <List itemLayout='horizontal' dataSource={daoProposals}
-              renderItem={item => (
-                <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
-              )}/>
-          </Card>
-        </div>
-      </Col>
-      <Col span={2}></Col>
-    </Row>
+    <>
+      { daoCard === 'statistics' ?
+      <Row>
+        <Col span={2}></Col>
+        <Col span={20} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title='DAO' bordered={false}
+              extra={<a href='/#/dao' className='CardLink' onClick={() => setDAOCard('vote')}>Vote</a>}>
+              <Row>
+                <Col span={6}>
+                  <p>Market Cap</p>
+                  <Title level={3} className='Title Dark'>{cMarketCap}</Title>
+                </Col>
+                <Col span={6}>
+                  <p>Price</p>
+                  <Title level={3} className='Title Dark'>{cCurrentPrice}</Title>
+                </Col>
+                <Col span={6}>
+                  <p>Circulating Supply (Total)</p>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {cSymbol}</Title>
+                </Col>
+                <Col span={6}>
+                  <p>Markets</p>
+                  <Title level={3} className='Title Dark'>{tokenCount}</Title>
+                </Col>
+              </Row>
+              <br/>
+              <Row>
+                <Col span={12}>
+                  <p>Total Value Deposited</p>
+                  <Line height={100} data={tvdData} options={chartOptions}/>
+                </Col>
+                <Col span={12}>
+                  <p>Market Value of Treasury Assets</p>
+                  <Line height={100} data={treasuryData} options={chartOptions}/>
+                </Col>
+              </Row>
+            </Card>
+          </div>
+        </Col>
+        <Col span={2}></Col>
+      </Row>
+          :
+          <Row>
+            <Col span={2}></Col>
+            <Col span={20} className='Cards'>
+              <div className='site-card-border-less-wrapper'>
+                <Card className='Card Dark' title='DAO' bordered={false}
+                  extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
+                  <List itemLayout='horizontal' dataSource={daoProposals}
+                    renderItem={item => (
+                      <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
+                    )}/>
+                </Card>
+              </div>
+            </Col>
+            <Col span={2}></Col>
+          </Row>
+      }
+    </>
   );
 
   useEffect(() => {
-    getProviderCallback().then(function(provider) {
-      if (wallet.connected) {
-        if (inverseAsset === 'SOL') {
-          provider.connection.getBalance(wallet.publicKey).then(function(result) {
-            setBalance(result / LAMPORTS_PER_SOL);
-          });
-        } else {
-          // TODO: Get wallet balance for asset
-          setBalance(0);
-        }
-      }
+    // TODO: This fires every second, minimize this
+    getBalanceCallback();
+    getDashboardDataCallback();
+    getFactoryDataCallback();
 
+    if (!isInverseDataSet) {
+      setIsInverseSet(true);
+      getInverseDataCallback(accounts.exchanges[0].name);
+    }
+  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet]);
+
+  useEffect(() => {
+    if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
+      setMenu(window.location.href.split('#/')[1]);
+    } else {
+      window.location.href = '/#/' + routes[0];
+    }
+  }, [setMenu]);
+
+  useEffect(() => {
+    getProviderCallback().then(function(provider) {
       if (!blockHeightInterval) {
         try {
           setBlockHeightInterval(true);
@@ -530,7 +571,9 @@ function App() {
         }
       }
     });
+  }, [blockHeightInterval, getProviderCallback]);
 
+  useEffect(() => {
     if (!countdownInterval) {
       try {
         setCountdownInterval(true);
@@ -541,22 +584,7 @@ function App() {
         networkErrorMessage();
       }
     }
-
-    if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
-      setMenu(window.location.href.split('#/')[1]);
-    } else {
-      window.location.href = '/#/' + routes[0];
-    }
-
-    getFactoryDataCallback();
-    getDashboardCallback();
-
-    if (!isInverseSet) {
-      setIsInverseSet(true);
-      getInverseDataCallback(accounts.exchanges[0].name);
-    }
-  }, [balance, blockHeightInterval, countdownInterval, getDashboardCallback, getFactoryDataCallback, getProviderCallback,
-    getInverseDataCallback, inverseAsset, isInverseSet, setMenu, wallet.connected, wallet.publicKey]);
+  }, [countdownInterval, setCountdownInterval]);
 
   return (
     <Layout className='App Dark'>
@@ -568,17 +596,17 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.fi</strong>
+              <img src='/logo.png' alt='Logo' className='LogoImage'/>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.so</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
             <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
               mode='horizontal'>
-              <Menu.Item key='dashboard'>Dashboard</Menu.Item>
+              <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='pool'>Pool</Menu.Item>
-              <Menu.Item key='stake'>Stake</Menu.Item>
-              <Menu.Item key='dao'>DAO</Menu.Item>
+              <Menu.Item key='stake'>Bond</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -602,7 +630,6 @@ function App() {
           <div>
             <br/>
             <br/>
-            { menu === 'dashboard' ? dashboardView : null }
             { menu === 'inverse' ? inverseView : null }
             { menu === 'pool' ? poolView : null }
             { menu === 'stake' ? stakeView : null }
@@ -612,7 +639,7 @@ function App() {
       </Layout>
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
       <Modal title='Assets' footer={null} visible={isInverseAssetModalVisible} onCancel={() => {setIsInverseAssetModalVisible(false)}}>
-        <List itemLayout='horizontal' dataSource={accounts.exchanges} forceRender={true}
+        <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true'
           renderItem={exchange => (
             <List.Item className='Asset ListItem'>
               <List.Item.Meta title={exchange.name}

@@ -1,7 +1,10 @@
 /* App */
+html {
+    zoom: 106%;
+}
+
 .App {
     text-align: center;
-    min-height: 100vh;
 }
 
 .App.Dark {
@@ -31,8 +34,9 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
-.Menu.Dark {
-    width: 34.55em;
+.LogoImage {
+    height: 18px;
+    margin-right: 10px;
 }
 
 .LearnMore.Dark {

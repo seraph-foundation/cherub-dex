@@ -1,12 +1,12 @@
 # XV01 Protocol
 
-Perpetual swaps vAMM with protocol-owned liquidity for high-yield, rebased XV01 cryptodollars
+Inverse Perpetuals DAO
 
 **Features**
 
-- Trade 100x leverage with zero impermanent loss and high-fidelity on-chain indexing
+- Trade 100x leverage with zero impermanent loss and high-fidelity on-chain indexing using vAMM technology
 - Access or provide deep, protocol-owned liquidity
-- DAO protocol governance based on high-yield, rebased XV01 cryptodollars
+- DAO protocol governance based on high-yield, rebased bonding token
 
 ## Development
 
