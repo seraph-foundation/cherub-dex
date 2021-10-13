@@ -1,12 +1,12 @@
-# XV01 Protocol
+# Cherub Finance
 
 Inverse Perpetuals DAO
 
 **Features**
 
-- Trade 100x leverage with zero impermanent loss and high-fidelity on-chain indexing using vAMM technology
-- Access or provide deep, protocol-owned liquidity
-- DAO protocol governance based on high-yield, rebased bonding token
+- Build using deep, protocol-owned liquidity
+- Trade 100x leverage with zero impermanent loss using vAMM technology
+- Invest via DAO protocol governance based on high-yield, rebased bonding token
 
 ## Development
 

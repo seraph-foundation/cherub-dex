@@ -10,7 +10,7 @@ const pythIdl = require('../target/idl/pyth.json');
 
 const { LAMPORTS_PER_SOL, PublicKey, SystemProgram } = anchor.web3;
 
-describe('XV01', () => {
+describe('Cherub', () => {
   anchor.setProvider(anchor.Provider.env());
 
   const browserWalletPublicKey = new PublicKey('292g43tSj4jVq7VKJLZ51DKvxTT5RxQkZ1YwryqgRvN2');
@@ -190,7 +190,6 @@ describe('XV01', () => {
 
     // Useful for Anchor CLI and app
     fs.writeFileSync(accountsFile, JSON.stringify({
-      factory: factoryAccount.publicKey.toString(),
       exchanges: [{
         exchange: exchange0Account.publicKey.toString(),
         index: 0,
@@ -214,9 +213,10 @@ describe('XV01', () => {
         walletB: walletTokenAccount1B.toString(),
         token: mintC.publicKey.toString()
       }],
-      trader: traderAccount.publicKey.toString(),
+      factory: factoryAccount.publicKey.toString(),
+      mintC: mintC.publicKey.toString(),
       pyth: pythAccount.publicKey.toString(),
-      mintC: mintC.publicKey.toString()
+      trader: traderAccount.publicKey.toString()
     }));
 
     let walletTokenAccountInfoA = await mint0A.getAccountInfo(walletTokenAccount0A);
@@ -254,8 +254,8 @@ describe('XV01', () => {
     const tx = await factory.rpc.initialize(exchange.programId, {
       accounts: {
         authority: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-        factory: factoryAccount.publicKey
+        factory: factoryAccount.publicKey,
+        systemProgram: SystemProgram.programId
       },
       signers: [factoryAccount]
     });
