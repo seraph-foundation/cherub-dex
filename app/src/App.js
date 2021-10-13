@@ -104,6 +104,7 @@ function App() {
   const [high24H, setHigh24H] = useState();
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
   const [isInverseDataSet, setIsInverseSet] = useState(false);
+  const [indexPrice, setIndexPrice] = useState();
   const [leverage, setLeverage] = useState(1);
   const [low24H, setLow24H] = useState();
   const [menu, setMenu] = useState('');
@@ -189,8 +190,9 @@ function App() {
     setCurrentMarket(lastPrice);
     setFundingRate(lastPrice > 0 ? (Math.random() / 100).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
+    setIndexPrice((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
     setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
-    setTurnaround24H((lastPrice * (Math.random() / 100 + 1.3)).toFixed(2));
+    setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0));
   }
 
   async function getInverseData(asset) {
@@ -307,8 +309,8 @@ function App() {
     <Row className='InverseStatsBar'>
       <Col span={3}></Col>
       <Col span={3}>
-        <p><small>Market</small></p>
-        <Title level={5} className='Title Dark Green'>{currentMarket}</Title>
+        <p><small>Market / Index</small></p>
+        <Title level={5} className='Title Dark Green'>{currentMarket}<span className='White'> / {indexPrice}</span></Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change</small></p>
@@ -323,7 +325,7 @@ function App() {
         <Title level={5} className='Title Dark'>{low24H}</Title>
       </Col>
       <Col span={3}>
-        <p><small>24H Turnaround</small></p>
+        <p><small>24H Turnaround ({inverseAsset})</small></p>
         <Title level={5} className='Title Dark'>{turnaround24H}</Title>
       </Col>
       <Col span={3}>
