@@ -4,9 +4,9 @@ Inverse Perpetuals DAO
 
 **Features**
 
-- **Build** Access deep, protocol-owned liquidity
+- **Invest** DAO protocol governance based on a high-yield, rebased bonding tokens
 - **Trade** 100x leverage with zero impermanent loss using virtual Automated Marketing Making
-- **Invest** DAO protocol governance based on a high-yield, rebased bonding token
+- **Build** Access or provide deep, protocol-owned liquidity
 
 ## Development
 

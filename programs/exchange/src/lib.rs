@@ -145,8 +145,9 @@ pub mod exchange {
     pub fn b_to_a_input(
         ctx: Context<Swap>,
         amount_b: u64,
-        direction: Direction,
         deadline: Option<i64>,
+        direction: Direction,
+        equity: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -167,7 +168,9 @@ pub mod exchange {
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
+        position.equity = equity;
         position.quantity = amount_b;
+        position.status = Status::Open;
         position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
@@ -180,8 +183,9 @@ pub mod exchange {
     pub fn a_to_b_input(
         ctx: Context<Swap>,
         amount_a: u64,
-        direction: Direction,
         deadline: Option<i64>,
+        direction: Direction,
+        equity: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -202,7 +206,9 @@ pub mod exchange {
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
+        position.equity = equity;
         position.quantity = amount_b;
+        position.status = Status::Open;
         position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
@@ -340,8 +346,8 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub recipient: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
-    #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8)]
-    pub position: Account<'info, Position>,
+    #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)]
+    pub position: Account<'info, PositionData>,
     pub system_program: Program<'info, System>,
     pub token_program: UncheckedAccount<'info>,
     #[account(mut)]
@@ -454,11 +460,11 @@ impl<'info> Swap<'info> {
 #[account]
 pub struct ExchangeData {
     pub factory: Pubkey,
+    pub fee: u64,
+    pub last_price: u64,
     pub token_a: Pubkey,
     pub token_b: Pubkey,
     pub token_c: Pubkey,
-    pub last_price: u64,
-    pub fee: u64,
 }
 
 /// User account state for input and output price quotes.
@@ -467,17 +473,29 @@ pub struct Quote {
     pub price: u64,
 }
 
+/// Specifies if the user is buying / long, or selling / short
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum Direction {
     Long,
     Short,
 }
 
+/// Trade status must be one of these three
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub enum Status {
+    Open,
+    Closed,
+    Liquidated,
+}
+
 /// User position account state
 #[account]
-pub struct Position {
+pub struct PositionData {
     pub direction: Direction,
     pub entry: u64,
+    pub equity: u64,
+    pub exit: u64,
+    pub status: Status,
     pub quantity: u64,
     pub unix_timestamp: i64,
 }

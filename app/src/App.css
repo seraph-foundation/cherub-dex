@@ -1,6 +1,6 @@
 /* App */
 html {
-    zoom: 106%;
+    zoom: 108%;
 }
 
 .App {
@@ -37,6 +37,7 @@ html {
 .LogoImage {
     height: 18px;
     margin-right: 10px;
+    display: none;
 }
 
 .LearnMore.Dark {

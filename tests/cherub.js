@@ -87,6 +87,12 @@ describe('Cherub', () => {
     Short: { short: {} },
   };
 
+  const Status = {
+    Open: { open: {} },
+    Closed: { closed: {} },
+    Liquidated: { liquidated: {} },
+  };
+
   it('State initialized', async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop),
@@ -461,8 +467,9 @@ describe('Cherub', () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.bToAInput(
       new anchor.BN(bToAAmountB),
-      Direction.Long,
       deadline,
+      Direction.Long,
+      new anchor.BN(bToAAmountB),
       {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -511,8 +518,9 @@ describe('Cherub', () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.aToBInput(
       new anchor.BN(aToBAmountA),
-      Direction.Short,
       deadline,
+      Direction.Short,
+      new anchor.BN(aToBAmountA),
       {
         accounts: {
           authority: provider.wallet.publicKey,

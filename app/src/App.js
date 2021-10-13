@@ -10,7 +10,7 @@ import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-a
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
 import { Connection, Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
 import './App.css';
@@ -34,11 +34,11 @@ const Direction = {
 };
 
 const cSymbol = 'CHRB';
-const githubUrl = 'https://www.github.com/xv01-finance/xv01-protocol';
+const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'Cherub';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dao', 'inverse', 'pool', 'stake'];
+const routes = ['dao', 'inverse', 'bond', 'stake'];
 const showBanner = false;
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
@@ -230,20 +230,30 @@ function App() {
     const exchangeTokenAccountA = inverseExchange.tokenA;
     const exchangeTokenAccountB = inverseExchange.tokenB;
 
-    // TODO: These should be PDAs on the front and back end
+    // TODO: Make PDA
     const walletTokenAccountA = inverseExchange.walletA;
     const walletTokenAccountB = inverseExchange.walletB;
 
     // eslint-disable-next-line
     const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-    const aToBAmountA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
+    const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenA.mint.publicKey,
+      wallet.publicKey
+    );
+
+    // TODO: Make PDA
     const exchangePositionAccount = Keypair.generate();
 
     try {
       const tx = await exchange.rpc.aToBInput(
         aToBAmountA,
-        inverseDirection === 'long' ? Direction.Long : Direction.Short,
         new BN(Date.now() + 5000 / 1000),
+        inverseDirection === 'long' ? Direction.Long : Direction.Short,
+        equityA,
         {
           accounts: {
             authority: provider.wallet.publicKey,
@@ -412,13 +422,13 @@ function App() {
     </>
   );
 
-  const poolView = (
+  const bondView = (
     <Row>
       <Col span={8}></Col>
       <Col span={8} className='Cards'>
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
-            extra={<a href='/#/pool' className='CardLink' onClick={(e) => {}}>Positions</a>}>
+            extra={<a href='/#/bond' className='CardLink' onClick={(e) => {}}>Positions</a>}>
             <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
               onChange={(e) => setStakeDeposit(e.target.value)} />
             <br/>
@@ -599,7 +609,7 @@ function App() {
           <Col span={5}>
             <div className='Logo Dark'>
               <img src='/logo.png' alt='Logo' className='LogoImage'/>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}</strong>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.so</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
@@ -607,8 +617,8 @@ function App() {
               mode='horizontal'>
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
-              <Menu.Item key='pool'>Pool</Menu.Item>
-              <Menu.Item key='stake'>Bond</Menu.Item>
+              <Menu.Item key='bond'>Bond</Menu.Item>
+              <Menu.Item key='stake'>Stake</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -633,7 +643,7 @@ function App() {
             <br/>
             <br/>
             { menu === 'inverse' ? inverseView : null }
-            { menu === 'pool' ? poolView : null }
+            { menu === 'bond' ? bondView : null }
             { menu === 'stake' ? stakeView : null }
             { menu === 'dao' ? daoView : null }
           </div>
