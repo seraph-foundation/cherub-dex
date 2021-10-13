@@ -190,7 +190,7 @@ function App() {
     setCurrentMarket(lastPrice);
     setFundingRate(lastPrice > 0 ? (Math.random() / 100).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
-    setIndexPrice((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
+    setIndexPrice((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
     setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
     setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0));
   }
@@ -599,7 +599,7 @@ function App() {
           <Col span={5}>
             <div className='Logo Dark'>
               <img src='/logo.png' alt='Logo' className='LogoImage'/>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.so</strong>
+              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
