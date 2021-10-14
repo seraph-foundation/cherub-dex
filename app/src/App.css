@@ -129,11 +129,11 @@ html {
 }
 
 .LogoText {
-    background: linear-gradient(-45deg, #ffb11a, white, #ffb11a);
+    /*background: linear-gradient(-45deg, #ffb11a, white, #ffb11a);*/
+    background: linear-gradient(-45deg, white, black);
     background-size: 400% 400%;
-    animation: gradient 60s ease infinite;
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;animation: gradient 60s ease infinite;
+    -webkit-text-fill-color: transparent;animation: gradient 30s ease infinite;
     font-size: 16px;
 }
 
