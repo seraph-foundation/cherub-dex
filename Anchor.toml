@@ -1,7 +1,7 @@
 anchor_version = "0.16.2"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [programs.localnet]

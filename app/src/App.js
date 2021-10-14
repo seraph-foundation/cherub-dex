@@ -18,10 +18,13 @@ import './App.css';
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
 
-import accounts from './accounts.json';
+let accounts = {};
 
-// Exchange accounts may be out of order
-accounts.exchanges.sort((x) => x.index);
+if (window.location.origin === 'http://127.0.0.1:3000') {
+  accounts = require('./accounts-localnet.json');
+} else {
+  accounts = require('./accounts.json');
+}
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
@@ -33,17 +36,16 @@ const Direction = {
   Short: { short: {} },
 };
 
-// Second exchange is always C
-const C_EXCHANGE = accounts.exchanges[1].exchange;
-const C_NAME = accounts.exchanges[1].name;
-const DEFAULT_TOKEN_NAME = accounts.exchanges[0].name;
-// First exchange is always SOL
-const SOL_TOKEN = accounts.exchanges[0].token
+const CHERUB = accounts.exchanges.find((x) => x.name === 'CHRB');
+const CHERUB_EXCHANGE = CHERUB.exchange;
+const CHERUB_NAME = CHERUB.name;
+const DEFAULT = accounts.exchanges.find((x) => x.name === 'SOL');
+const DEFAULT_NAME = DEFAULT.name;
+const SOL_TOKEN = DEFAULT.token
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'Cherub';
 const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dao', 'inverse', 'stake', 'bond'];
 const showBanner = network !== 'http://127.0.0.1:8899';
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
@@ -134,7 +136,7 @@ function App() {
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
   const [tokenCount, setTokenCount] = useState(0);
-  const [inverseAsset, setInverseAsset] = useState(DEFAULT_TOKEN_NAME);
+  const [inverseAsset, setInverseAsset] = useState(DEFAULT_NAME);
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
@@ -191,7 +193,7 @@ function App() {
       const supply = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
       const total = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(C_EXCHANGE));
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB_EXCHANGE));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (mintCInfo.decimals * 10)).toFixed(2);
       setCCurrentPrice((lastPrice / 1).toFixed(0));
       setCMarketCap((lastPrice / 1).toFixed(0));
@@ -534,7 +536,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={C_NAME} bordered={false}
+            <Card className='Card Dark' title={CHERUB_NAME} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
@@ -547,7 +549,7 @@ function App() {
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={C_NAME} bordered={false}
+        <Card className='Card Dark' title={CHERUB_NAME} bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
         </Card>
       </Col>
@@ -576,7 +578,7 @@ function App() {
                 </Col>
                 <Col span={6}>
                   <p>Circulating Supply (Total)</p>
-                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {C_NAME}</Title>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {CHERUB_NAME}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Markets</p>
@@ -627,11 +629,12 @@ function App() {
 
     if (!isInverseDataSet) {
       setIsInverseSet(true);
-      getInverseDataCallback(DEFAULT_TOKEN_NAME);
+      getInverseDataCallback(DEFAULT_NAME);
     }
   }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet]);
 
   useEffect(() => {
+    const routes = ['dao', 'inverse', 'stake', 'bond'];
     if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
       setMenu(window.location.href.split('#/')[1]);
     } else {
@@ -689,7 +692,7 @@ function App() {
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
-              <Menu.Item key='stake' onClick={() => {setInverseAsset(C_NAME)}}>Stake</Menu.Item>
+              <Menu.Item key='stake' onClick={() => {setInverseAsset(CHERUB_NAME)}}>Stake</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
