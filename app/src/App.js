@@ -33,7 +33,12 @@ const Direction = {
   Short: { short: {} },
 };
 
-const cSymbol = 'CHRB';
+// Second exchange is always C
+const C_EXCHANGE = accounts.exchanges[1].exchange;
+const C_NAME = accounts.exchanges[1].name;
+const DEFAULT_TOKEN_NAME = accounts.exchanges[0].name;
+// First exchange is always SOL
+const SOL_TOKEN = accounts.exchanges[0].token
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'Cherub';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
@@ -105,6 +110,7 @@ function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
   const [blockHeightInterval, setBlockHeightInterval] = useState(false);
+  const [bondDeposit, setBondDeposit] = useState();
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
@@ -128,7 +134,7 @@ function App() {
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
   const [tokenCount, setTokenCount] = useState(0);
-  const [inverseAsset, setInverseAsset] = useState(accounts.exchanges[0].name);
+  const [inverseAsset, setInverseAsset] = useState(DEFAULT_TOKEN_NAME);
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
@@ -153,8 +159,7 @@ function App() {
     const provider = await getProviderCallback();
     const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
     if (wallet.connected) {
-      // First exchange is always SOL
-      if (inverseExchange.token === accounts.exchanges[0].token) {
+      if (inverseExchange.token === SOL_TOKEN) {
         const balance = await provider.connection.getBalance(wallet.publicKey);
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
@@ -186,8 +191,7 @@ function App() {
       const supply = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
       const total = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
-      // Second exchange is always C
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(accounts.exchanges[1].exchange));
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(C_EXCHANGE));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (mintCInfo.decimals * 10)).toFixed(2);
       setCCurrentPrice((lastPrice / 1).toFixed(0));
       setCMarketCap((lastPrice / 1).toFixed(0));
@@ -306,6 +310,56 @@ function App() {
       console.log('Transaction error: ', err);
     }
   }
+
+  async function approveBond() {
+    const provider = await getProviderCallback();
+
+    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+
+    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+    const exchangePublicKey = new PublicKey(inverseExchange.exchange);
+
+    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const mintAInfo = await tokenA.getMintInfo();
+    const exchangeTokenAccountA = inverseExchange.tokenA;
+    const exchangeTokenAccountB = inverseExchange.tokenB;
+
+    // TODO: Make PDA
+    const walletTokenAccountA = inverseExchange.walletA;
+    const walletTokenAccountB = inverseExchange.walletB;
+
+    // eslint-disable-next-line
+    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
+    const aAmount = new BN(bondDeposit * (10 ** mintAInfo.decimals));
+    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      wallet.publicKey,
+      wallet.publicKey
+    );
+
+    try {
+      // TODO: Add bond function
+      const tx = null;
+      const link = 'https://explorer.solana.com/tx/' + tx;
+
+      notification.open({
+        message: 'Order Successfully Placed',
+        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
+        duration: 0,
+        placement: 'bottomLeft'
+      });
+
+      setInverseStep(0);
+      setLeverage(1);
+      setInverseQuantity();
+
+      getInverseDataCallback(inverseExchange.name);
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
 
   function calculateCountdown() {
     // TODO: Use 8 hour funding cycles instead of midnight
@@ -445,11 +499,12 @@ function App() {
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
             extra={<a href='/#/bond' className='CardLink' onClick={(e) => {}}>Positions</a>}>
-            <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
-              onChange={(e) => setStakeDeposit(e.target.value)} />
+            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0'
+              onChange={(e) => setBondDeposit(e.target.value)} />
             <br/>
             <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'
+              onClick={approveBond}>
               Approve</Button>
           </Card>
         </div>
@@ -479,7 +534,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={accounts.exchanges[1].name} bordered={false}
+            <Card className='Card Dark' title={C_NAME} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
@@ -492,7 +547,7 @@ function App() {
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={accounts.exchanges[1].name} bordered={false}
+        <Card className='Card Dark' title={C_NAME} bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
         </Card>
       </Col>
@@ -521,7 +576,7 @@ function App() {
                 </Col>
                 <Col span={6}>
                   <p>Circulating Supply (Total)</p>
-                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {cSymbol}</Title>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {C_NAME}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Markets</p>
@@ -572,7 +627,7 @@ function App() {
 
     if (!isInverseDataSet) {
       setIsInverseSet(true);
-      getInverseDataCallback(accounts.exchanges[0].name);
+      getInverseDataCallback(DEFAULT_TOKEN_NAME);
     }
   }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet]);
 
@@ -634,7 +689,7 @@ function App() {
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
-              <Menu.Item key='stake' onClick={() => {setInverseAsset(accounts.exchanges[1].name)}}>Stake</Menu.Item>
+              <Menu.Item key='stake' onClick={() => {setInverseAsset(C_NAME)}}>Stake</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>

@@ -262,6 +262,18 @@ pub mod exchange {
         exchange.last_price = amount_b;
         Ok(())
     }
+
+    /// Bond V to A.
+    ///
+    /// amount_v Amount A bonded to vault V (exact input)
+    pub fn bond_v_to_a(ctx: Context<BondVToA>, amount_v: u64, deadline: Option<i64>) -> ProgramResult {
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        // TODO: Call add_liquidity
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -354,6 +366,31 @@ pub struct Swap<'info> {
     pub user_a: UncheckedAccount<'info>,
     #[account(mut)]
     pub user_b: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct BondVToA<'info> {
+    pub authority: Signer<'info>,
+    pub token_program: UncheckedAccount<'info>,
+    pub clock: Sysvar<'info, Clock>,
+    #[account(mut)]
+    pub exchange: Account<'info, ExchangeData>,
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub exchange_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_b: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_v: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_a: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub user_b: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub user_c: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub user_v: UncheckedAccount<'info>,
 }
 
 /// Implements creation accounts
