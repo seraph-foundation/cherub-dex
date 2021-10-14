@@ -1,6 +1,7 @@
 /* App */
 html {
     zoom: 108%;
+    background-color: black;
 }
 
 .App {
@@ -226,8 +227,21 @@ html {
     color: white;
 }
 
+.Banner {
+    background-color: #ffb11a;
+    border-color: #ffb11a;
+}
+
+.ant-alert-message {
+    color: black;
+}
+
+.anticon.anticon-close {
+    color: black;
+}
+
 .BuyButton > .ant-radio-button-checked {
-    border-right-color: #24ae64 !important;
+    border-color: #24ae64 !important;
     background-color: #24ae64 !important;
     color: white !important;
 }

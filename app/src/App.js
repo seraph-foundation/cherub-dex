@@ -41,13 +41,11 @@ const DEFAULT_TOKEN_NAME = accounts.exchanges[0].name;
 const SOL_TOKEN = accounts.exchanges[0].token
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'Cherub';
-const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
+const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const routes = ['dao', 'inverse', 'stake', 'bond'];
-const showBanner = false;
+const showBanner = network !== 'http://127.0.0.1:8899';
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
-
-console.log('Using network', network);
 
 const chartOptions = {
   scales: {
@@ -674,8 +672,8 @@ function App() {
   return (
     <Layout className='App Dark'>
       { showBanner ?
-      <Alert type='info' className='Dark Alert' closable banner
-        message='You are currently using an unaudited piece of software. Use at your own risk.' /> : null
+      <Alert type='info' className='Banner' closable
+        message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.</span> /> : null
       }
       <Header className='Header Dark'>
         <Row>
