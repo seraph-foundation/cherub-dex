@@ -38,11 +38,25 @@ const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'Cherub';
 const network = window.location.origin === 'http://localhost:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('mainnet');
 const opts = { preflightCommitment: 'processed' };
-const routes = ['dao', 'inverse', 'bond', 'stake'];
+const routes = ['dao', 'inverse', 'stake', 'bond'];
 const showBanner = false;
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
 const chartOptions = {
+  scales: {
+    x: {
+      display: true,
+      grid: {
+        display: false
+      },
+    },
+    y: {
+      display: true,
+      grid: {
+        display: false
+      },
+    }
+  },
   plugins: {
     legend: { display: false }
   }
@@ -66,13 +80,14 @@ const daoProposals = [{
   icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
 }];
 
+// TODO: Remove grid line color https://stackoverflow.com/questions/41094658/chartjs-change-grid-line-color
 const treasuryData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [{
     data: [0, 7, 6, 10, 24, 51, 54, 176],
     fill: true,
     borderColor: '#40a9ff',
-    backgroundColor: '#69c0ff'
+    backgroundColor: '#69c0ff',
   }]
 };
 
@@ -238,10 +253,11 @@ function App() {
     const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
     const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
     const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    console.log('?', mintAInfo)
     const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      tokenA.mint.publicKey,
+      wallet.publicKey,
       wallet.publicKey
     );
 
@@ -463,7 +479,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={assetTitleModal} bordered={false}
+            <Card className='Card Dark' title={accounts.exchanges[1].name} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
@@ -476,7 +492,7 @@ function App() {
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={assetTitleModal} bordered={false}
+        <Card className='Card Dark' title={accounts.exchanges[1].name} bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
         </Card>
       </Col>
@@ -618,7 +634,7 @@ function App() {
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
-              <Menu.Item key='stake'>Stake</Menu.Item>
+              <Menu.Item key='stake' onClick={() => {setInverseAsset(accounts.exchanges[1].name)}}>Stake</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -643,8 +659,8 @@ function App() {
             <br/>
             <br/>
             { menu === 'inverse' ? inverseView : null }
-            { menu === 'bond' ? bondView : null }
             { menu === 'stake' ? stakeView : null }
+            { menu === 'bond' ? bondView : null }
             { menu === 'dao' ? daoView : null }
           </div>
         </Content>

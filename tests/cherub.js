@@ -34,10 +34,10 @@ describe('Cherub', () => {
 
   let mintC = null;
 
-  const decimals0A = 9;
-  const decimals0B = 9;
-  const decimals1A = 0;
-  const decimals1B = 0;
+  const decimals0A = 6;
+  const decimals0B = 6;
+  const decimals1A = 6;
+  const decimals1B = 6;
 
   const decimalsC = 6;
 
@@ -317,7 +317,7 @@ describe('Cherub', () => {
   const initialMaxAmountA = 100 * (10 ** decimals0A);
   const initialAmountB = 50 * (10 ** decimals0B);
   const initialMinLiquidityC = 0;
-  const initialLiquidityMinted = 50000 * (10 ** decimalsC);
+  const initialLiquidityMinted = 50 * (10 ** decimalsC);
 
   it('Add initial liquidity', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -363,7 +363,7 @@ describe('Cherub', () => {
   const additionalMaxAmountA = 150 * (10 ** decimals0A);
   const additionalAmountB = 75 * (10 ** decimals0B);
   const additionalMinLiquidityC = 5 * (10 ** decimalsC);
-  const additionalLiquidityMinted = 37000 * (10 ** decimalsC);
+  const additionalLiquidityMinted = 37 * (10 ** decimalsC);
 
   it('Add additional liquidity', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -507,7 +507,7 @@ describe('Cherub', () => {
     //assert.ok(exchange0AccountInfo.lastPrice.eq(new anchor.BN(6)));
   });
 
-  const aToBAmountA = 12 * (decimals0A ** 10);
+  const aToBAmountA = 3 * (decimals0A ** 10);
   const exchange0Position1Account = anchor.web3.Keypair.generate();
 
   it('A to B input', async () => {
