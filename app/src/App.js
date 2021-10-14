@@ -679,7 +679,7 @@ function App() {
         <Row>
           <Col span={5}>
             <div className='Logo Dark'>
-              <img src='/logo.png' alt='Logo' className='LogoImage'/>
+              <img src='/logo.svg' alt='Logo' className='LogoImage'/>
               <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{name}</strong>
             </div>
           </Col>
