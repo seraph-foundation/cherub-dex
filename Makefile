@@ -4,6 +4,11 @@ airdrop:
 airdrop-wallet:
 	@while true; do solana airdrop 1 7ADLt8RQX6W5v7L4voBxY9WcT7xRVis9rgbaUTpvEQ4w; sleep 30; done
 
+build-frontend:
+	@cd app && yarn build
+	@rm -rf docs
+	@cp -R app/build docs
+
 set-devnet:
 	@solana config set --url https://api.devnet.solana.com
 
