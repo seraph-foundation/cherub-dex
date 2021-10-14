@@ -18,7 +18,7 @@ import './App.css';
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
 
-import accounts from './accounts-localnet.json';
+import accounts from './accounts.json';
 
 // Exchange accounts may be out of order
 accounts.exchanges.sort((x) => x.index);
@@ -46,6 +46,8 @@ const opts = { preflightCommitment: 'processed' };
 const routes = ['dao', 'inverse', 'stake', 'bond'];
 const showBanner = false;
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
+
+console.log('Using network', network);
 
 const chartOptions = {
   scales: {

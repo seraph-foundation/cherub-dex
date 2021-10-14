@@ -20,7 +20,7 @@ describe('Cherub', () => {
   const solDecimals = 9;
   const solMintPublicKey = new PublicKey('So11111111111111111111111111111111111111112');
 
-  const browserWalletPublicKey = new PublicKey('292g43tSj4jVq7VKJLZ51DKvxTT5RxQkZ1YwryqgRvN2');
+  const browserWalletPublicKey = new PublicKey('8iA8BGF7Fx5VT16dqu1Rbgmved7KSgpCaSEXojWgMFgp');
 
   const accountsFile = isLocalnet ? './app/src/accounts-localnet.json' : 'accounts.json';
 
@@ -29,6 +29,8 @@ describe('Cherub', () => {
   const pyth = anchor.workspace.Pyth;
 
   let mintAuthority = provider.wallet;
+
+  let tokenSol = null;
 
   // TODO: These mint variables are really Token objects so should be renamed
   let mintC = null;
@@ -118,17 +120,18 @@ describe('Cherub', () => {
   };
 
   it('State initialized', async () => {
+    // TODO: Airdrop only works on localnet?
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop),
       'confirmed'
     );
 
-      await provider.connection.confirmTransaction(
-        await provider.connection.requestAirdrop(browserWalletPublicKey, amountAirdrop),
-        'confirmed'
-      );
+    await provider.connection.confirmTransaction(
+      await provider.connection.requestAirdrop(browserWalletPublicKey, amountAirdrop),
+      'confirmed'
+    );
 
-    const solToken = new Token(provider.connection, solMintPublicKey, TOKEN_PROGRAM_ID, payerAccount);
+    tokenSol = new Token(provider.connection, solMintPublicKey, TOKEN_PROGRAM_ID, payerAccount);
 
     mintC = await Token.createMint(
       provider.connection,
@@ -176,7 +179,7 @@ describe('Cherub', () => {
     );
 
     // First exchange is SOL
-    mint0V = solToken
+    mint0V = tokenSol
     // Second exchange is CHRB
     mint1V = mintC
 

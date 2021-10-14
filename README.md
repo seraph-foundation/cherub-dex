@@ -29,4 +29,8 @@ cd app && yarn start
 
 ### Support
 
-This project is looking for support! For inquiries, message me on Telegram @pindaroso. SOL donations can be sent to `xb6KGidQAijtLuKxhS4QSgptGKLyXPr1mqt9QQpxAM9`.
+For inquiries, message me on Telegram @pindaroso or Twitter @pindarosothecat. Financial contributions can be sent to:
+
+- **SOL** `GzA3eoD5SFrzeydPqtkaQfBRbBBdboQBWdppuNkRNEuM`
+- **BTC** `3L1aBRedf2fKy4MFBTdGfLh4VUFJvqp4Tq`
+- **ETH** `0x61bF2Be1362Ca0231f8C30B9C90363d3Ba97929b`
