@@ -680,7 +680,7 @@ function App() {
           <Col span={5}>
             <div className='Logo Dark'>
               <img src='/logo.png' alt='Logo' className='LogoImage'/>
-              <strong onClick={() => window.open(githubUrl, '_blank')}>{name}.so</strong>
+              <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{name}.so</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
