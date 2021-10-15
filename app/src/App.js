@@ -43,7 +43,7 @@ const DEFAULT = accounts.exchanges.find((x) => x.name === 'SOL');
 const DEFAULT_NAME = DEFAULT.name;
 const SOL_TOKEN = DEFAULT.token
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
-const name = 'Cherub';
+const name = 'cheruβ';
 const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const showBanner = network !== 'http://127.0.0.1:8899';
@@ -207,11 +207,12 @@ function App() {
   }
 
   function setDummyInverseData(lastPrice) {
+    const marketIndex = lastPrice * (Math.random() / 100 + 0.9);
     setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0) + '%');
     setCurrentMarket(lastPrice);
-    setFundingRate(lastPrice > 0 ? (Math.random() / 100).toFixed(4) : 0);
+    setFundingRate(lastPrice > 0 ? ((lastPrice - marketIndex) / 1000).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
-    setIndexPrice((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
+    setIndexPrice(marketIndex.toFixed(2));
     setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
     setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0));
   }
@@ -394,9 +395,8 @@ function App() {
     }
   }
 
-
   function calculateCountdown() {
-    // TODO: Use 8 hour funding cycles instead of midnight
+    // TODO: No longer needed?
     const today = new Date();
     const deadline = new Date();
     deadline.setHours(24, 0, 0, 0);
@@ -404,7 +404,7 @@ function App() {
     const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
     const secs = Math.floor((delta % (1000 * 60)) / 1000);
-    setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
+    //setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
   }
 
   const settingsMenu = (
@@ -443,8 +443,8 @@ function App() {
         <Title level={5} className='Title Dark'>{turnaround24H}</Title>
       </Col>
       <Col span={3}>
-        <p><small>Funding Rate / Countdown</small></p>
-        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
+        <p><small>Funding Rate</small></p>
+        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span></Title>
       </Col>
       <Col span={3}></Col>
     </Row>
