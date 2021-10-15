@@ -114,6 +114,9 @@ function getWindowRoute() {
     return routes[0];
   }
 }
+function currencyFormat(num) {
+   return '$' + num.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+}
 
 function App() {
   const [balance, setBalance] = useState(0);
@@ -204,9 +207,9 @@ function App() {
       const total = mintCInfo.supply.toNumber() / (1 ** mintCInfo.decimals);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
       const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.exchange));
-      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (mintCInfo.decimals * 10)).toFixed(2);
-      setCCurrentPrice((lastPrice / 1).toFixed(0));
-      setCMarketCap((lastPrice / 1).toFixed(0));
+      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (1 ** mintCInfo.decimals)).toFixed(2);
+      setCCurrentPrice(currencyFormat(lastPrice / 1));
+      setCMarketCap(currencyFormat(lastPrice * total));
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -677,7 +680,7 @@ function App() {
                 </Col>
                 <Col span={6}>
                   <p>Circulating Supply (Total)</p>
-                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {CHERUB.symbol}</Title>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Markets</p>

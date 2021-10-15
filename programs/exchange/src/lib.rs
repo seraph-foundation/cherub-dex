@@ -79,6 +79,8 @@ pub mod exchange {
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
         Ok(())
     }
 
