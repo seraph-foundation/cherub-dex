@@ -617,7 +617,7 @@ function App() {
   const stakeDescription = (
     <small>
       Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {CHERUB.symbol.toUpperCase()}</span>
-      is set to earn <span className='White'>12% APY</span>
+      &nbsp;is set to earn <span className='White'>12% APY</span>
     </small>
   );
 
@@ -677,7 +677,7 @@ function App() {
                 </Col>
                 <Col span={6}>
                   <p>Circulating Supply (Total)</p>
-                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal}</Title>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {CHERUB.symbol}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Markets</p>

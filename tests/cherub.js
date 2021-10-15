@@ -252,6 +252,20 @@ describe('Cherub', () => {
       traderAmount0B
     );
 
+    await mint1A.mintTo(
+      walletTokenAccount1A,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      amount1A
+    );
+
+    await mint1B.mintTo(
+      walletTokenAccount1B,
+      mintAuthority.publicKey,
+      [mintAuthority.payer],
+      amount1B
+    );
+
     // Useful for Anchor CLI and app
     fs.writeFileSync(accountsFile, JSON.stringify({
       exchanges: [{
@@ -783,12 +797,6 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
   });
 
-  const bondMaxAmountV = 100 * (1 ** decimals0A);
-  //const bondMaxAmountA = 100 * (1 ** decimals0A);
-  //const bondAmountB = 50 * (1 ** decimals0B);
-  //const bondMinBondC = 0;
-  //const bondBondMinted = 50 * (1 ** decimalsC);
-
   it('Second factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
@@ -827,5 +835,53 @@ describe('Cherub', () => {
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
 
     //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
+  });
+
+  const finalMaxAmountA = 1000 * (1 ** decimals1A);
+  const finalAmountB = 1000 * (1 ** decimals1B);
+  const finalMinBondC = 0;
+  const finalBondMinted = 1000 * (1 ** decimalsC);
+
+  it('Initial bond', async () => {
+    const deadline = new anchor.BN(Date.now() / 1000);
+    const tx = await exchange.rpc.bond(
+      new anchor.BN(finalMaxAmountA),
+      new anchor.BN(finalAmountB),
+      new anchor.BN(finalMinBondC),
+      deadline, {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          exchange: exchange1Account.publicKey,
+          exchangeA: exchangeTokenAccount1A,
+          exchangeB: exchangeTokenAccount1B,
+          exchangeV: exchangeTokenAccount1V,
+          mint: mintC.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userA: walletTokenAccount1A,
+          userB: walletTokenAccount1B,
+          userC: walletTokenAccountC,
+          userV: walletTokenAccount1V
+        },
+        signers: [provider.wallet.owner]
+      });
+
+    console.log('Your transaction signature', tx);
+
+    let exchangeTokenAccount1AInfo = await mint1A.getAccountInfo(exchangeTokenAccount1A);
+    let walletTokenAccount1AInfo = await mint1A.getAccountInfo(walletTokenAccount1A);
+
+    assert.ok(exchangeTokenAccount1AInfo.amount.eq(new anchor.BN(finalMaxAmountA)));
+    assert.ok(walletTokenAccount1AInfo.amount.eq(new anchor.BN(amount1A - finalMaxAmountA)));
+
+    let exchangeTokenAccount1BInfo = await mint1B.getAccountInfo(exchangeTokenAccount1B);
+    let walletTokenAccount1BInfo = await mint1B.getAccountInfo(walletTokenAccount1B);
+
+    assert.ok(exchangeTokenAccount1BInfo.amount.eq(new anchor.BN(finalAmountB)));
+    assert.ok(walletTokenAccount1BInfo.amount.eq(new anchor.BN(amount1B - finalAmountB)));
+
+    let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+
+    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(finalBondMinted)));
   });
 });
