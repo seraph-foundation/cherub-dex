@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Spartan&display=swap');
+@font-face {
+    font-family: 'Spartan';
+    src: url('./fonts/Spartan-VariableFont_wght.ttf');
+}
 
 /* App */
 html {

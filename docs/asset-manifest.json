@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.css": "/static/css/main.1160f4ac.chunk.css",
+    "main.css": "/static/css/main.a831d921.chunk.css",
     "main.js": "/static/js/main.fa3c6ed5.chunk.js",
     "main.js.map": "/static/js/main.fa3c6ed5.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.337eb443.js",
@@ -12,14 +12,15 @@
     "static/js/3.7e4d83d3.chunk.js.map": "/static/js/3.7e4d83d3.chunk.js.map",
     "index.html": "/index.html",
     "static/css/2.5cc6782e.chunk.css.map": "/static/css/2.5cc6782e.chunk.css.map",
-    "static/css/main.1160f4ac.chunk.css.map": "/static/css/main.1160f4ac.chunk.css.map",
-    "static/js/2.abdaece5.chunk.js.LICENSE.txt": "/static/js/2.abdaece5.chunk.js.LICENSE.txt"
+    "static/css/main.a831d921.chunk.css.map": "/static/css/main.a831d921.chunk.css.map",
+    "static/js/2.abdaece5.chunk.js.LICENSE.txt": "/static/js/2.abdaece5.chunk.js.LICENSE.txt",
+    "static/media/App.css": "/static/media/Spartan-VariableFont_wght.0427aac0.ttf"
   },
   "entrypoints": [
     "static/js/runtime-main.337eb443.js",
     "static/css/2.5cc6782e.chunk.css",
     "static/js/2.abdaece5.chunk.js",
-    "static/css/main.1160f4ac.chunk.css",
+    "static/css/main.a831d921.chunk.css",
     "static/js/main.fa3c6ed5.chunk.js"
   ]
 }
