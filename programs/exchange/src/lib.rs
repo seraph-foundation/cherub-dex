@@ -1,4 +1,4 @@
-//! An example of an AMM exchange program, inspired by Uniswap V1 seen here:
+//! A virtual automated market exchange program, inspired by Uniswap V1 seen here:
 //! https://github.com/Uniswap/uniswap-v1/. This example has some
 //! implementation changes to address the differences between the EVM and
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
@@ -14,7 +14,8 @@ declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod exchange {
     use super::*;
 
-    const EXCHANGE_PDA_SEED: &[u8] = b"exchange"; // TODO: This should use token pk for exchange PDAs
+    // TODO: This should use token pk for exchange PDAs
+    const EXCHANGE_PDA_SEED: &[u8] = b"exchange";
 
     /// This function acts as a contract constructor which is not currently
     /// supported in contracts deployed using `initialize()` which is called
@@ -53,9 +54,9 @@ pub mod exchange {
     /// amount_b Amount of B deposited
     /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
     /// deadline Time after which this transaction can no longer be executed
-    #[access_control(add_future_deadline(&ctx, deadline) add_correct_tokens(&ctx))]
-    pub fn add_liquidity(
-        ctx: Context<AddLiquidity>,
+    #[access_control(bond_future_deadline(&ctx, deadline) bond_correct_tokens(&ctx))]
+    pub fn bond(
+        ctx: Context<Bond>,
         max_amount_a: u64,
         amount_b: u64,
         min_liquidity_c: u64,
@@ -67,10 +68,15 @@ pub mod exchange {
             assert!(min_liquidity_c > 0);
             amount_a = amount_b * ctx.accounts.exchange_a.amount / ctx.accounts.exchange_b.amount;
             liquidity_minted = amount_b * ctx.accounts.mint.supply / ctx.accounts.exchange_a.amount;
+            msg!(&format!(
+                "{} {} {} {}",
+                max_amount_a, amount_a, liquidity_minted, min_liquidity_c
+            ));
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
         Ok(())
     }
@@ -81,12 +87,8 @@ pub mod exchange {
     /// min_amount_a Minimum A withdrawn
     /// min_amount_b Minimum B withdrawn
     /// deadline Time after which this transaction can no longer be executed
-    #[access_control(remove_future_deadline(&ctx, deadline) remove_correct_tokens(&ctx))]
-    pub fn remove_liquidity(
-        ctx: Context<RemoveLiquidity>,
-        amount_c: u64,
-        deadline: i64,
-    ) -> ProgramResult {
+    #[access_control(unbond_future_deadline(&ctx, deadline) unbond_correct_tokens(&ctx))]
+    pub fn unbond(ctx: Context<Unbond>, amount_c: u64, deadline: i64) -> ProgramResult {
         let amount_a = amount_c * ctx.accounts.exchange_a.amount / ctx.accounts.mint.supply;
         let amount_b = amount_c * ctx.accounts.exchange_b.amount / ctx.accounts.mint.supply;
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
@@ -262,18 +264,6 @@ pub mod exchange {
         exchange.last_price = amount_b;
         Ok(())
     }
-
-    /// Bond V to A.
-    ///
-    /// amount_v Amount A bonded to vault V (exact input)
-    pub fn bond_v_to_a(ctx: Context<BondVToA>, amount_v: u64, deadline: Option<i64>) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
-        // TODO: Call add_liquidity
-        Ok(())
-    }
 }
 
 #[derive(Accounts)]
@@ -290,29 +280,33 @@ pub struct Create<'info> {
 
 #[derive(Accounts)]
 #[instruction(max_amount_a: u64, amount_b: u64)]
-pub struct AddLiquidity<'info> {
+pub struct Bond<'info> {
     pub authority: Signer<'info>,
-    pub token_program: UncheckedAccount<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub mint: Account<'info, Mint>,
-    #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub exchange_v: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub mint: Account<'info, Mint>,
+    pub token_program: UncheckedAccount<'info>,
     #[account(mut, constraint = max_amount_a > 0)]
     pub user_a: UncheckedAccount<'info>,
     #[account(mut, constraint = amount_b > 0)]
     pub user_b: UncheckedAccount<'info>,
     #[account(mut)]
     pub user_c: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub user_v: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
 #[instruction(amount_c: u64)]
-pub struct RemoveLiquidity<'info> {
+pub struct Unbond<'info> {
     pub authority: UncheckedAccount<'info>,
     pub token_program: UncheckedAccount<'info>,
     pub clock: Sysvar<'info, Clock>,
@@ -368,31 +362,6 @@ pub struct Swap<'info> {
     pub user_b: UncheckedAccount<'info>,
 }
 
-#[derive(Accounts)]
-pub struct BondVToA<'info> {
-    pub authority: Signer<'info>,
-    pub token_program: UncheckedAccount<'info>,
-    pub clock: Sysvar<'info, Clock>,
-    #[account(mut)]
-    pub exchange: Account<'info, ExchangeData>,
-    #[account(mut)]
-    pub mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_v: AccountInfo<'info>,
-    #[account(mut)]
-    pub user_a: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_b: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_c: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_v: UncheckedAccount<'info>,
-}
-
 /// Implements creation accounts
 impl<'info> Create<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
@@ -413,7 +382,7 @@ impl<'info> Create<'info> {
 }
 
 /// Implements adding liquidity accounts
-impl<'info> AddLiquidity<'info> {
+impl<'info> Bond<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.user_a.to_account_info(),
@@ -440,10 +409,19 @@ impl<'info> AddLiquidity<'info> {
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
+
+    fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_v.to_account_info(),
+            to: self.exchange_v.to_account_info(),
+            authority: self.authority.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
 }
 
 /// Implements removing liquidity accounts
-impl<'info> RemoveLiquidity<'info> {
+impl<'info> Unbond<'info> {
     fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.exchange_a.to_account_info(),
@@ -557,7 +535,7 @@ fn future_deadline(ts: i64, deadline: i64) -> Result<()> {
 /// or future.
 ///
 /// deadline Timestamp specified by user
-fn add_future_deadline<'info>(ctx: &Context<AddLiquidity<'info>>, deadline: i64) -> Result<()> {
+fn bond_future_deadline<'info>(ctx: &Context<Bond<'info>>, deadline: i64) -> Result<()> {
     future_deadline(ctx.accounts.clock.unix_timestamp, deadline)
 }
 
@@ -565,15 +543,12 @@ fn add_future_deadline<'info>(ctx: &Context<AddLiquidity<'info>>, deadline: i64)
 /// or future.
 ///
 /// deadline Timestamp specified by user
-fn remove_future_deadline<'info>(
-    ctx: &Context<RemoveLiquidity<'info>>,
-    deadline: i64,
-) -> Result<()> {
+fn unbond_future_deadline<'info>(ctx: &Context<Unbond<'info>>, deadline: i64) -> Result<()> {
     future_deadline(ctx.accounts.clock.unix_timestamp, deadline)
 }
 
 /// Access control function for ensuring correct token accounts are used.
-fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
+fn bond_correct_tokens<'info>(ctx: &Context<Bond<'info>>) -> Result<()> {
     if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
@@ -587,7 +562,7 @@ fn add_correct_tokens<'info>(ctx: &Context<AddLiquidity<'info>>) -> Result<()> {
 }
 
 /// Access control function for ensuring correct token accounts are used.
-fn remove_correct_tokens<'info>(ctx: &Context<RemoveLiquidity<'info>>) -> Result<()> {
+fn unbond_correct_tokens<'info>(ctx: &Context<Unbond<'info>>) -> Result<()> {
     if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }

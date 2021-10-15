@@ -1,7 +1,7 @@
 const anchor = require('@project-serum/anchor');
 const assert = require('assert');
 const fs = require('fs');
-const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
+const { NATIVE_MINT, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 
 const exchangeIdl = require('../target/idl/exchange.json');
@@ -17,9 +17,6 @@ describe('Cherub', () => {
 
   const isLocalnet = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
 
-  const solDecimals = 9;
-  const solMintPublicKey = new PublicKey('So11111111111111111111111111111111111111112');
-
   const browserWalletPublicKey = new PublicKey('8iA8BGF7Fx5VT16dqu1Rbgmved7KSgpCaSEXojWgMFgp');
 
   const accountsFile = isLocalnet ? './app/src/accounts-localnet.json' : 'accounts.json';
@@ -30,10 +27,7 @@ describe('Cherub', () => {
 
   let mintAuthority = provider.wallet;
 
-  let tokenSol = null;
-
-  // TODO: These mint variables are really Token objects so should be renamed
-  let mintC = null;
+  // TODO: These mint variables are really token objects so should be renamed
 
   // First exchange is SOL
   let mint0A = null;
@@ -42,17 +36,20 @@ describe('Cherub', () => {
   // Second exchange is CHRB
   let mint1A = null;
   let mint1B = null;
-  let mint1C = null;
 
-  const decimalsC = 6;
+  let mintC = null;
 
-  const decimals0A = 6;
-  const decimals0B = 6;
-  const decimals0V = solDecimals;
+  const decimals0A = 9;
+  const decimals0B = 9;
+  // First exchange is SOL
+  const decimals0V = 9;
 
   // Second exchange is CHRB
-  const decimals1A = 6;
-  const decimals1B = 6;
+  const decimalsC = 9;
+
+  const decimals1A = 9;
+  const decimals1B = 9;
+  // Second exchange is CHRB
   const decimals1V = decimalsC;
 
   const exchange0Account = anchor.web3.Keypair.generate();
@@ -94,19 +91,19 @@ describe('Cherub', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const amount0A = 1000000 * (10 ** decimals0B);
-  const amount0B = 1000000 * (10 ** decimals0B);
-  const amount0V = 1000000 * (10 ** decimals0B);
+  const amount0A = 100000 * (10 ** decimals0A);
+  const amount0B = 100000 * (10 ** decimals0B);
+  const amount0V = 100000 * (10 ** decimals0V);
 
-  const amount1A = 9000000 * (10 ** decimals1A);
-  const amount1B = 9000000 * (10 ** decimals1B);
-  const amount1V = 9000000 * (10 ** decimals1B);
+  const amount1A = 900000 * (10 ** decimals1A);
+  const amount1B = 900000 * (10 ** decimals1B);
+  const amount1V = 900000 * (10 ** decimals1V);
 
-  const traderAmount0A = 500 * (10 ** decimals0B);
-  const traderAmount0B = 500 * (10 ** decimals0B);
-  const traderAmount0V = 500 * (10 ** decimals0B);
+  const traderAmount0A = 50000 * (10 ** decimals0A);
+  const traderAmount0B = 50000 * (10 ** decimals0B);
+  const traderAmount0V = 50000 * (10 ** decimals0V);
 
-  const amountAirdrop = 50 * LAMPORTS_PER_SOL;
+  const amountAirdrop = 200000 * LAMPORTS_PER_SOL;
 
   const Direction = {
     Long: { long: {} },
@@ -130,8 +127,6 @@ describe('Cherub', () => {
       await provider.connection.requestAirdrop(browserWalletPublicKey, amountAirdrop),
       'confirmed'
     );
-
-    tokenSol = new Token(provider.connection, solMintPublicKey, TOKEN_PROGRAM_ID, payerAccount);
 
     mintC = await Token.createMint(
       provider.connection,
@@ -160,6 +155,9 @@ describe('Cherub', () => {
       TOKEN_PROGRAM_ID
     );
 
+    // First exchange is SOL
+    mint0V = new Token(provider.connection, NATIVE_MINT, TOKEN_PROGRAM_ID, payerAccount);
+
     mint1A = await Token.createMint(
       provider.connection,
       payerAccount,
@@ -178,15 +176,20 @@ describe('Cherub', () => {
       TOKEN_PROGRAM_ID
     );
 
-    // First exchange is SOL
-    mint0V = tokenSol
     // Second exchange is CHRB
     mint1V = mintC
 
     walletTokenAccount0A = await mint0A.createAccount(provider.wallet.publicKey);
     walletTokenAccount0B = await mint0B.createAccount(provider.wallet.publicKey);
-    // First exchange is SOL
-    walletTokenAccount0V = provider.wallet.publicKey;
+
+    // Wrap native SOL
+    walletTokenAccount0V = await Token.createWrappedNativeAccount(
+      provider.connection,
+      TOKEN_PROGRAM_ID,
+      provider.wallet.publicKey,
+      payerAccount,
+      amount0V
+    );
 
     walletTokenAccount1A = await mint1A.createAccount(provider.wallet.publicKey);
     walletTokenAccount1B = await mint1B.createAccount(provider.wallet.publicKey);
@@ -248,6 +251,7 @@ describe('Cherub', () => {
         tokenV: exchangeTokenAccount0V.toString(),
         walletA: walletTokenAccount0A.toString(),
         walletB: walletTokenAccount0B.toString(),
+        walletC: walletTokenAccountC.toString(),
         walletV: walletTokenAccount0V.toString(),
         token: mint0V.publicKey.toString()
       }, {
@@ -262,6 +266,7 @@ describe('Cherub', () => {
         tokenV: exchangeTokenAccount1V.toString(),
         walletA: walletTokenAccount1A.toString(),
         walletB: walletTokenAccount1B.toString(),
+        walletC: walletTokenAccountC.toString(),
         walletV: walletTokenAccount1V.toString(),
         token: mintC.publicKey.toString()
       }],
@@ -273,9 +278,11 @@ describe('Cherub', () => {
 
     let walletTokenAccountInfoA = await mint0A.getAccountInfo(walletTokenAccount0A);
     let walletTokenAccountInfoB = await mint0B.getAccountInfo(walletTokenAccount0B);
+    let walletTokenAccountInfoV = await mint0V.getAccountInfo(walletTokenAccount0V);
 
     assert.ok(walletTokenAccountInfoA.amount.toNumber() == amount0A);
     assert.ok(walletTokenAccountInfoB.amount.toNumber() == amount0B);
+    assert.ok(walletTokenAccountInfoV.amount.toNumber() == amount0V);
 
     let exchangeTokenAccountInfoA = await mint0A.getAccountInfo(exchangeTokenAccount0A);
     let exchangeTokenAccountInfoB = await mint0B.getAccountInfo(exchangeTokenAccount0B);
@@ -362,15 +369,15 @@ describe('Cherub', () => {
 
   const initialMaxAmountA = 100 * (10 ** decimals0A);
   const initialAmountB = 50 * (10 ** decimals0B);
-  const initialMinLiquidityC = 0;
-  const initialLiquidityMinted = 50 * (10 ** decimalsC);
+  const initialMinBondC = 0;
+  const initialBondMinted = 50 * (10 ** decimalsC);
 
-  it('Add initial liquidity', async () => {
+  it('Initial bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.addLiquidity(
+    const tx = await exchange.rpc.bond(
       new anchor.BN(initialMaxAmountA),
       new anchor.BN(initialAmountB),
-      new anchor.BN(initialMinLiquidityC),
+      new anchor.BN(initialMinBondC),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -378,11 +385,13 @@ describe('Cherub', () => {
           exchange: exchange0Account.publicKey,
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
+          exchangeV: exchangeTokenAccount0V,
           mint: mintC.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           userA: walletTokenAccount0A,
           userB: walletTokenAccount0B,
-          userC: walletTokenAccountC
+          userC: walletTokenAccountC,
+          userV: walletTokenAccount0V
         },
         signers: [provider.wallet.owner]
       });
@@ -403,20 +412,21 @@ describe('Cherub', () => {
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialLiquidityMinted)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted)));
   });
 
-  const additionalMaxAmountA = 150 * (10 ** decimals0A);
-  const additionalAmountB = 75 * (10 ** decimals0B);
-  const additionalMinLiquidityC = 5 * (10 ** decimalsC);
-  const additionalLiquidityMinted = 37 * (10 ** decimalsC);
+  const additionalMaxAmountA = 1500 * (10 ** decimals0A);
+  const additionalAmountB = 750 * (10 ** decimals0B);
+  // TODO: Not right
+  const additionalMinBondC = 0.1 * (10 ** decimalsC);
+  const additionalBondMinted = 37 * (10 ** decimalsC);
 
-  it('Add additional liquidity', async () => {
+  it('Additional bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.addLiquidity(
+    const tx = await exchange.rpc.bond(
       new anchor.BN(additionalMaxAmountA),
       new anchor.BN(additionalAmountB),
-      new anchor.BN(additionalMinLiquidityC),
+      new anchor.BN(additionalMinBondC),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -424,11 +434,13 @@ describe('Cherub', () => {
           exchange: exchange0Account.publicKey,
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
+          exchangeV: exchangeTokenAccount0V,
           mint: mintC.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           userA: walletTokenAccount0A,
           userB: walletTokenAccount0B,
-          userC: walletTokenAccountC
+          userC: walletTokenAccountC,
+          userV: walletTokenAccount0V
         },
         signers: [provider.wallet.owner]
       });
@@ -449,7 +461,7 @@ describe('Cherub', () => {
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
-    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialLiquidityMinted + additionalLiquidityMinted)));
+    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted + additionalBondMinted)));
   });
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate();
@@ -635,16 +647,16 @@ describe('Cherub', () => {
   //  assert.ok(accountInfo.data);
   //});
 
-  const removeAmountC = 87;
+  const unbondAmountC = 87;
 
-  it('Remove liquidity', async () => {
+  it('Unbond', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
     const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.removeLiquidity(
-      new anchor.BN(removeAmountC),
+    const tx = await exchange.rpc.unbond(
+      new anchor.BN(unbondAmountC),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -680,57 +692,13 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
 
-  it('Add additional liquidity', async () => {
+  it('Bond final', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.addLiquidity(
+    const tx = await exchange.rpc.bond(
       new anchor.BN(additionalMaxAmountA),
       new anchor.BN(additionalAmountB),
-      new anchor.BN(additionalMinLiquidityC),
-      deadline, {
-        accounts: {
-          authority: provider.wallet.publicKey,
-          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-          exchange: exchange0Account.publicKey,
-          exchangeA: exchangeTokenAccount0A,
-          exchangeB: exchangeTokenAccount0B,
-          mint: mintC.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          userA: walletTokenAccount0A,
-          userB: walletTokenAccount0B,
-          userC: walletTokenAccountC
-        },
-        signers: [provider.wallet.owner]
-      });
-
-    console.log('Your transaction signature', tx);
-
-    let exchangeTokenAccount0AInfo = await mint0A.getAccountInfo(exchangeTokenAccount0A);
-    let walletTokenAccount0AInfo = await mint0A.getAccountInfo(walletTokenAccount0A);
-
-    //assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(additionalMaxAmountA)));
-    //assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(99850)));
-
-    let exchangeTokenAccount0BInfo = await mint0B.getAccountInfo(exchangeTokenAccount0B);
-    let walletTokenAccount0BInfo = await mint0B.getAccountInfo(walletTokenAccount0B);
-
-    //assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(75)));
-    //assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(99925)));
-
-    let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
-
-    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
-  });
-
-  const bondMaxAmountV = 100 * (10 ** decimals0A);
-  //const bondMaxAmountA = 100 * (10 ** decimals0A);
-  //const bondAmountB = 50 * (10 ** decimals0B);
-  //const bondMinLiquidityC = 0;
-  //const bondLiquidityMinted = 50 * (10 ** decimalsC);
-
-  it('Bond', async () => {
-    const deadline = new anchor.BN(Date.now() / 1000);
-    const tx = await exchange.rpc.bondVToA(
-      new anchor.BN(bondMaxAmountV),
+      // TODO: Not correct
+      new anchor.BN(additionalMinBondC / 10),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -768,6 +736,11 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
   });
 
+  const bondMaxAmountV = 100 * (10 ** decimals0A);
+  //const bondMaxAmountA = 100 * (10 ** decimals0A);
+  //const bondAmountB = 50 * (10 ** decimals0B);
+  //const bondMinBondC = 0;
+  //const bondBondMinted = 50 * (10 ** decimalsC);
 
   it('Second factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(

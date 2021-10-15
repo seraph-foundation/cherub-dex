@@ -251,6 +251,21 @@ function App() {
     const exchangeTokenAccountA = inverseExchange.tokenA;
     const exchangeTokenAccountB = inverseExchange.tokenB;
 
+    // eslint-disable-next-line
+    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      wallet.publicKey,
+      wallet.publicKey
+    );
+
+    // eslint-disable-next-line
+    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      wallet.publicKey,
+      wallet.publicKey
+    );
     // TODO: Make PDA
     const walletTokenAccountA = inverseExchange.walletA;
     const walletTokenAccountB = inverseExchange.walletB;
@@ -259,13 +274,6 @@ function App() {
     const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
     const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
     const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
-    console.log('?', mintAInfo)
-    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      wallet.publicKey,
-      wallet.publicKey
-    );
 
     // TODO: Make PDA
     const exchangePositionAccount = Keypair.generate();
@@ -319,30 +327,54 @@ function App() {
     const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const exchangePublicKey = new PublicKey(inverseExchange.exchange);
 
-    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
-    const exchangeTokenAccountA = inverseExchange.tokenA;
-    const exchangeTokenAccountB = inverseExchange.tokenB;
 
-    // TODO: Make PDA
-    const walletTokenAccountA = inverseExchange.walletA;
-    const walletTokenAccountB = inverseExchange.walletB;
-
+    // TODO: Do not pull from accounts file but get from browser via PDA
     // eslint-disable-next-line
-    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-    const aAmount = new BN(bondDeposit * (10 ** mintAInfo.decimals));
-    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
+    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       wallet.publicKey,
       wallet.publicKey
     );
+    const walletTokenAccountA = inverseExchange.walletA;
+    const walletTokenAccountB = inverseExchange.walletB;
+    const walletTokenAccountC = inverseExchange.walletC;
+    const walletTokenAccountV = inverseExchange.walletV;
+
+    // eslint-disable-next-line
+    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
+    const aAmount = new BN(bondDeposit * (10 ** mintAInfo.decimals));
+
+    const additionalAmountB = aAmount / 2;
+    // TODO: Not right
+    const additionalMinBondC = 0.00001 * (10 ** 9);
 
     try {
-      // TODO: Add bond function
-      const tx = null;
+      const tx = await exchange.rpc.bond(
+        new BN(aAmount),
+        new BN(additionalAmountB),
+        new BN(additionalMinBondC),
+        new BN(Date.now() + 5000 / 1000), {
+          accounts: {
+            authority: provider.wallet.publicKey,
+            clock: SYSVAR_CLOCK_PUBKEY,
+            exchange: inverseExchange.exchange,
+            exchangeA: inverseExchange.walletA,
+            exchangeB: inverseExchange.walletB,
+            exchangeV: inverseExchange.walletV,
+            mint: new PublicKey(accounts.mintC),
+            tokenProgram: TOKEN_PROGRAM_ID,
+            userA: walletTokenAccountA,
+            userB: walletTokenAccountB,
+            userC: walletTokenAccountC,
+            userV: walletTokenAccountV
+          },
+          signers: [provider.wallet.owner]
+        });
+
       const link = 'https://explorer.solana.com/tx/' + tx;
 
       notification.open({

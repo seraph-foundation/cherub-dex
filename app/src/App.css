@@ -1,7 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Spartan&display=swap');
+
 /* App */
 html {
     zoom: 108%;
     background-color: black;
+}
+
+body {
+    font-family: 'Spartan', sans-serif !important;
 }
 
 .App {
@@ -134,7 +140,9 @@ html {
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;animation: gradient 15s ease infinite;
-    font-size: 16px;
+    font-family: 'Spartan', sans-serif;
+    font-size: 20px;
+    font-weight: bold;
 }
 
 .BlockHeight {
@@ -295,6 +303,10 @@ body {
 }
 
 /* Ant */
+.anticon.anticon-close {
+    color: white;
+}
+
 .ant-notification-notice {
     background-color: #141414 !important;
     color: rgba(255, 255, 255, 0.65);
