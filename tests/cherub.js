@@ -38,6 +38,7 @@ describe('Cherub', () => {
   let mint1B = null;
 
   let mintC = null;
+  let mintS = null;
 
   const decimals0A = 9;
   const decimals0B = 9;
@@ -46,6 +47,7 @@ describe('Cherub', () => {
 
   // Second exchange is CHRB
   const decimalsC = 9;
+  const decimalsS = 9;
 
   const decimals1A = 9;
   const decimals1B = 9;
@@ -68,6 +70,7 @@ describe('Cherub', () => {
   let exchangeTokenAccount1V = null;
 
   let walletTokenAccountC = null;
+  let walletTokenAccountS = null;
 
   let walletTokenAccount0A = null;
   let walletTokenAccount0B = null;
@@ -134,6 +137,15 @@ describe('Cherub', () => {
       mintAuthority.publicKey,
       null,
       decimalsC,
+      TOKEN_PROGRAM_ID
+    );
+
+    mintS = await Token.createMint(
+      provider.connection,
+      payerAccount,
+      mintAuthority.publicKey,
+      null,
+      decimalsS,
       TOKEN_PROGRAM_ID
     );
 
@@ -207,7 +219,10 @@ describe('Cherub', () => {
     traderTokenAccount0B = await mint0B.createAccount(traderAccount.publicKey);
     traderTokenAccount0V = await mint0V.createAccount(traderAccount.publicKey);
 
+    factoryTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
+
     walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
+    walletTokenAccountS = await mintS.createAccount(provider.wallet.publicKey);
 
     await mint0A.mintTo(
       walletTokenAccount0A,
@@ -271,7 +286,11 @@ describe('Cherub', () => {
         token: mintC.publicKey.toString()
       }],
       factory: factoryAccount.publicKey.toString(),
+      factoryC: factoryTokenAccountC.toString(),
       mintC: mintC.publicKey.toString(),
+      mintS: mintS.publicKey.toString(),
+      walletC: walletTokenAccountC.toString(),
+      walletS: walletTokenAccountS.toString(),
       pyth: pythAccount.publicKey.toString(),
       trader: traderAccount.publicKey.toString()
     }));
@@ -413,6 +432,37 @@ describe('Cherub', () => {
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
 
     assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted)));
+  });
+
+  const stakeAmount = initialBondMinted / 2;
+
+  it('Stake', async () => {
+    const tx = await factory.rpc.stake(
+      new anchor.BN(stakeAmount), {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          factory: factoryAccount.publicKey,
+          factoryC: factoryTokenAccountC,
+          mintS: mintS.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userC: walletTokenAccountC,
+          userS: walletTokenAccountS
+        },
+        signers: [provider.wallet.owner]
+      }
+    );
+
+    console.log('Your transaction signature', tx);
+
+    let factoryTokenAccountCInfo = await mintC.getAccountInfo(factoryTokenAccountC);
+
+    assert.ok(factoryTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted)));
+
+    let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
+    let walletTokenAccountSInfo = await mintS.getAccountInfo(walletTokenAccountS);
+
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountSInfo.amount.eq(new anchor.BN(stakeAmount)));
   });
 
   const additionalMaxAmountA = 1500 * (10 ** decimals0A);

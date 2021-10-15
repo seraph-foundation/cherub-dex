@@ -44,6 +44,7 @@ const DEFAULT_NAME = DEFAULT.name;
 const SOL_TOKEN = DEFAULT.token
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const name = 'cheruβ';
+const symbol = 'CHRB';
 const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const showBanner = network !== 'http://127.0.0.1:8899';
@@ -395,6 +396,59 @@ function App() {
     }
   }
 
+  async function approveStake() {
+    const provider = await getProviderCallback();
+    const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+
+    const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
+    const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
+    const mintCInfo = await tokenC.getMintInfo();
+    const mintSInfo = await tokenS.getMintInfo();
+
+    // TODO: Do not pull from accounts file but get from browser via PDA
+    // eslint-disable-next-line
+    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      wallet.publicKey,
+      wallet.publicKey
+    );
+    const walletTokenAccountC = accounts.walletC;
+    const walletTokenAccountS = accounts.walletS;
+
+    const amountC = new BN(stakeDeposit * (10 ** mintCInfo.decimals));
+
+    try {
+      const tx = await factory.rpc.stake(
+        new BN(amountC), {
+          accounts: {
+            authority: provider.wallet.publicKey,
+            factory: new PublicKey(accounts.factory),
+            factoryC: new PublicKey(accounts.factoryC),
+            mintS: tokenS.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            userS: walletTokenAccountS,
+            userC: walletTokenAccountC
+          },
+          signers: [provider.wallet.owner]
+        }
+      );
+      const link = 'https://explorer.solana.com/tx/' + tx;
+
+      notification.open({
+        message: 'Order Successfully Placed',
+        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
+        duration: 0,
+        placement: 'bottomLeft'
+      });
+
+      setStakeStep(0);
+      setStakeDeposit();
+    } catch (err) {
+      console.log('Transaction error: ', err);
+    }
+  }
+
   function calculateCountdown() {
     // TODO: No longer needed?
     const today = new Date();
@@ -549,7 +603,7 @@ function App() {
 
   const stakeDescription = (
     <small>
-      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {name.toUpperCase()}</span> is
+      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {symbol.toUpperCase()}</span> is
       set to earn <span className='White'>12% APY</span>
     </small>
   );
@@ -574,7 +628,7 @@ function App() {
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
               <br/>
               <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'>
+              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>
                 Approve</Button>
             </Card>
           </div>

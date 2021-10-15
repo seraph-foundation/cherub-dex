@@ -4,9 +4,9 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
+use anchor_spl::token::{self, Mint, MintTo, TokenAccount, Transfer};
 
-use exchange::{self, ExchangeData, Create};
+use exchange::{self, Create, ExchangeData};
 
 declare_id!("GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -48,6 +48,12 @@ pub mod factory {
     pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, _token: Pubkey) -> ProgramResult {
         Ok(())
     }
+
+    pub fn stake(ctx: Context<Stake>, amount_c: u64) -> ProgramResult {
+        token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
+        token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -63,13 +69,13 @@ pub struct CreateExchange<'info> {
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub factory: Account<'info, FactoryData>,
-    pub exchange_program: AccountInfo<'info>,
-    pub token_program: AccountInfo<'info>,
-    #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
+    pub exchange_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub factory: Account<'info, FactoryData>,
+    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -87,6 +93,41 @@ pub struct GetTokenWithId<'info> {
     pub factory: Account<'info, FactoryData>,
 }
 
+#[derive(Accounts)]
+pub struct Stake<'info> {
+    pub authority: AccountInfo<'info>,
+    pub factory: Account<'info, FactoryData>,
+    #[account(mut)]
+    pub factory_c: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub mint_s: Account<'info, Mint>,
+    pub token_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_s: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_c: Account<'info, TokenAccount>,
+}
+
+impl<'info> Stake<'info> {
+    fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_c.to_account_info(),
+            to: self.factory_c.to_account_info(),
+            authority: self.authority.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+
+    fn into_ctx_s(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.mint_s.to_account_info(),
+            to: self.user_s.to_account_info(),
+            authority: self.authority.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+}
+
 impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Create<'info>>
 {
@@ -98,10 +139,7 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
             exchange_a: accounts.exchange_a.clone(),
             exchange_b: accounts.exchange_b.clone(),
         };
-        CpiContext::new(
-            accounts.exchange_program.to_account_info(),
-            cpi_accounts,
-        )
+        CpiContext::new(accounts.exchange_program.to_account_info(), cpi_accounts)
     }
 }
 
