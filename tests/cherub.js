@@ -94,17 +94,17 @@ describe('Cherub', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const amount0A = 100000 * (10 ** decimals0A);
-  const amount0B = 100000 * (10 ** decimals0B);
-  const amount0V = 100000 * (10 ** decimals0V);
+  const amount0A = 100000 * (1 ** decimals0A);
+  const amount0B = 100000 * (1 ** decimals0B);
+  const amount0V = 100000 * (1 ** decimals0V);
 
-  const amount1A = 900000 * (10 ** decimals1A);
-  const amount1B = 900000 * (10 ** decimals1B);
-  const amount1V = 900000 * (10 ** decimals1V);
+  const amount1A = 900000 * (1 ** decimals1A);
+  const amount1B = 900000 * (1 ** decimals1B);
+  const amount1V = 900000 * (1 ** decimals1V);
 
-  const traderAmount0A = 50000 * (10 ** decimals0A);
-  const traderAmount0B = 50000 * (10 ** decimals0B);
-  const traderAmount0V = 50000 * (10 ** decimals0V);
+  const traderAmount0A = 50000 * (1 ** decimals0A);
+  const traderAmount0B = 50000 * (1 ** decimals0B);
+  const traderAmount0V = 50000 * (1 ** decimals0V);
 
   const amountAirdrop = 200000 * LAMPORTS_PER_SOL;
 
@@ -203,9 +203,14 @@ describe('Cherub', () => {
       amount0V
     );
 
+    factoryTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
+
+    walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
+    walletTokenAccountS = await mintS.createAccount(provider.wallet.publicKey);
+
     walletTokenAccount1A = await mint1A.createAccount(provider.wallet.publicKey);
     walletTokenAccount1B = await mint1B.createAccount(provider.wallet.publicKey);
-    walletTokenAccount1V = await mint1V.createAccount(provider.wallet.publicKey);
+    walletTokenAccount1V = walletTokenAccountC;
 
     exchangeTokenAccount0A = await mint0A.createAccount(exchange0Account.publicKey);
     exchangeTokenAccount0B = await mint0B.createAccount(exchange0Account.publicKey);
@@ -218,11 +223,6 @@ describe('Cherub', () => {
     traderTokenAccount0A = await mint0A.createAccount(traderAccount.publicKey);
     traderTokenAccount0B = await mint0B.createAccount(traderAccount.publicKey);
     traderTokenAccount0V = await mint0V.createAccount(traderAccount.publicKey);
-
-    factoryTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
-
-    walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
-    walletTokenAccountS = await mintS.createAccount(provider.wallet.publicKey);
 
     await mint0A.mintTo(
       walletTokenAccount0A,
@@ -260,13 +260,12 @@ describe('Cherub', () => {
         mintA: mint0A.publicKey.toString(),
         mintB: mint0B.publicKey.toString(),
         mintV: mint0V.publicKey.toString(),
-        name: 'SOL',
+        symbol: 'SOL',
         tokenA: exchangeTokenAccount0A.toString(),
         tokenB: exchangeTokenAccount0B.toString(),
         tokenV: exchangeTokenAccount0V.toString(),
         walletA: walletTokenAccount0A.toString(),
         walletB: walletTokenAccount0B.toString(),
-        walletC: walletTokenAccountC.toString(),
         walletV: walletTokenAccount0V.toString(),
         token: mint0V.publicKey.toString()
       }, {
@@ -275,13 +274,12 @@ describe('Cherub', () => {
         mintA: mint1A.publicKey.toString(),
         mintB: mint1B.publicKey.toString(),
         mintV: mint1V.publicKey.toString(),
-        name: 'CHRB',
+        symbol: 'CHRB',
         tokenA: exchangeTokenAccount1A.toString(),
         tokenB: exchangeTokenAccount1B.toString(),
         tokenV: exchangeTokenAccount1V.toString(),
         walletA: walletTokenAccount1A.toString(),
         walletB: walletTokenAccount1B.toString(),
-        walletC: walletTokenAccountC.toString(),
         walletV: walletTokenAccount1V.toString(),
         token: mintC.publicKey.toString()
       }],
@@ -289,10 +287,10 @@ describe('Cherub', () => {
       factoryC: factoryTokenAccountC.toString(),
       mintC: mintC.publicKey.toString(),
       mintS: mintS.publicKey.toString(),
-      walletC: walletTokenAccountC.toString(),
-      walletS: walletTokenAccountS.toString(),
       pyth: pythAccount.publicKey.toString(),
-      trader: traderAccount.publicKey.toString()
+      trader: traderAccount.publicKey.toString(),
+      walletC: walletTokenAccountC.toString(),
+      walletS: walletTokenAccountS.toString()
     }));
 
     let walletTokenAccountInfoA = await mint0A.getAccountInfo(walletTokenAccount0A);
@@ -386,10 +384,10 @@ describe('Cherub', () => {
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
-  const initialMaxAmountA = 100 * (10 ** decimals0A);
-  const initialAmountB = 50 * (10 ** decimals0B);
+  const initialMaxAmountA = 10000 * (1 ** decimals0A);
+  const initialAmountB = 5000 * (1 ** decimals0B);
   const initialMinBondC = 0;
-  const initialBondMinted = 50 * (10 ** decimalsC);
+  const initialBondMinted = 5000 * (1 ** decimalsC);
 
   it('Initial bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -456,20 +454,19 @@ describe('Cherub', () => {
 
     let factoryTokenAccountCInfo = await mintC.getAccountInfo(factoryTokenAccountC);
 
-    assert.ok(factoryTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted)));
+    assert.ok(factoryTokenAccountCInfo.amount.eq(new anchor.BN(stakeAmount)));
 
     let walletTokenAccountCInfo = await mintC.getAccountInfo(walletTokenAccountC);
     let walletTokenAccountSInfo = await mintS.getAccountInfo(walletTokenAccountS);
 
-    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
+    assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(initialBondMinted - stakeAmount)));
     assert.ok(walletTokenAccountSInfo.amount.eq(new anchor.BN(stakeAmount)));
   });
 
-  const additionalMaxAmountA = 1500 * (10 ** decimals0A);
-  const additionalAmountB = 750 * (10 ** decimals0B);
-  // TODO: Not right
-  const additionalMinBondC = 0.1 * (10 ** decimalsC);
-  const additionalBondMinted = 37 * (10 ** decimalsC);
+  const additionalMaxAmountA = 1500 * (1 ** decimals0A);
+  const additionalAmountB = 750 * (1 ** decimals0B);
+  const additionalMinBondC = 375 * (1 ** decimalsC);
+  const additionalBondMinted = 37 * (1 ** decimalsC);
 
   it('Additional bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -515,7 +512,7 @@ describe('Cherub', () => {
   });
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate();
-  const aToBAmount = 10 * (10 ** decimals0A);
+  const aToBAmount = 10 * (1 ** decimals0A);
 
   it('Get input price', async () => {
     const tx = await exchange.rpc.getBToAInputPrice(
@@ -540,7 +537,7 @@ describe('Cherub', () => {
   });
 
   const traderOutputQuoteAccount = anchor.web3.Keypair.generate();
-  const bToAAmount = 5 * (10 ** decimals0B);
+  const bToAAmount = 5 * (1 ** decimals0B);
 
   it('Get output price', async () => {
     const tx = await exchange.rpc.getBToAOutputPrice(
@@ -564,7 +561,7 @@ describe('Cherub', () => {
     //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)));
   });
 
-  const bToAAmountB = 6 * (10 ** decimals0B);
+  const bToAAmountB = 6 * (1 ** decimals0B);
   const exchange0Position0Account = anchor.web3.Keypair.generate();
 
   it('B to A input', async () => {
@@ -615,7 +612,7 @@ describe('Cherub', () => {
     //assert.ok(exchange0AccountInfo.lastPrice.eq(new anchor.BN(6)));
   });
 
-  const aToBAmountA = 3 * (decimals0A ** 10);
+  const aToBAmountA = 3 * (1 ** decimals0A);
   const exchange0Position1Account = anchor.web3.Keypair.generate();
 
   it('A to B input', async () => {
@@ -786,11 +783,11 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
   });
 
-  const bondMaxAmountV = 100 * (10 ** decimals0A);
-  //const bondMaxAmountA = 100 * (10 ** decimals0A);
-  //const bondAmountB = 50 * (10 ** decimals0B);
+  const bondMaxAmountV = 100 * (1 ** decimals0A);
+  //const bondMaxAmountA = 100 * (1 ** decimals0A);
+  //const bondAmountB = 50 * (1 ** decimals0B);
   //const bondMinBondC = 0;
-  //const bondBondMinted = 50 * (10 ** decimalsC);
+  //const bondBondMinted = 50 * (1 ** decimalsC);
 
   it('Second factory exchange created', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(

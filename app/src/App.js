@@ -18,12 +18,12 @@ import './App.css';
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
 
-let accounts = {};
+var accounts = {};
 
 if (window.location.origin === 'http://127.0.0.1:3000') {
   accounts = require('./accounts-localnet.json');
 } else {
-  accounts = require('./accounts.json');
+  accounts = require('./accounts-devnet.json');
 }
 
 const { Content, Footer, Header } = Layout;
@@ -36,19 +36,16 @@ const Direction = {
   Short: { short: {} },
 };
 
-const CHERUB = accounts.exchanges.find((x) => x.name === 'CHRB');
-const CHERUB_EXCHANGE = CHERUB.exchange;
-const CHERUB_NAME = CHERUB.name;
-const DEFAULT = accounts.exchanges.find((x) => x.name === 'SOL');
-const DEFAULT_NAME = DEFAULT.name;
-const SOL_TOKEN = DEFAULT.token
+const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
+const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
-const name = 'cheruβ';
-const symbol = 'CHRB';
+const logoText = 'cheruβ';
 const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const showBanner = network !== 'http://127.0.0.1:8899';
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
+
+const DEFAULT_NAME = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol;
 
 const chartOptions = {
   scales: {
@@ -88,7 +85,6 @@ const daoProposals = [{
   icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
 }];
 
-// TODO: Remove grid line color https://stackoverflow.com/questions/41094658/chartjs-change-grid-line-color
 const treasuryData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [{
@@ -109,6 +105,16 @@ const tvdData = {
   }]
 };
 
+function getWindowRoute() {
+  const routes = ['dao', 'inverse', 'stake', 'bond'];
+  if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
+    return window.location.href.split('#/')[1];
+  } else {
+    // First route is default route
+    return routes[0];
+  }
+}
+
 function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
@@ -118,6 +124,7 @@ function App() {
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
+  // eslint-disable-next-line
   const [countdown, setCountdown] = useState('');
   const [countdownInterval, setCountdownInterval] = useState(false);
   const [currentMarket, setCurrentMarket] = useState();
@@ -160,16 +167,16 @@ function App() {
 
   async function getBalance() {
     const provider = await getProviderCallback();
-    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
     if (wallet.connected) {
-      if (inverseExchange.token === SOL_TOKEN) {
+      if (inverseExchange.token === SOL.token) {
         const balance = await provider.connection.getBalance(wallet.publicKey);
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
-        const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.token), TOKEN_PROGRAM_ID);
-        const mintAInfo = await tokenA.getMintInfo();
-        const balance = await provider.connection.getBalance(new PublicKey(inverseExchange.token));
-        setBalance((balance / (10 ** mintAInfo.decimals)).toFixed(2));
+        const tokenV = new Token(provider.connection, new PublicKey(inverseExchange.token), TOKEN_PROGRAM_ID);
+        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(inverseExchange.walletV));
+        const mintVInfo = await tokenV.getMintInfo();
+        setBalance((accountVInfo.amount.toNumber() / (1 ** mintVInfo.decimals)).toFixed(2));
       }
     }
   }
@@ -189,12 +196,14 @@ function App() {
     const provider = await getProviderCallback();
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
-      const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID, null);
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
       const mintCInfo = await tokenC.getMintInfo();
-      const supply = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
-      const total = mintCInfo.supply.toNumber() / (mintCInfo.decimals ** 10);
+      const mintSInfo = await tokenS.getMintInfo();
+      const supply = mintSInfo.supply.toNumber() / (1 ** mintSInfo.decimals);
+      const total = mintCInfo.supply.toNumber() / (1 ** mintCInfo.decimals);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB_EXCHANGE));
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.exchange));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (mintCInfo.decimals * 10)).toFixed(2);
       setCCurrentPrice((lastPrice / 1).toFixed(0));
       setCMarketCap((lastPrice / 1).toFixed(0));
@@ -220,15 +229,15 @@ function App() {
 
   async function getInverseData(asset) {
     const provider = await getProviderCallback();
-    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.name === asset).exchange);
+    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).exchange);
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
     try {
       const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
-      const mintAPublicKey = accounts.exchanges.find((x) => x.name === asset).mintA;
+      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).mintA;
       const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
       const mintAInfo = await tokenA.getMintInfo();
-      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
+      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (1 ** mintAInfo.decimals)).toFixed(2);
 
       setDummyInverseData(lastPrice);
       setExchangeRate(lastPrice);
@@ -243,7 +252,7 @@ function App() {
   async function approveInverse() {
     const provider = await getProviderCallback();
 
-    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
+    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const exchangePublicKey = new PublicKey(inverseExchange.exchange);
@@ -274,8 +283,8 @@ function App() {
 
     // eslint-disable-next-line
     const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-    const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
-    const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    const aToBAmountA = new BN(inverseQuantity * leverage * (1 ** mintAInfo.decimals));
+    const equityA = new BN(inverseQuantity * (1 ** mintAInfo.decimals));
 
     // TODO: Make PDA
     const exchangePositionAccount = Keypair.generate();
@@ -317,7 +326,7 @@ function App() {
       setLeverage(1);
       setInverseQuantity();
 
-      getInverseDataCallback(inverseExchange.name);
+      getInverseDataCallback(inverseExchange.symbol);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -326,10 +335,8 @@ function App() {
   async function approveBond() {
     const provider = await getProviderCallback();
 
-    const inverseExchange = accounts.exchanges.find((x) => x.name === inverseAsset);
-
+    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-
     const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
 
@@ -343,22 +350,24 @@ function App() {
     );
     const walletTokenAccountA = inverseExchange.walletA;
     const walletTokenAccountB = inverseExchange.walletB;
-    const walletTokenAccountC = inverseExchange.walletC;
+    const walletTokenAccountC = accounts.walletC;
     const walletTokenAccountV = inverseExchange.walletV;
 
     // eslint-disable-next-line
-    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-    const aAmount = new BN(bondDeposit * (10 ** mintAInfo.decimals));
-
-    const additionalAmountB = aAmount / 2;
-    // TODO: Not right
-    const additionalMinBondC = 0.00001 * (10 ** 9);
+    const [pda, nonce] = await PublicKey.findProgramAddress(
+      [Buffer.from(utils.bytes.utf8.encode('exchange'))],
+      exchange.programId
+    );
+    const amountA = new BN(bondDeposit * (1 ** mintAInfo.decimals));
+    const amountB = amountA / 2;
+    // TODO: Calculate this correctly
+    const minC = amountB * (1 ** 9) / 3;
 
     try {
       const tx = await exchange.rpc.bond(
-        new BN(aAmount),
-        new BN(additionalAmountB),
-        new BN(additionalMinBondC),
+        new BN(amountA),
+        new BN(amountB),
+        new BN(minC),
         new BN(Date.now() + 5000 / 1000), {
           accounts: {
             authority: provider.wallet.publicKey,
@@ -376,7 +385,6 @@ function App() {
           },
           signers: [provider.wallet.owner]
         });
-
       const link = 'https://explorer.solana.com/tx/' + tx;
 
       notification.open({
@@ -390,7 +398,7 @@ function App() {
       setLeverage(1);
       setInverseQuantity();
 
-      getInverseDataCallback(inverseExchange.name);
+      getInverseDataCallback(inverseExchange.symbol);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -403,7 +411,6 @@ function App() {
     const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
     const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
     const mintCInfo = await tokenC.getMintInfo();
-    const mintSInfo = await tokenS.getMintInfo();
 
     // TODO: Do not pull from accounts file but get from browser via PDA
     // eslint-disable-next-line
@@ -416,7 +423,7 @@ function App() {
     const walletTokenAccountC = accounts.walletC;
     const walletTokenAccountS = accounts.walletS;
 
-    const amountC = new BN(stakeDeposit * (10 ** mintCInfo.decimals));
+    const amountC = new BN(stakeDeposit * (1 ** mintCInfo.decimals));
 
     try {
       const tx = await factory.rpc.stake(
@@ -449,16 +456,22 @@ function App() {
     }
   }
 
+  // TODO: No longer needed with continuous funding, need to understand price oracle better
   function calculateCountdown() {
-    // TODO: No longer needed?
+    // eslint-disable-next-line
     const today = new Date();
+    // eslint-disable-next-line
     const deadline = new Date();
     deadline.setHours(24, 0, 0, 0);
+    // eslint-disable-next-line
     const delta = deadline.getTime() - today.getTime();
+    // eslint-disable-next-line
     const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    // eslint-disable-next-line
     const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
+    // eslint-disable-next-line
     const secs = Math.floor((delta % (1000 * 60)) / 1000);
-    //setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
+    setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
   }
 
   const settingsMenu = (
@@ -603,8 +616,8 @@ function App() {
 
   const stakeDescription = (
     <small>
-      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {symbol.toUpperCase()}</span> is
-      set to earn <span className='White'>12% APY</span>
+      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {CHERUB.symbol.toUpperCase()}</span>
+      is set to earn <span className='White'>12% APY</span>
     </small>
   );
 
@@ -622,7 +635,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={CHERUB_NAME} bordered={false}
+            <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
@@ -635,7 +648,7 @@ function App() {
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={CHERUB_NAME} bordered={false}
+        <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
         </Card>
       </Col>
@@ -659,12 +672,12 @@ function App() {
                   <Title level={3} className='Title Dark'>{cMarketCap}</Title>
                 </Col>
                 <Col span={6}>
-                  <p>Price</p>
+                  <p>{CHERUB.symbol} Price</p>
                   <Title level={3} className='Title Dark'>{cCurrentPrice}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Circulating Supply (Total)</p>
-                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal} {CHERUB_NAME}</Title>
+                  <Title level={3} className='Title Dark'>{cCirculatingSupplyTotal}</Title>
                 </Col>
                 <Col span={6}>
                   <p>Markets</p>
@@ -686,23 +699,22 @@ function App() {
           </div>
         </Col>
         <Col span={2}></Col>
+      </Row> :
+      <Row>
+        <Col span={2}></Col>
+        <Col span={20} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title='DAO' bordered={false}
+              extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
+              <List itemLayout='horizontal' dataSource={daoProposals}
+                renderItem={item => (
+                  <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
+                )}/>
+            </Card>
+          </div>
+        </Col>
+        <Col span={2}></Col>
       </Row>
-          :
-          <Row>
-            <Col span={2}></Col>
-            <Col span={20} className='Cards'>
-              <div className='site-card-border-less-wrapper'>
-                <Card className='Card Dark' title='DAO' bordered={false}
-                  extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
-                  <List itemLayout='horizontal' dataSource={daoProposals}
-                    renderItem={item => (
-                      <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
-                    )}/>
-                </Card>
-              </div>
-            </Col>
-            <Col span={2}></Col>
-          </Row>
       }
     </>
   );
@@ -720,12 +732,7 @@ function App() {
   }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet]);
 
   useEffect(() => {
-    const routes = ['dao', 'inverse', 'stake', 'bond'];
-    if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
-      setMenu(window.location.href.split('#/')[1]);
-    } else {
-      window.location.href = '/#/' + routes[0];
-    }
+    setMenu(getWindowRoute());
   }, [setMenu]);
 
   useEffect(() => {
@@ -769,7 +776,7 @@ function App() {
           <Col span={5}>
             <div className='Logo Dark'>
               <img src='/logo.svg' alt='Logo' className='LogoImage'/>
-              <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{name}</strong>
+              <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{logoText}</strong>
             </div>
           </Col>
           <Col span={14} className='ColCentered'>
@@ -778,7 +785,7 @@ function App() {
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
-              <Menu.Item key='stake' onClick={() => {setInverseAsset(CHERUB_NAME)}}>Stake</Menu.Item>
+              <Menu.Item key='stake' onClick={() => {setInverseAsset(CHERUB.symbol)}}>Stake</Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
@@ -814,8 +821,8 @@ function App() {
         <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true'
           renderItem={exchange => (
             <List.Item className='Asset ListItem'>
-              <List.Item.Meta title={exchange.name}
-                onClick={() => {setInverseAsset(exchange.name); getInverseData(exchange.name); setIsInverseAssetModalVisible(false)}}/>
+              <List.Item.Meta title={exchange.symbol}
+                onClick={() => {setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false)}}/>
             </List.Item>
           )}
         />
