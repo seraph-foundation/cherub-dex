@@ -341,7 +341,9 @@ function App() {
     const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID);
+    const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
+    const mintCInfo = await tokenC.getMintInfo();
 
     // TODO: Do not pull from accounts file but get from browser via PDA
     // eslint-disable-next-line
@@ -361,10 +363,10 @@ function App() {
       [Buffer.from(utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
-    const amountA = new BN(bondDeposit * (1 ** mintAInfo.decimals));
-    const amountB = amountA / 2;
+    const amountA = bondDeposit * (1 ** mintAInfo.decimals);
+    const amountB = amountA / 3;
     // TODO: Calculate this correctly
-    const minC = amountB * (1 ** 9) / 3;
+    const minC = 1 * (1 ** mintCInfo.decimals);
 
     try {
       const tx = await exchange.rpc.bond(
