@@ -131,7 +131,7 @@ function App() {
   // eslint-disable-next-line
   const [countdown, setCountdown] = useState('');
   const [countdownInterval, setCountdownInterval] = useState(false);
-  const [currentExchange, setCurrentExchange] = useState({ walletV: null, token: null, symbol: null });
+  const [currentExchange, setCurrentExchange] = useState({ accountV: null, token: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
   const [exchangeRate, setExchangeRate] = useState(0);
@@ -160,7 +160,7 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.walletV,
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.accountV,
     wallet.connected, wallet.publicKey]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
@@ -179,7 +179,7 @@ function App() {
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
         const tokenV = new Token(provider.connection, new PublicKey(currentExchange.token), TOKEN_PROGRAM_ID);
-        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(currentExchange.walletV));
+        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(currentExchange.accountV));
         const mintVInfo = await tokenV.getMintInfo();
         setBalance((accountVInfo.amount.toNumber() / (10 ** mintVInfo.decimals)).toFixed(2));
       }
@@ -190,7 +190,7 @@ function App() {
     const provider = await getProviderCallback();
     const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
     try {
-      const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory));
+      const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
       setTokenCount(account.tokenCount.toNumber());
     } catch (err) {
       console.log('Transaction error: ', err);
@@ -201,14 +201,14 @@ function App() {
     const provider = await getProviderCallback();
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
-      const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
-      const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
       const mintCInfo = await tokenC.getMintInfo();
       const mintSInfo = await tokenS.getMintInfo();
       const supply = mintSInfo.supply.toNumber() / (10 ** mintSInfo.decimals);
       const total = mintCInfo.supply.toNumber() / (10 ** mintCInfo.decimals);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.exchange));
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintCInfo.decimals)).toFixed(2);
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * total));
@@ -234,12 +234,12 @@ function App() {
 
   async function getInverseData(asset) {
     const provider = await getProviderCallback();
-    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).exchange);
+    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
     try {
       const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
-      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).mintA;
+      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenA;
       const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
       const mintAInfo = await tokenA.getMintInfo();
       const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
@@ -258,10 +258,10 @@ function App() {
     const provider = await getProviderCallback();
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const exchangePublicKey = new PublicKey(currentExchange.exchange);
+    const exchangePublicKey = new PublicKey(currentExchange.account);
 
-    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
-    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.mintB), TOKEN_PROGRAM_ID);
+    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
+    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
 
     const walletTokenAccountA = await Token.getAssociatedTokenAddress(
@@ -298,8 +298,8 @@ function App() {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
             exchange: exchangePublicKey,
-            exchangeA: currentExchange.tokenA,
-            exchangeB: currentExchange.tokenB,
+            exchangeA: currentExchange.accountA,
+            exchangeB: currentExchange.accountB,
             pda,
             position: exchangePositionAccount.publicKey,
             recipient: walletTokenAccountA,
@@ -334,9 +334,11 @@ function App() {
     const provider = await getProviderCallback();
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
-    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.mintB), TOKEN_PROGRAM_ID);
-    const tokenC = new Token(provider.connection, new PublicKey(currentExchange.mintC), TOKEN_PROGRAM_ID);
+
+    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
+    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
+    const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
+    const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
 
     const mintAInfo = await tokenA.getMintInfo();
     const mintBInfo = await tokenB.getMintInfo();
@@ -359,7 +361,13 @@ function App() {
       tokenC.publicKey,
       provider.wallet.publicKey
     );
-    const walletTokenAccountV = currentExchange.walletV;
+    // TODO: SOL account is not associated token address
+    const walletTokenAccountV = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenV.publicKey,
+      provider.wallet.publicKey
+    );
 
     // eslint-disable-next-line
     const [pda, nonce] = await PublicKey.findProgramAddress(
@@ -380,11 +388,11 @@ function App() {
           accounts: {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
-            exchange: currentExchange.exchange,
-            exchangeA: currentExchange.walletA,
-            exchangeB: currentExchange.walletB,
-            exchangeV: currentExchange.walletV,
-            mint: new PublicKey(accounts.mintC),
+            exchange: currentExchange.account,
+            exchangeA: currentExchange.accountA,
+            exchangeB: currentExchange.accountB,
+            exchangeV: currentExchange.accountV,
+            mint: new PublicKey(accounts.factory.tokenC),
             tokenProgram: TOKEN_PROGRAM_ID,
             userA: walletTokenAccountA,
             userB: walletTokenAccountB,
@@ -414,8 +422,8 @@ function App() {
     const provider = await getProviderCallback();
     const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
 
-    const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
-    const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
+    const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
+    const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
     const mintCInfo = await tokenC.getMintInfo();
 
     const walletTokenAccountC = await Token.getAssociatedTokenAddress(
@@ -738,7 +746,7 @@ function App() {
       getInverseDataCallback(DEFAULT_SYMBOL);
     }
   }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet,
-    currentExchange.token, currentExchange.walletV]);
+    currentExchange.token, currentExchange.accountV]);
 
   useEffect(() => {
     setMenu(getWindowRoute());
