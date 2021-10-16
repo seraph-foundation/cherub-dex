@@ -1,7 +1,7 @@
 const anchor = require('@project-serum/anchor');
 const assert = require('assert');
 const fs = require('fs');
-const { NATIVE_MINT, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
+const { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 
 const exchangeIdl = require('../target/idl/exchange.json');
@@ -191,8 +191,8 @@ describe('Cherub', () => {
     // Second exchange is CHRB
     mint1V = mintC
 
-    walletTokenAccount0A = await mint0A.createAccount(provider.wallet.publicKey);
-    walletTokenAccount0B = await mint0B.createAccount(provider.wallet.publicKey);
+    walletTokenAccount0A = await mint0A.createAssociatedTokenAccount(provider.wallet.publicKey);
+    walletTokenAccount0B = await mint0B.createAssociatedTokenAccount(provider.wallet.publicKey);
 
     // Wrap native SOL
     walletTokenAccount0V = await Token.createWrappedNativeAccount(
@@ -205,11 +205,11 @@ describe('Cherub', () => {
 
     factoryTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
 
-    walletTokenAccountC = await mintC.createAccount(provider.wallet.publicKey);
-    walletTokenAccountS = await mintS.createAccount(provider.wallet.publicKey);
+    walletTokenAccountC = await mintC.createAssociatedTokenAccount(provider.wallet.publicKey);
+    walletTokenAccountS = await mintS.createAssociatedTokenAccount(provider.wallet.publicKey);
 
-    walletTokenAccount1A = await mint1A.createAccount(provider.wallet.publicKey);
-    walletTokenAccount1B = await mint1B.createAccount(provider.wallet.publicKey);
+    walletTokenAccount1A = await mint1A.createAssociatedTokenAccount(provider.wallet.publicKey);
+    walletTokenAccount1B = await mint1B.createAssociatedTokenAccount(provider.wallet.publicKey);
     walletTokenAccount1V = walletTokenAccountC;
 
     exchangeTokenAccount0A = await mint0A.createAccount(exchange0Account.publicKey);
@@ -220,9 +220,9 @@ describe('Cherub', () => {
     exchangeTokenAccount1B = await mint1B.createAccount(exchange1Account.publicKey);
     exchangeTokenAccount1V = await mint1V.createAccount(exchange1Account.publicKey);
 
-    traderTokenAccount0A = await mint0A.createAccount(traderAccount.publicKey);
-    traderTokenAccount0B = await mint0B.createAccount(traderAccount.publicKey);
-    traderTokenAccount0V = await mint0V.createAccount(traderAccount.publicKey);
+    traderTokenAccount0A = await mint0A.createAssociatedTokenAccount(traderAccount.publicKey);
+    traderTokenAccount0B = await mint0B.createAssociatedTokenAccount(traderAccount.publicKey);
+    traderTokenAccount0V = await mint0V.createAssociatedTokenAccount(traderAccount.publicKey);
 
     await mint0A.mintTo(
       walletTokenAccount0A,
@@ -278,8 +278,6 @@ describe('Cherub', () => {
         tokenA: exchangeTokenAccount0A.toString(),
         tokenB: exchangeTokenAccount0B.toString(),
         tokenV: exchangeTokenAccount0V.toString(),
-        walletA: walletTokenAccount0A.toString(),
-        walletB: walletTokenAccount0B.toString(),
         walletV: walletTokenAccount0V.toString(),
         token: mint0V.publicKey.toString()
       }, {
@@ -292,19 +290,14 @@ describe('Cherub', () => {
         tokenA: exchangeTokenAccount1A.toString(),
         tokenB: exchangeTokenAccount1B.toString(),
         tokenV: exchangeTokenAccount1V.toString(),
-        walletA: walletTokenAccount1A.toString(),
-        walletB: walletTokenAccount1B.toString(),
         walletV: walletTokenAccount1V.toString(),
-        token: mintC.publicKey.toString()
+        token: mint0V.publicKey.toString()
       }],
       factory: factoryAccount.publicKey.toString(),
       factoryC: factoryTokenAccountC.toString(),
       mintC: mintC.publicKey.toString(),
       mintS: mintS.publicKey.toString(),
-      pyth: pythAccount.publicKey.toString(),
-      trader: traderAccount.publicKey.toString(),
-      walletC: walletTokenAccountC.toString(),
-      walletS: walletTokenAccountS.toString()
+      pyth: pythAccount.publicKey.toString()
     }));
 
     let walletTokenAccountInfoA = await mint0A.getAccountInfo(walletTokenAccount0A);
@@ -423,8 +416,7 @@ describe('Cherub', () => {
           userB: walletTokenAccount0B,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
-        },
-        signers: [provider.wallet.owner]
+        }
       });
 
     console.log('Your transaction signature', tx);
@@ -459,8 +451,7 @@ describe('Cherub', () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userS: walletTokenAccountS
-        },
-        signers: [provider.wallet.owner]
+        }
       }
     );
 
@@ -502,8 +493,7 @@ describe('Cherub', () => {
           userB: walletTokenAccount0B,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
-        },
-        signers: [provider.wallet.owner]
+        }
       });
 
     console.log('Your transaction signature', tx);
@@ -774,8 +764,7 @@ describe('Cherub', () => {
           userB: walletTokenAccount0B,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
-        },
-        signers: [provider.wallet.owner]
+        }
       });
 
     console.log('Your transaction signature', tx);
@@ -862,8 +851,7 @@ describe('Cherub', () => {
           userB: walletTokenAccount1B,
           userC: walletTokenAccountC,
           userV: walletTokenAccount1V
-        },
-        signers: [provider.wallet.owner]
+        }
       });
 
     console.log('Your transaction signature', tx);

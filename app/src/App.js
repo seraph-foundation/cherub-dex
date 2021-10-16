@@ -9,7 +9,7 @@ import { Line } from 'react-chartjs-2';
 import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, Keypair, PublicKey, SystemProgram, SYSVAR_CLOCK_PUBKEY, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
 
 import 'antd/dist/antd.css';
@@ -133,6 +133,7 @@ function App() {
   const [countdownInterval, setCountdownInterval] = useState(false);
   const [currentExchange, setCurrentExchange] = useState({ walletV: null, token: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
+  const [daoCard, setDAOCard] = useState('statistics');
   const [exchangeRate, setExchangeRate] = useState(0);
   const [fundingRate, setFundingRate] = useState();
   // eslint-disable-next-line
@@ -141,19 +142,18 @@ function App() {
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
   const [isInverseDataSet, setIsInverseSet] = useState(false);
   const [indexPrice, setIndexPrice] = useState();
-  const [leverage, setLeverage] = useState(1);
-  const [low24H, setLow24H] = useState();
-  const [menu, setMenu] = useState('');
-  const [daoCard, setDAOCard] = useState('statistics');
-  const [stakeCard, setStakeCard] = useState('stake');
-  const [stakeDeposit, setStakeDeposit] = useState();
-  const [stakeStep, setStakeStep] = useState(0);
-  const [tokenCount, setTokenCount] = useState(0);
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL);
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
   const [inverseStep, setInverseStep] = useState(0);
+  const [leverage, setLeverage] = useState(1);
+  const [low24H, setLow24H] = useState();
+  const [menu, setMenu] = useState('');
+  const [stakeCard, setStakeCard] = useState('stake');
+  const [stakeDeposit, setStakeDeposit] = useState();
+  const [stakeStep, setStakeStep] = useState(0);
+  const [tokenCount, setTokenCount] = useState(0);
   const [turnaround24H, setTurnaround24H] = useState();
 
   const wallet = useWallet();
@@ -260,19 +260,22 @@ function App() {
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const exchangePublicKey = new PublicKey(currentExchange.exchange);
 
-    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
+    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.mintB), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
 
-    // eslint-disable-next-line
-    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
+    const walletTokenAccountA = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      wallet.publicKey,
-      wallet.publicKey
+      tokenA.publicKey,
+      provider.wallet.publicKey
     );
-    // TODO: Make PDA
-    const walletTokenAccountA = currentExchange.walletA;
-    const walletTokenAccountB = currentExchange.walletB;
+    const walletTokenAccountB = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenB.publicKey,
+      provider.wallet.publicKey
+    );
 
     // TODO: Make PDA
     const exchangePositionAccount = Keypair.generate();
@@ -333,20 +336,29 @@ function App() {
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
     const tokenB = new Token(provider.connection, new PublicKey(currentExchange.mintB), TOKEN_PROGRAM_ID);
+    const tokenC = new Token(provider.connection, new PublicKey(currentExchange.mintC), TOKEN_PROGRAM_ID);
+
     const mintAInfo = await tokenA.getMintInfo();
     const mintBInfo = await tokenB.getMintInfo();
 
-    // TODO: Do not pull from accounts file but get from browser via PDA
-    // eslint-disable-next-line
-    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
+    const walletTokenAccountA = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      wallet.publicKey,
-      wallet.publicKey
+      tokenA.publicKey,
+      provider.wallet.publicKey
     );
-    const walletTokenAccountA = currentExchange.walletA;
-    const walletTokenAccountB = currentExchange.walletB;
-    const walletTokenAccountC = accounts.walletC;
+    const walletTokenAccountB = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenB.publicKey,
+      provider.wallet.publicKey
+    );
+    const walletTokenAccountC = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenC.publicKey,
+      provider.wallet.publicKey
+    );
     const walletTokenAccountV = currentExchange.walletV;
 
     // eslint-disable-next-line
@@ -406,16 +418,18 @@ function App() {
     const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
     const mintCInfo = await tokenC.getMintInfo();
 
-    // TODO: Do not pull from accounts file but get from browser via PDA
-    // eslint-disable-next-line
-    const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
+    const walletTokenAccountC = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      wallet.publicKey,
-      wallet.publicKey
+      tokenC.publicKey,
+      provider.wallet.publicKey
     );
-    const walletTokenAccountC = accounts.walletC;
-    const walletTokenAccountS = accounts.walletS;
+    const walletTokenAccountS = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenS.publicKey,
+      provider.wallet.publicKey
+    );
 
     const amountC = new BN(stakeDeposit * (10 ** mintCInfo.decimals));
 
@@ -428,8 +442,8 @@ function App() {
             factoryC: new PublicKey(accounts.factoryC),
             mintS: tokenS.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
+            userC: walletTokenAccountC,
             userS: walletTokenAccountS,
-            userC: walletTokenAccountC
           },
           signers: [provider.wallet.owner]
         }
