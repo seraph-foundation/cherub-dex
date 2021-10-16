@@ -1,6 +1,9 @@
 # Cherub
 
-<img alt="logo" height="150px" src="/app/public/logo-white-1.svg"/>
+<picture>
+<source srcset="/app/public/logo-white-1.svg" media="(prefers-color-scheme: dark)">
+<img src="/app/public/logo-black-1.svg" alt= "Cherub Logo" height="150px">
+</picture>
 
 *Inverse Perpetuals (3,3) DAO*
 
