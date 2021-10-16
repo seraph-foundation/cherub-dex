@@ -306,6 +306,10 @@ body {
 }
 
 /* Ant */
+h5.ant-typography, .ant-typography h5 {
+    font-size: 15px;
+}
+
 .anticon.anticon-close {
     color: white;
 }

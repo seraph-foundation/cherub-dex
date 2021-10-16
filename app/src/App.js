@@ -51,15 +51,11 @@ const chartOptions = {
   scales: {
     x: {
       display: true,
-      grid: {
-        display: false
-      },
+      grid: { display: false },
     },
     y: {
       display: true,
-      grid: {
-        display: false
-      },
+      grid: { display: false },
     }
   },
   plugins: {
@@ -160,8 +156,8 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.accountV,
-    wallet.connected, wallet.publicKey]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.accountV, wallet.connected,
+    wallet.publicKey]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
@@ -223,7 +219,7 @@ function App() {
 
   function setDummyInverseData(lastPrice) {
     const marketIndex = lastPrice * (Math.random() / 100 + 0.9);
-    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0) + '%');
+    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0));
     setCurrentMarketPrice(lastPrice);
     setFundingRate(lastPrice > 0 ? ((lastPrice - marketIndex) / 1000).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
@@ -256,7 +252,6 @@ function App() {
 
   async function approveInverse() {
     const provider = await getProviderCallback();
-
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const exchangePublicKey = new PublicKey(currentExchange.account);
 
@@ -332,7 +327,6 @@ function App() {
 
   async function approveBond() {
     const provider = await getProviderCallback();
-
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
     const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
@@ -411,7 +405,6 @@ function App() {
       });
 
       setBondDeposit();
-
       getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
       console.log('Transaction error: ', err);
@@ -498,8 +491,7 @@ function App() {
   );
 
   const assetTitleModal = (
-    <Button className='AssetTitleModal' type='link'
-      onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
+    <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
   );
 
   const inverseStatsBar = (
@@ -510,7 +502,7 @@ function App() {
         <Title level={5} className='Title Dark Green'>{currentMarketPrice}<span className='White'> / {indexPrice}</span></Title>
       </Col>
       <Col span={3}>
-        <p><small>24H Change</small></p>
+        <p><small>24H Change (%)</small></p>
         <Title level={5} className='Title Dark Green'>{change24H}</Title>
       </Col>
       <Col span={3}>
@@ -526,29 +518,23 @@ function App() {
         <Title level={5} className='Title Dark'>{turnaround24H}</Title>
       </Col>
       <Col span={3}>
-        <p><small>Funding Rate</small></p>
-        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span></Title>
+        <p><small>Funding (%) / Countdown</small></p>
+        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
       </Col>
       <Col span={3}></Col>
     </Row>
   );
 
   const inverseQuantityDescription = (
-    <small>
-      Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice).toFixed(2) : 0} {inverseAsset}</span>
-    </small>
+    <small>Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
+        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
   );
 
-  const approveDescription = (
-    <small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>
-  );
+  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>);
 
   const leverageDescription = (
-    <small>
-      At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span>
-    </small>
+    <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
+        {inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
   );
 
   const inverseView = (
@@ -565,15 +551,12 @@ function App() {
                 extra={<a href='/#/inverse' className='CardLink' onClick={() => setInverseCard('positions')}>Positions</a>}>
                 <p><strong>Quantity</strong></p>
                 <Input className='InverseInput Input Dark' value={inverseQuantity} placeholder='0'
-                  addonAfter={
-                    <Select defaultValue='USD' className='select-after'>
-                      <Option value='USD'>USD</Option>
-                    </Select>
-                  } onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
+                  addonAfter={<Select defaultValue='USD' className='select-after'><Option value='USD'>USD</Option></Select>}
+                  onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
                 <br/>
                 <p>Your current exchange rate is 1 USD = {exchangeRate} {inverseAsset}</p>
-                <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark'
-                  optionType='button' buttonStyle='solid' value={inverseDirection}>
+                <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark' optionType='button' buttonStyle='solid'
+                  value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
                   <Radio.Button className='SellButton' value='short'>Sell / Short</Radio.Button>
                 </Radio.Group>
@@ -582,8 +565,9 @@ function App() {
                 <p><strong>{leverage}x Leverage</strong></p>
                 <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setInverseStep(2)}} />
                 <br/>
-                <Button size='large' disabled={!wallet.connected} onClick={approveInverse} className='InverseButton Button Dark'
-                  type='ghost'>Approve</Button>
+                <Button size='large' disabled={!wallet.connected} onClick={approveInverse} className='InverseButton Button Dark' type='ghost'>
+                  Approve
+                </Button>
               </Card>
             </div>
           </Col>
@@ -616,12 +600,10 @@ function App() {
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
             extra={<a href='/#/bond' className='CardLink' onClick={(e) => {}}>Positions</a>}>
-            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0'
-              onChange={(e) => setBondDeposit(e.target.value)} />
+            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)} />
             <br/>
             <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>
-              Approve</Button>
+            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
           </Card>
         </div>
       </Col>
@@ -630,9 +612,8 @@ function App() {
   );
 
   const stakeDescription = (
-    <small>
-      Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {CHERUB.symbol.toUpperCase()}</span>
-      &nbsp;is set to earn <span className='White'>12% APY</span>
+    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {CHERUB.symbol.toUpperCase()}</span>&nbsp;
+      is set to earn <span className='White'>12% APY</span>
     </small>
   );
 
@@ -656,8 +637,7 @@ function App() {
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
               <br/>
               <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>
-                Approve</Button>
+              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>Approve</Button>
             </Card>
           </div>
         </Col>
@@ -679,8 +659,7 @@ function App() {
         <Col span={2}></Col>
         <Col span={20} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title='DAO' bordered={false}
-              extra={<a href='/#/dao' className='CardLink' onClick={() => setDAOCard('vote')}>Vote</a>}>
+            <Card className='Card Dark' title='DAO' bordered={false} extra={<a href='/#/dao' className='CardLink' onClick={() => setDAOCard('vote')}>Vote</a>}>
               <Row>
                 <Col span={6}>
                   <p>Market Cap</p>
@@ -721,10 +700,7 @@ function App() {
           <div className='site-card-border-less-wrapper'>
             <Card className='Card Dark' title='DAO' bordered={false}
               extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
-              <List itemLayout='horizontal' dataSource={daoProposals}
-                renderItem={item => (
-                  <List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>
-                )}/>
+              <List itemLayout='horizontal' dataSource={daoProposals} renderItem={item => (<List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>)}/>
             </Card>
           </div>
         </Col>
@@ -745,8 +721,8 @@ function App() {
       setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
       getInverseDataCallback(DEFAULT_SYMBOL);
     }
-  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet,
-    currentExchange.token, currentExchange.accountV]);
+  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet, currentExchange.token,
+    currentExchange.accountV]);
 
   useEffect(() => {
     setMenu(getWindowRoute());
@@ -785,8 +761,7 @@ function App() {
   return (
     <Layout className='App Dark'>
       { showBanner ?
-      <Alert type='info' className='Banner' closable
-        message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.</span> /> : null
+      <Alert type='info' className='Banner' closable message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.</span> /> : null
       }
       <Header className='Header Dark'>
         <Row>
@@ -809,8 +784,7 @@ function App() {
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
-              <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()}
-                type='link'>Connect Wallet</Button>
+              <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()} type='link'>Connect Wallet</Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
               <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>
@@ -841,11 +815,9 @@ function App() {
               <List.Item.Meta title={exchange.symbol}
                 onClick={() => {setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false);
                   setCurrentExchange(accounts.exchanges.find((x) => x.symbol === exchange.symbol)); }}/>
-              </List.Item>
-          )}
-        />
-      </Modal>
-    </Layout>
+            </List.Item>)}/>
+          </Modal>
+        </Layout>
   );
 }
 
