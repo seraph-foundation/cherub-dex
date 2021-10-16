@@ -761,7 +761,8 @@ function App() {
   return (
     <Layout className='App Dark'>
       { showBanner ?
-      <Alert type='info' className='Banner' closable message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.</span> /> : null
+      <Alert type='info' className='Banner' message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.
+      </span> /> : null
       }
       <Header className='Header Dark'>
         <Row>
