@@ -98,9 +98,9 @@ describe('Cherub', () => {
   const amount0B = 100000 * (10 ** decimals0B);
   const amount0V = 100000 * (10 ** decimals0V);
 
-  const amount1A = 900000 * (10 ** decimals1A);
-  const amount1B = 900000 * (10 ** decimals1B);
-  const amount1V = 900000 * (10 ** decimals1V);
+  const amount1A = 100000 * (10 ** decimals1A);
+  const amount1B = 100000 * (10 ** decimals1B);
+  const amount1V = 100000 * (10 ** decimals1V);
 
   const traderAmount0A = 50000 * (10 ** decimals0A);
   const traderAmount0B = 50000 * (10 ** decimals0B);

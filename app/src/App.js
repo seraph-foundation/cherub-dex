@@ -332,9 +332,9 @@ function App() {
 
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
-    const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
+    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.mintB), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
-    const mintCInfo = await tokenC.getMintInfo();
+    const mintBInfo = await tokenB.getMintInfo();
 
     // TODO: Do not pull from accounts file but get from browser via PDA
     // eslint-disable-next-line
@@ -354,19 +354,16 @@ function App() {
       [Buffer.from(utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
-    const amountA = bondDeposit * (10 ** mintAInfo.decimals);
-    // TODO: Calculate this correctly
-    const amountB = (amountA / 3).toFixed(0);
-    // TODO: Calculate this correctly
-    const minC = 1 * (10 ** mintCInfo.decimals);
-
-    console.log(amountA, amountB, minC)
+    // TODO: Not accurate
+    const maxAmountA = bondDeposit * (10 ** mintAInfo.decimals);
+    const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintAInfo.decimals))) * (10 ** mintBInfo.decimals);
+    const minLiquidityC = amountB / 1000;
 
     try {
       const tx = await exchange.rpc.bond(
-        new BN(amountA),
-        new BN(amountB),
-        new BN(minC),
+        new BN(maxAmountA.toFixed(0)),
+        new BN(amountB.toFixed(0)),
+        new BN(minLiquidityC.toFixed(0)),
         new BN(Date.now() + 5000 / 1000), {
           accounts: {
             authority: provider.wallet.publicKey,
