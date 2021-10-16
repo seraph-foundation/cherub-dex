@@ -94,17 +94,17 @@ describe('Cherub', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const amount0A = 100000 * (1 ** decimals0A);
-  const amount0B = 100000 * (1 ** decimals0B);
-  const amount0V = 100000 * (1 ** decimals0V);
+  const amount0A = 100000 * (10 ** decimals0A);
+  const amount0B = 100000 * (10 ** decimals0B);
+  const amount0V = 100000 * (10 ** decimals0V);
 
-  const amount1A = 900000 * (1 ** decimals1A);
-  const amount1B = 900000 * (1 ** decimals1B);
-  const amount1V = 900000 * (1 ** decimals1V);
+  const amount1A = 900000 * (10 ** decimals1A);
+  const amount1B = 900000 * (10 ** decimals1B);
+  const amount1V = 900000 * (10 ** decimals1V);
 
-  const traderAmount0A = 50000 * (1 ** decimals0A);
-  const traderAmount0B = 50000 * (1 ** decimals0B);
-  const traderAmount0V = 50000 * (1 ** decimals0V);
+  const traderAmount0A = 50000 * (10 ** decimals0A);
+  const traderAmount0B = 50000 * (10 ** decimals0B);
+  const traderAmount0V = 50000 * (10 ** decimals0V);
 
   const amountAirdrop = 200000 * LAMPORTS_PER_SOL;
 
@@ -398,10 +398,10 @@ describe('Cherub', () => {
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
-  const initialMaxAmountA = 10000 * (1 ** decimals0A);
-  const initialAmountB = 5000 * (1 ** decimals0B);
+  const initialMaxAmountA = 10000 * (10 ** decimals0A);
+  const initialAmountB = 5000 * (10 ** decimals0B);
   const initialMinBondC = 0;
-  const initialBondMinted = 5000 * (1 ** decimalsC);
+  const initialBondMinted = 5000 * (10 ** decimalsC);
 
   it('Initial bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -477,10 +477,10 @@ describe('Cherub', () => {
     assert.ok(walletTokenAccountSInfo.amount.eq(new anchor.BN(stakeAmount)));
   });
 
-  const additionalMaxAmountA = 1500 * (1 ** decimals0A);
-  const additionalAmountB = 750 * (1 ** decimals0B);
-  const additionalMinBondC = 375 * (1 ** decimalsC);
-  const additionalBondMinted = 37 * (1 ** decimalsC);
+  const additionalMaxAmountA = 1500 * (10 ** decimals0A);
+  const additionalAmountB = 750 * (10 ** decimals0B);
+  const additionalMinBondC = 375 * (10 ** decimalsC);
+  const additionalBondMinted = 375 * (10 ** decimalsC);
 
   it('Additional bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
@@ -526,7 +526,7 @@ describe('Cherub', () => {
   });
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate();
-  const aToBAmount = 10 * (1 ** decimals0A);
+  const aToBAmount = 10 * (10 ** decimals0A);
 
   it('Get input price', async () => {
     const tx = await exchange.rpc.getBToAInputPrice(
@@ -551,7 +551,7 @@ describe('Cherub', () => {
   });
 
   const traderOutputQuoteAccount = anchor.web3.Keypair.generate();
-  const bToAAmount = 5 * (1 ** decimals0B);
+  const bToAAmount = 5 * (10 ** decimals0B);
 
   it('Get output price', async () => {
     const tx = await exchange.rpc.getBToAOutputPrice(
@@ -575,7 +575,7 @@ describe('Cherub', () => {
     //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)));
   });
 
-  const bToAAmountB = 6 * (1 ** decimals0B);
+  const bToAAmountB = 6 * (10 ** decimals0B);
   const exchange0Position0Account = anchor.web3.Keypair.generate();
 
   it('B to A input', async () => {
@@ -626,7 +626,7 @@ describe('Cherub', () => {
     //assert.ok(exchange0AccountInfo.lastPrice.eq(new anchor.BN(6)));
   });
 
-  const aToBAmountA = 3 * (1 ** decimals0A);
+  const aToBAmountA = 3 * (10 ** decimals0A);
   const exchange0Position1Account = anchor.web3.Keypair.generate();
 
   it('A to B input', async () => {
@@ -837,10 +837,10 @@ describe('Cherub', () => {
     //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
-  const finalMaxAmountA = 1000 * (1 ** decimals1A);
-  const finalAmountB = 1000 * (1 ** decimals1B);
+  const finalMaxAmountA = 1000 * (10 ** decimals1A);
+  const finalAmountB = 1000 * (10 ** decimals1B);
   const finalMinBondC = 0;
-  const finalBondMinted = 1000 * (1 ** decimalsC);
+  const finalBondMinted = 1000 * (10 ** decimalsC);
 
   it('Initial bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);

@@ -45,7 +45,7 @@ const opts = { preflightCommitment: 'processed' };
 const showBanner = network !== 'http://127.0.0.1:8899';
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
-const DEFAULT_NAME = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol;
+const DEFAULT_SYMBOL = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol;
 
 const chartOptions = {
   scales: {
@@ -105,6 +105,10 @@ const tvdData = {
   }]
 };
 
+function currencyFormat(x) {
+  return '$' + x.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+}
+
 function getWindowRoute() {
   const routes = ['dao', 'inverse', 'stake', 'bond'];
   if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
@@ -113,9 +117,6 @@ function getWindowRoute() {
     // First route is default route
     return routes[0];
   }
-}
-function currencyFormat(num) {
-   return '$' + num.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
 }
 
 function App() {
@@ -130,7 +131,8 @@ function App() {
   // eslint-disable-next-line
   const [countdown, setCountdown] = useState('');
   const [countdownInterval, setCountdownInterval] = useState(false);
-  const [currentMarket, setCurrentMarket] = useState();
+  const [currentExchange, setCurrentExchange] = useState({ walletV: null, token: null, symbol: null });
+  const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [exchangeRate, setExchangeRate] = useState(0);
   const [fundingRate, setFundingRate] = useState();
   // eslint-disable-next-line
@@ -147,7 +149,7 @@ function App() {
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
   const [tokenCount, setTokenCount] = useState(0);
-  const [inverseAsset, setInverseAsset] = useState(DEFAULT_NAME);
+  const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL);
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
@@ -158,7 +160,8 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, inverseAsset, wallet.connected, wallet.publicKey]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.walletV,
+    wallet.connected, wallet.publicKey]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
@@ -170,16 +173,15 @@ function App() {
 
   async function getBalance() {
     const provider = await getProviderCallback();
-    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
     if (wallet.connected) {
-      if (inverseExchange.token === SOL.token) {
+      if (currentExchange.token === SOL.token) {
         const balance = await provider.connection.getBalance(wallet.publicKey);
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
-        const tokenV = new Token(provider.connection, new PublicKey(inverseExchange.token), TOKEN_PROGRAM_ID);
-        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(inverseExchange.walletV));
+        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.token), TOKEN_PROGRAM_ID);
+        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(currentExchange.walletV));
         const mintVInfo = await tokenV.getMintInfo();
-        setBalance((accountVInfo.amount.toNumber() / (1 ** mintVInfo.decimals)).toFixed(2));
+        setBalance((accountVInfo.amount.toNumber() / (10 ** mintVInfo.decimals)).toFixed(2));
       }
     }
   }
@@ -203,11 +205,11 @@ function App() {
       const tokenS = new Token(provider.connection, new PublicKey(accounts.mintS), TOKEN_PROGRAM_ID);
       const mintCInfo = await tokenC.getMintInfo();
       const mintSInfo = await tokenS.getMintInfo();
-      const supply = mintSInfo.supply.toNumber() / (1 ** mintSInfo.decimals);
-      const total = mintCInfo.supply.toNumber() / (1 ** mintCInfo.decimals);
+      const supply = mintSInfo.supply.toNumber() / (10 ** mintSInfo.decimals);
+      const total = mintCInfo.supply.toNumber() / (10 ** mintCInfo.decimals);
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
       const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.exchange));
-      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (1 ** mintCInfo.decimals)).toFixed(2);
+      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintCInfo.decimals)).toFixed(2);
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * total));
     } catch (err) {
@@ -222,7 +224,7 @@ function App() {
   function setDummyInverseData(lastPrice) {
     const marketIndex = lastPrice * (Math.random() / 100 + 0.9);
     setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0) + '%');
-    setCurrentMarket(lastPrice);
+    setCurrentMarketPrice(lastPrice);
     setFundingRate(lastPrice > 0 ? ((lastPrice - marketIndex) / 1000).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
     setIndexPrice(marketIndex.toFixed(2));
@@ -240,7 +242,7 @@ function App() {
       const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).mintA;
       const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
       const mintAInfo = await tokenA.getMintInfo();
-      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (1 ** mintAInfo.decimals)).toFixed(2);
+      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
 
       setDummyInverseData(lastPrice);
       setExchangeRate(lastPrice);
@@ -255,15 +257,11 @@ function App() {
   async function approveInverse() {
     const provider = await getProviderCallback();
 
-    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
-
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const exchangePublicKey = new PublicKey(inverseExchange.exchange);
+    const exchangePublicKey = new PublicKey(currentExchange.exchange);
 
-    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID, null);
+    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID, null);
     const mintAInfo = await tokenA.getMintInfo();
-    const exchangeTokenAccountA = inverseExchange.tokenA;
-    const exchangeTokenAccountB = inverseExchange.tokenB;
 
     // eslint-disable-next-line
     const walletAssociatedAccountX = await Token.getAssociatedTokenAddress(
@@ -272,25 +270,19 @@ function App() {
       wallet.publicKey,
       wallet.publicKey
     );
-
-    // eslint-disable-next-line
-    const associatedTokenAccountA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      wallet.publicKey,
-      wallet.publicKey
-    );
     // TODO: Make PDA
-    const walletTokenAccountA = inverseExchange.walletA;
-    const walletTokenAccountB = inverseExchange.walletB;
-
-    // eslint-disable-next-line
-    const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-    const aToBAmountA = new BN(inverseQuantity * leverage * (1 ** mintAInfo.decimals));
-    const equityA = new BN(inverseQuantity * (1 ** mintAInfo.decimals));
+    const walletTokenAccountA = currentExchange.walletA;
+    const walletTokenAccountB = currentExchange.walletB;
 
     // TODO: Make PDA
     const exchangePositionAccount = Keypair.generate();
+    // eslint-disable-next-line
+    const [pda, nonce] = await PublicKey.findProgramAddress(
+      [Buffer.from(utils.bytes.utf8.encode('exchange'))],
+      exchange.programId
+    );
+    const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
+    const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
 
     try {
       const tx = await exchange.rpc.aToBInput(
@@ -303,8 +295,8 @@ function App() {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
             exchange: exchangePublicKey,
-            exchangeA: exchangeTokenAccountA,
-            exchangeB: exchangeTokenAccountB,
+            exchangeA: currentExchange.tokenA,
+            exchangeB: currentExchange.tokenB,
             pda,
             position: exchangePositionAccount.publicKey,
             recipient: walletTokenAccountA,
@@ -329,7 +321,7 @@ function App() {
       setLeverage(1);
       setInverseQuantity();
 
-      getInverseDataCallback(inverseExchange.symbol);
+      getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -338,9 +330,8 @@ function App() {
   async function approveBond() {
     const provider = await getProviderCallback();
 
-    const inverseExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
     const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const tokenA = new Token(provider.connection, new PublicKey(inverseExchange.mintA), TOKEN_PROGRAM_ID);
+    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.mintA), TOKEN_PROGRAM_ID);
     const tokenC = new Token(provider.connection, new PublicKey(accounts.mintC), TOKEN_PROGRAM_ID);
     const mintAInfo = await tokenA.getMintInfo();
     const mintCInfo = await tokenC.getMintInfo();
@@ -353,20 +344,23 @@ function App() {
       wallet.publicKey,
       wallet.publicKey
     );
-    const walletTokenAccountA = inverseExchange.walletA;
-    const walletTokenAccountB = inverseExchange.walletB;
+    const walletTokenAccountA = currentExchange.walletA;
+    const walletTokenAccountB = currentExchange.walletB;
     const walletTokenAccountC = accounts.walletC;
-    const walletTokenAccountV = inverseExchange.walletV;
+    const walletTokenAccountV = currentExchange.walletV;
 
     // eslint-disable-next-line
     const [pda, nonce] = await PublicKey.findProgramAddress(
       [Buffer.from(utils.bytes.utf8.encode('exchange'))],
       exchange.programId
     );
-    const amountA = bondDeposit * (1 ** mintAInfo.decimals);
-    const amountB = amountA / 3;
+    const amountA = bondDeposit * (10 ** mintAInfo.decimals);
     // TODO: Calculate this correctly
-    const minC = 1 * (1 ** mintCInfo.decimals);
+    const amountB = (amountA / 3).toFixed(0);
+    // TODO: Calculate this correctly
+    const minC = 1 * (10 ** mintCInfo.decimals);
+
+    console.log(amountA, amountB, minC)
 
     try {
       const tx = await exchange.rpc.bond(
@@ -377,10 +371,10 @@ function App() {
           accounts: {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
-            exchange: inverseExchange.exchange,
-            exchangeA: inverseExchange.walletA,
-            exchangeB: inverseExchange.walletB,
-            exchangeV: inverseExchange.walletV,
+            exchange: currentExchange.exchange,
+            exchangeA: currentExchange.walletA,
+            exchangeB: currentExchange.walletB,
+            exchangeV: currentExchange.walletV,
             mint: new PublicKey(accounts.mintC),
             tokenProgram: TOKEN_PROGRAM_ID,
             userA: walletTokenAccountA,
@@ -399,11 +393,9 @@ function App() {
         placement: 'bottomLeft'
       });
 
-      setInverseStep(0);
-      setLeverage(1);
-      setInverseQuantity();
+      setBondDeposit();
 
-      getInverseDataCallback(inverseExchange.symbol);
+      getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
       console.log('Transaction error: ', err);
     }
@@ -428,7 +420,7 @@ function App() {
     const walletTokenAccountC = accounts.walletC;
     const walletTokenAccountS = accounts.walletS;
 
-    const amountC = new BN(stakeDeposit * (1 ** mintCInfo.decimals));
+    const amountC = new BN(stakeDeposit * (10 ** mintCInfo.decimals));
 
     try {
       const tx = await factory.rpc.stake(
@@ -496,7 +488,7 @@ function App() {
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market / Index</small></p>
-        <Title level={5} className='Title Dark Green'>{currentMarket}<span className='White'> / {indexPrice}</span></Title>
+        <Title level={5} className='Title Dark Green'>{currentMarketPrice}<span className='White'> / {indexPrice}</span></Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change</small></p>
@@ -525,7 +517,7 @@ function App() {
   const inverseQuantityDescription = (
     <small>
       Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarket).toFixed(2) : 0} {inverseAsset}</span>
+        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice).toFixed(2) : 0} {inverseAsset}</span>
     </small>
   );
 
@@ -536,7 +528,7 @@ function App() {
   const leverageDescription = (
     <small>
       At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {inverseQuantity > 0 ? (inverseQuantity / currentMarket * leverage).toFixed(2) : 0} {inverseAsset}</span>
+        {inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span>
     </small>
   );
 
@@ -609,8 +601,7 @@ function App() {
               onChange={(e) => setBondDeposit(e.target.value)} />
             <br/>
             <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost'
-              onClick={approveBond}>
+            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>
               Approve</Button>
           </Card>
         </div>
@@ -732,9 +723,11 @@ function App() {
 
     if (!isInverseDataSet) {
       setIsInverseSet(true);
-      getInverseDataCallback(DEFAULT_NAME);
+      setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
+      getInverseDataCallback(DEFAULT_SYMBOL);
     }
-  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet]);
+  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet,
+    currentExchange.token, currentExchange.walletV]);
 
   useEffect(() => {
     setMenu(getWindowRoute());
@@ -827,8 +820,9 @@ function App() {
           renderItem={exchange => (
             <List.Item className='Asset ListItem'>
               <List.Item.Meta title={exchange.symbol}
-                onClick={() => {setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false)}}/>
-            </List.Item>
+                onClick={() => {setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false);
+                  setCurrentExchange(accounts.exchanges.find((x) => x.symbol === exchange.symbol)); }}/>
+              </List.Item>
           )}
         />
       </Modal>

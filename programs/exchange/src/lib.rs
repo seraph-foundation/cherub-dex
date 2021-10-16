@@ -66,15 +66,13 @@ pub mod exchange {
         let mut amount_a = max_amount_a;
         if ctx.accounts.exchange_a.amount > 0 && ctx.accounts.exchange_b.amount > 0 {
             assert!(min_liquidity_c > 0);
-            amount_a = amount_b * ctx.accounts.exchange_a.amount / ctx.accounts.exchange_b.amount;
-            liquidity_minted = amount_b * ctx.accounts.mint.supply / ctx.accounts.exchange_a.amount;
-            msg!(&format!(
-                "max_amount_a: {}, amount_a: {}, liquidity_minted: {}, min_liquidity_c: {}",
-                max_amount_a, amount_a, liquidity_minted, min_liquidity_c
-            ));
+            amount_a =
+                amount_b * (ctx.accounts.exchange_a.amount / (ctx.accounts.exchange_b.amount + 1));
+            liquidity_minted = (amount_b as f64
+                * (ctx.accounts.mint.supply as f64 / ctx.accounts.exchange_a.amount as f64))
+                as u64;
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
-        msg!(&format!("amount_a: {}, amount_b: {}, liquidity_minted: {}", amount_a, amount_b, liquidity_minted));
         token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
         token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
