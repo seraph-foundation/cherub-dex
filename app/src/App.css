@@ -101,7 +101,6 @@ body {
 .ConnectWallet {
     float: right;
     width: 30%;
-    margin-right: 5px;
     border-radius: 0;
 }
 
@@ -119,6 +118,7 @@ body {
 
 .ConnectWalletButton {
     color: rgba(255, 255, 255, 0.65) !important;
+    padding-right: 0;
 }
 
 .LearnMore {

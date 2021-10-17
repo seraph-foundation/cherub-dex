@@ -773,13 +773,13 @@ function App() {
       }
       <Header className='Header Dark'>
         <Row>
-          <Col span={5}>
+          <Col span={6}>
             <div className='Logo Dark'>
               <img src='/logo.svg' alt='Logo' className='LogoImage'/>
               <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{logoText}</strong>
             </div>
           </Col>
-          <Col span={14} className='ColCentered'>
+          <Col span={12} className='ColCentered'>
             <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
               mode='horizontal'>
               <Menu.Item key='dao'>DAO</Menu.Item>
@@ -791,7 +791,7 @@ function App() {
               </Menu.Item>
             </Menu>
           </Col>
-          <Col span={5} className='ConnectWalletHeader'>
+          <Col span={6} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
@@ -800,7 +800,7 @@ function App() {
               </Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
-              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>
+              <span className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</span>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
@@ -820,7 +820,8 @@ function App() {
           </div>
         </Content>
       </Layout>
-      <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code></Footer>
+      <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code>
+      </Footer>
       <Modal title='Assets' footer={null} visible={isInverseAssetModalVisible} onCancel={() => {setIsInverseAssetModalVisible(false)}}>
         <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true'
           renderItem={exchange => (
