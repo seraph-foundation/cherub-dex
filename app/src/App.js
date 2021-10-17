@@ -1,61 +1,62 @@
-import {
-  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, message,
-  notification
-} from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
-import { BN, Program, Provider, utils } from '@project-serum/anchor';
-import { useEffect, useCallback, useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
-import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
-
 import 'antd/dist/antd.css';
 import './App.css';
 
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
+import { BN, Program, Provider, utils } from '@project-serum/anchor';
+import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, notification } from 'antd';
+import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js';
+import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
+import { Line } from 'react-chartjs-2';
+import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
+import { useEffect, useCallback, useState } from 'react';
+
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
-
-var accounts = {};
-
-if (window.location.origin === 'http://127.0.0.1:3000') {
-  accounts = require('./accounts-localnet.json');
-} else {
-  accounts = require('./accounts-devnet.json');
-}
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
 const { Step } = Steps;
 const { Title } = Typography;
 
-const Direction = {
-  Long: { long: {} },
-  Short: { short: {} },
-};
+const LOCALHOST = 'http://localhost:3000';
+const LOCALNET = 'http://127.0.0.1:8899';
+
+const IS_LOCALHOST = window.location.origin === LOCALHOST;
+
+let accounts = {};
+
+if (IS_LOCALHOST) {
+  accounts = require('./accounts-localnet.json');
+} else {
+  accounts = require('./accounts-devnet.json');
+}
 
 const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
 const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
 const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
 const logoText = 'cheruβ';
-const network = window.location.origin === 'http://127.0.0.1:3000' ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet');
+const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
-const showBanner = network !== 'http://127.0.0.1:8899';
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
 
 const DEFAULT_SYMBOL = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol;
+
+const Direction = {
+  Long: { long: {} },
+  Short: { short: {} }
+};
 
 const chartOptions = {
   scales: {
     x: {
       display: true,
-      grid: { display: false },
+      grid: { display: false }
     },
     y: {
       display: true,
-      grid: { display: false },
+      grid: { display: false }
     }
   },
   plugins: {
@@ -64,45 +65,45 @@ const chartOptions = {
 }
 
 const daoProposals = [{
-  title: 'Move SOL/COPE stake to SOL/MANGO',
   description: '4 • September 25th, 2021',
-  icon: <ClockCircleOutlined className='ClockCircleOutlined'/>
+  icon: <ClockCircleOutlined className='ClockCircleOutlined'/>,
+  title: 'Move SOL/COPE stake to SOL/MANGO'
 }, {
-  title: 'Contributor Grant: Tim Su',
   description: '3 • Executed September 12th, 2021',
-  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>,
+  title: 'Contributor Grant: Tim Su'
 }, {
-  title: 'Add AAVE, SUSHI, YFI',
   description: '2 • Executed September 2nd, 2021',
-  icon: <CloseCircleOutlined className='CloseCircleOutlined'/>
+  icon: <CloseCircleOutlined className='CloseCircleOutlined'/>,
+  title: 'Add AAVE, SUSHI, YFI'
 }, {
-  title: 'Set Pause Guardian to Community Multi-Sig',
   description: '1 • Executed September 1st, 2021',
-  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>
+  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>,
+  title: 'Set Pause Guardian to Community Multi-Sig'
 }];
 
 const treasuryData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [{
-    data: [0, 7, 6, 10, 24, 51, 54, 176],
-    fill: true,
-    borderColor: '#40a9ff',
     backgroundColor: '#69c0ff',
-  }]
+    borderColor: '#40a9ff',
+    data: [0, 7, 6, 10, 24, 51, 54, 176],
+    fill: true
+  }],
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
 };
 
 const tvdData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [{
-    data: [0, 5, 10, 33, 35, 51, 54, 76],
-    fill: true,
+    backgroundColor: '#69c0ff',
     borderColor: '#40a9ff',
-    backgroundColor: '#69c0ff'
+    data: [0, 5, 10, 33, 35, 51, 54, 76],
+    fill: true
   }]
 };
 
 function currencyFormat(x) {
-  return '$' + x.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+  return '$' + x.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
 }
 
 function getWindowRoute() {
@@ -118,15 +119,13 @@ function getWindowRoute() {
 function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
-  const [blockHeightInterval, setBlockHeightInterval] = useState(false);
   const [bondDeposit, setBondDeposit] = useState();
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
-  // eslint-disable-next-line
   const [countdown, setCountdown] = useState('');
-  const [countdownInterval, setCountdownInterval] = useState(false);
+  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
   const [currentExchange, setCurrentExchange] = useState({ accountV: null, token: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
@@ -135,6 +134,7 @@ function App() {
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState();
   const [high24H, setHigh24H] = useState();
+  const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false);
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
   const [isInverseDataSet, setIsInverseSet] = useState(false);
   const [indexPrice, setIndexPrice] = useState();
@@ -156,8 +156,8 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, currentExchange.accountV, wallet.connected,
-    wallet.publicKey]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, wallet.publicKey]);
+  const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
@@ -167,54 +167,70 @@ function App() {
     return new Provider(connection, wallet, opts.preflightCommitment);
   }
 
+  function getBlockHeight() {
+    getProviderCallback().then((provider) => {
+      provider.connection.getEpochInfo().then(function(epochInfo) {
+        setBlockHeight(epochInfo.blockHeight);
+      });
+    });
+  }
+
   async function getBalance() {
-    const provider = await getProviderCallback();
-    if (wallet.connected) {
+    try {
+      const provider = await getProviderCallback();
       if (currentExchange.token === SOL.token) {
         const balance = await provider.connection.getBalance(wallet.publicKey);
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
         const tokenV = new Token(provider.connection, new PublicKey(currentExchange.token), TOKEN_PROGRAM_ID);
-        const accountVInfo = await tokenV.getAccountInfo(new PublicKey(currentExchange.accountV));
-        const mintVInfo = await tokenV.getMintInfo();
-        setBalance((accountVInfo.amount.toNumber() / (10 ** mintVInfo.decimals)).toFixed(2));
+        const walletTokenAccountV = await Token.getAssociatedTokenAddress(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          tokenV.publicKey,
+          provider.wallet.publicKey
+        );
+        const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV);
+        const mintInfoV = await tokenV.getMintInfo();
+        setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2));
       }
+    } catch (err) {
+      console.log('Error: ', err);
     }
   }
 
   async function getFactoryData() {
-    const provider = await getProviderCallback();
-    const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
     try {
+      const provider = await getProviderCallback();
+      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
       const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
       setTokenCount(account.tokenCount.toNumber());
     } catch (err) {
-      console.log('Transaction error: ', err);
+      console.log('Error: ', err);
     }
   }
 
   async function getDashboardData() {
-    const provider = await getProviderCallback();
-    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
     try {
+      const provider = await getProviderCallback();
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+
       const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
       const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
-      const mintCInfo = await tokenC.getMintInfo();
-      const mintSInfo = await tokenS.getMintInfo();
-      const supply = mintSInfo.supply.toNumber() / (10 ** mintSInfo.decimals);
-      const total = mintCInfo.supply.toNumber() / (10 ** mintCInfo.decimals);
+      const mintInfoC = await tokenC.getMintInfo();
+      const mintInfoS = await tokenS.getMintInfo();
+      const supply = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals);
+      const total = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals);
+
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
+
       const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account));
-      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintCInfo.decimals)).toFixed(2);
+      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2);
+
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * total));
     } catch (err) {
-      console.log('Transaction error: ', err);
+      console.log('Error: ', err);
     }
-  }
-
-  function networkErrorMessage() {
-    message.info('Unable to connect to network');
   }
 
   function setDummyInverseData(lastPrice) {
@@ -229,11 +245,11 @@ function App() {
   }
 
   async function getInverseData(asset) {
-    const provider = await getProviderCallback();
-    const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
-    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-
     try {
+      const provider = await getProviderCallback();
+      const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+
       const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
       const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenA;
       const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
@@ -243,7 +259,7 @@ function App() {
       setDummyInverseData(lastPrice);
       setExchangeRate(lastPrice);
     } catch (err) {
-      console.log('Transaction error: ', err);
+      console.log('Error: ', err);
     }
 
     setInverseStep(0);
@@ -251,43 +267,46 @@ function App() {
   }
 
   async function approveInverse() {
-    const provider = await getProviderCallback();
-    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-    const exchangePublicKey = new PublicKey(currentExchange.account);
-
-    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
-    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
-    const mintAInfo = await tokenA.getMintInfo();
-
-    const walletTokenAccountA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenA.publicKey,
-      provider.wallet.publicKey
-    );
-    const walletTokenAccountB = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenB.publicKey,
-      provider.wallet.publicKey
-    );
-
-    // TODO: Make PDA
-    const exchangePositionAccount = Keypair.generate();
-    // eslint-disable-next-line
-    const [pda, nonce] = await PublicKey.findProgramAddress(
-      [Buffer.from(utils.bytes.utf8.encode('exchange'))],
-      exchange.programId
-    );
-    const aToBAmountA = new BN(inverseQuantity * leverage * (10 ** mintAInfo.decimals));
-    const equityA = new BN(inverseQuantity * (10 ** mintAInfo.decimals));
+    let message;
+    let description;
 
     try {
+      const provider = await getProviderCallback();
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+      const exchangePublicKey = new PublicKey(currentExchange.account);
+
+      const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
+      const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
+      const mintAInfo = await tokenA.getMintInfo();
+
+      const walletTokenAccountA = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenA.publicKey,
+        provider.wallet.publicKey
+      );
+      const walletTokenAccountB = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenB.publicKey,
+        provider.wallet.publicKey
+      );
+
+      // TODO: Make PDA
+      const exchangePositionAccount = Keypair.generate();
+      // eslint-disable-next-line
+      const [pda, nonce] = await PublicKey.findProgramAddress(
+        [Buffer.from(utils.bytes.utf8.encode('exchange'))],
+        exchange.programId
+      );
+      const aToBAmountA = inverseQuantity * leverage * (10 ** mintAInfo.decimals);
+      const equityA = inverseQuantity * (10 ** mintAInfo.decimals);
+
       const tx = await exchange.rpc.aToBInput(
-        aToBAmountA,
+        BN(aToBAmountA),
         new BN(Date.now() + 5000 / 1000),
         inverseDirection === 'long' ? Direction.Long : Direction.Short,
-        equityA,
+        BN(equityA),
         {
           accounts: {
             authority: provider.wallet.publicKey,
@@ -308,12 +327,8 @@ function App() {
 
       const link = 'https://explorer.solana.com/tx/' + tx;
 
-      notification.open({
-        message: 'Order Successfully Placed',
-        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
-        duration: 0,
-        placement: 'bottomLeft'
-      });
+      message = 'Order Successfully Placed';
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
 
       setInverseStep(0);
       setLeverage(1);
@@ -321,59 +336,66 @@ function App() {
 
       getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
-      console.log('Transaction error: ', err);
+      message = 'Order Error';
+      description = 'Transaction error';
+      console.log('Error: ', err);
     }
+
+    notification.open({message: message, description: description, duration: 0, placement: 'bottomLeft'});
   }
 
   async function approveBond() {
-    const provider = await getProviderCallback();
-    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-
-    const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
-    const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
-    const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
-    const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
-
-    const mintAInfo = await tokenA.getMintInfo();
-    const mintBInfo = await tokenB.getMintInfo();
-
-    const walletTokenAccountA = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenA.publicKey,
-      provider.wallet.publicKey
-    );
-    const walletTokenAccountB = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenB.publicKey,
-      provider.wallet.publicKey
-    );
-    const walletTokenAccountC = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenC.publicKey,
-      provider.wallet.publicKey
-    );
-    // TODO: SOL account is not associated token address
-    const walletTokenAccountV = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenV.publicKey,
-      provider.wallet.publicKey
-    );
-
-    // eslint-disable-next-line
-    const [pda, nonce] = await PublicKey.findProgramAddress(
-      [Buffer.from(utils.bytes.utf8.encode('exchange'))],
-      exchange.programId
-    );
-    // TODO: Not accurate
-    const maxAmountA = bondDeposit * (10 ** mintAInfo.decimals);
-    const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintAInfo.decimals))) * (10 ** mintBInfo.decimals);
-    const minLiquidityC = amountB / 1000;
+    let message;
+    let description;
 
     try {
+      const provider = await getProviderCallback();
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+
+      const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
+      const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
+
+      const mintInfoA = await tokenA.getMintInfo();
+      const mintInfoB = await tokenB.getMintInfo();
+
+      const walletTokenAccountA = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenA.publicKey,
+        provider.wallet.publicKey
+      );
+      const walletTokenAccountB = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenB.publicKey,
+        provider.wallet.publicKey
+      );
+      const walletTokenAccountC = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenC.publicKey,
+        provider.wallet.publicKey
+      );
+      // TODO: SOL account is not associated token address
+      const walletTokenAccountV = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenV.publicKey,
+        provider.wallet.publicKey
+      );
+
+      // eslint-disable-next-line
+      const [pda, nonce] = await PublicKey.findProgramAddress(
+        [Buffer.from(utils.bytes.utf8.encode('exchange'))],
+        exchange.programId
+      );
+      // TODO: Not accurate
+      const maxAmountA = bondDeposit * (10 ** mintInfoA.decimals);
+      const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintInfoA.decimals))) * (10 ** mintInfoB.decimals);
+      const minLiquidityC = amountB / 1000;
+
       const tx = await exchange.rpc.bond(
         new BN(maxAmountA.toFixed(0)),
         new BN(amountB.toFixed(0)),
@@ -397,88 +419,84 @@ function App() {
         });
       const link = 'https://explorer.solana.com/tx/' + tx;
 
-      notification.open({
-        message: 'Order Successfully Placed',
-        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
-        duration: 0,
-        placement: 'bottomLeft'
-      });
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
+      message = 'Order Successfully Place';
 
-      setBondDeposit();
       getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
-      console.log('Transaction error: ', err);
+      description = 'There was an error with your order';
+      message = 'Order Error';
+      console.log('Error: ', err);
     }
+
+    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'});
+
+    setBondDeposit();
   }
 
   async function approveStake() {
-    const provider = await getProviderCallback();
-    const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
-
-    const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
-    const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
-    const mintCInfo = await tokenC.getMintInfo();
-
-    const walletTokenAccountC = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenC.publicKey,
-      provider.wallet.publicKey
-    );
-    const walletTokenAccountS = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenS.publicKey,
-      provider.wallet.publicKey
-    );
-
-    const amountC = new BN(stakeDeposit * (10 ** mintCInfo.decimals));
+    let description;
+    let message;
 
     try {
+      const provider = await getProviderCallback();
+      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
+      const mintInfoC = await tokenC.getMintInfo();
+
+      const walletTokenAccountC = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenC.publicKey,
+        provider.wallet.publicKey
+      );
+      const walletTokenAccountS = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenS.publicKey,
+        provider.wallet.publicKey
+      );
+
+      const amountC = stakeDeposit * (10 ** mintInfoC.decimals);
+
       const tx = await factory.rpc.stake(
         new BN(amountC), {
           accounts: {
             authority: provider.wallet.publicKey,
-            factory: new PublicKey(accounts.factory),
-            factoryC: new PublicKey(accounts.factoryC),
+            factory: new PublicKey(accounts.factory.account),
+            factoryC: new PublicKey(accounts.factory.accountC),
             mintS: tokenS.publicKey,
             tokenProgram: TOKEN_PROGRAM_ID,
             userC: walletTokenAccountC,
             userS: walletTokenAccountS,
-          },
-          signers: [provider.wallet.owner]
+          }
         }
       );
       const link = 'https://explorer.solana.com/tx/' + tx;
 
-      notification.open({
-        message: 'Order Successfully Placed',
-        description: <div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>,
-        duration: 0,
-        placement: 'bottomLeft'
-      });
-
-      setStakeStep(0);
-      setStakeDeposit();
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
+      message = 'Stake Successfully Placed';
     } catch (err) {
-      console.log('Transaction error: ', err);
+      description = 'Transaction error';
+      message = 'Stake Error';
+      console.log('Error: ', err);
     }
+
+    setStakeStep(0);
+    setStakeDeposit();
+
+    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'});
   }
 
-  // TODO: No longer needed with continuous funding, need to understand price oracle better
   function calculateCountdown() {
-    // eslint-disable-next-line
     const today = new Date();
-    // eslint-disable-next-line
     const deadline = new Date();
     deadline.setHours(24, 0, 0, 0);
-    // eslint-disable-next-line
     const delta = deadline.getTime() - today.getTime();
-    // eslint-disable-next-line
     const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    // eslint-disable-next-line
     const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
-    // eslint-disable-next-line
     const secs = Math.floor((delta % (1000 * 60)) / 1000);
     setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
   }
@@ -659,7 +677,8 @@ function App() {
         <Col span={2}></Col>
         <Col span={20} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title='DAO' bordered={false} extra={<a href='/#/dao' className='CardLink' onClick={() => setDAOCard('vote')}>Vote</a>}>
+            <Card className='Card Dark' title='DAO' bordered={false} extra={<a href='/#/dao' className='CardLink' onClick={() => setDAOCard('vote')}>
+                Vote</a>}>
               <Row>
                 <Col span={6}>
                   <p>Market Cap</p>
@@ -700,7 +719,9 @@ function App() {
           <div className='site-card-border-less-wrapper'>
             <Card className='Card Dark' title='DAO' bordered={false}
               extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
-              <List itemLayout='horizontal' dataSource={daoProposals} renderItem={item => (<List.Item><List.Item.Meta title={item.title} description={item.description} />{item.icon}</List.Item>)}/>
+              <List itemLayout='horizontal' dataSource={daoProposals} renderItem={item => (<List.Item><List.Item.Meta title={item.title}
+                description={item.description} />{item.icon}</List.Item>)}
+              />
             </Card>
           </div>
         </Col>
@@ -711,56 +732,47 @@ function App() {
   );
 
   useEffect(() => {
-    // TODO: This fires every second, minimize this
-    getBalanceCallback();
+    setMenu(getWindowRoute());
+  }, [setMenu]);
+
+  useEffect(() => {
+    if (!isBlockHeightIntervalSet) {
+      setIsBlockHeightIntervalSet(true);
+      setInterval(getBlockHeightCallback, 10000);
+    }
+  }, [isBlockHeightIntervalSet, getBlockHeightCallback]);
+
+  useEffect(() => {
+    if (!isCountdownIntervalSet) {
+      setIsCountdownIntervalSet(true);
+      setInterval(calculateCountdown, 1000);
+    }
+  }, [isCountdownIntervalSet, setIsCountdownIntervalSet]);
+
+  useEffect(() => {
+    // TODO: This fires every second which is too often
     getDashboardDataCallback();
     getFactoryDataCallback();
+  }, [getDashboardDataCallback, getFactoryDataCallback]);
 
+  useEffect(() => {
+    // TODO: This fires every second which is too often
+    if (wallet.connected) {
+      getBalanceCallback();
+    }
+  }, [getBalanceCallback, wallet.connected]);
+
+  useEffect(() => {
     if (!isInverseDataSet) {
       setIsInverseSet(true);
       setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
       getInverseDataCallback(DEFAULT_SYMBOL);
     }
-  }, [getBalanceCallback, getDashboardDataCallback, getFactoryDataCallback, getInverseDataCallback, isInverseDataSet, currentExchange.token,
-    currentExchange.accountV]);
-
-  useEffect(() => {
-    setMenu(getWindowRoute());
-  }, [setMenu]);
-
-  useEffect(() => {
-    getProviderCallback().then(function(provider) {
-      if (!blockHeightInterval) {
-        try {
-          setBlockHeightInterval(true);
-          setInterval(function () {
-            provider.connection.getEpochInfo().then(function(epochInfo) {
-              setBlockHeight(epochInfo.blockHeight);
-            });
-          }, 10000);
-        } catch (e) {
-          networkErrorMessage();
-        }
-      }
-    });
-  }, [blockHeightInterval, getProviderCallback]);
-
-  useEffect(() => {
-    if (!countdownInterval) {
-      try {
-        setCountdownInterval(true);
-        setInterval(function () {
-          calculateCountdown();
-        }, 1000);
-      } catch (e) {
-        networkErrorMessage();
-      }
-    }
-  }, [countdownInterval, setCountdownInterval]);
+  }, [currentExchange.token, currentExchange.accountV, getInverseDataCallback, isInverseDataSet]);
 
   return (
     <Layout className='App Dark'>
-      { showBanner ?
+      { !IS_LOCALHOST ?
       <Alert type='info' className='Banner' message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.
       </span> /> : null
       }
@@ -778,14 +790,19 @@ function App() {
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
-              <Menu.Item key='stake' onClick={() => {setInverseAsset(CHERUB.symbol)}}>Stake</Menu.Item>
+              <Menu.Item key='stake'
+                onClick={() => {setInverseAsset(CHERUB.symbol); setCurrentExchange(accounts.exchanges.find((x) => x.symbol === CHERUB.symbol))}}>
+                Stake
+              </Menu.Item>
             </Menu>
           </Col>
           <Col span={5} className='ConnectWalletHeader'>
             { !wallet.connected ?
             <>
               <WalletMultiButton className='WalletMultiButton'/>
-              <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()} type='link'>Connect Wallet</Button>
+              <Button className='ConnectWalletButton' onClick={(e) => document.getElementsByClassName('WalletMultiButton')[0].click()} type='link'>
+                Connect Wallet
+              </Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
               <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>

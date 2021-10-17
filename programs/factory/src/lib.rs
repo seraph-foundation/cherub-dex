@@ -96,7 +96,6 @@ pub struct GetTokenWithId<'info> {
 #[derive(Accounts)]
 pub struct Stake<'info> {
     pub authority: AccountInfo<'info>,
-    pub factory: Account<'info, FactoryData>,
     #[account(mut)]
     pub factory_c: Account<'info, TokenAccount>,
     #[account(mut)]
