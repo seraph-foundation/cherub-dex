@@ -84,6 +84,13 @@ body {
 
 .Cards {
     text-align: left;
+    box-shadow: 4px 3px 8px 1px #000;
+    -webkit-box-shadow: 3px 3px 8px 1px #000;
+}
+
+.ant-steps-item-icon {
+    box-shadow: 4px 3px 8px 1px #000;
+    -webkit-box-shadow: 3px 3px 8px 1px #000;
 }
 
 .Connected {

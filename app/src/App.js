@@ -800,7 +800,7 @@ function App() {
               </Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
-              <span className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</span>
+              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
