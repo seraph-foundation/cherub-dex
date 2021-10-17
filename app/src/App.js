@@ -125,7 +125,7 @@ function App() {
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
   const [countdown, setCountdown] = useState('');
-  const [currentExchange, setCurrentExchange] = useState({ accountV: null, token: null, symbol: null });
+  const [currentExchange, setCurrentExchange] = useState({ accountV: null, tokenV: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
   const [exchangeRate, setExchangeRate] = useState(0);
@@ -156,7 +156,7 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.token, wallet.publicKey]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.tokenV, wallet.publicKey]);
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
@@ -178,11 +178,11 @@ function App() {
   async function getBalance() {
     try {
       const provider = await getProviderCallback();
-      if (currentExchange.token === SOL.token) {
+      if (currentExchange.tokenV === SOL.tokenV) {
         const balance = await provider.connection.getBalance(wallet.publicKey);
         setBalance(balance / LAMPORTS_PER_SOL);
       } else {
-        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.token), TOKEN_PROGRAM_ID);
+        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
         const walletTokenAccountV = await Token.getAssociatedTokenAddress(
           ASSOCIATED_TOKEN_PROGRAM_ID,
           TOKEN_PROGRAM_ID,
