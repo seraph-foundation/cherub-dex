@@ -125,7 +125,6 @@ function App() {
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
   const [countdown, setCountdown] = useState('');
-  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
   const [currentExchange, setCurrentExchange] = useState({ accountV: null, token: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
@@ -135,6 +134,7 @@ function App() {
   const [gasFee, setGasFee] = useState();
   const [high24H, setHigh24H] = useState();
   const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false);
+  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
   const [isInverseDataSet, setIsInverseSet] = useState(false);
   const [indexPrice, setIndexPrice] = useState();
@@ -292,21 +292,18 @@ function App() {
         provider.wallet.publicKey
       );
 
-      // TODO: Make PDA
-      const exchangePositionAccount = Keypair.generate();
-      // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress(
-        [Buffer.from(utils.bytes.utf8.encode('exchange'))],
-        exchange.programId
-      );
       const aToBAmountA = inverseQuantity * leverage * (10 ** mintAInfo.decimals);
       const equityA = inverseQuantity * (10 ** mintAInfo.decimals);
+      // eslint-disable-next-line
+      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
+      // TODO: Make PDA
+      const exchangePositionAccount = Keypair.generate();
 
       const tx = await exchange.rpc.aToBInput(
-        BN(aToBAmountA),
+        new BN(aToBAmountA),
         new BN(Date.now() + 5000 / 1000),
         inverseDirection === 'long' ? Direction.Long : Direction.Short,
-        BN(equityA),
+        new BN(equityA),
         {
           accounts: {
             authority: provider.wallet.publicKey,
@@ -378,6 +375,7 @@ function App() {
         tokenC.publicKey,
         provider.wallet.publicKey
       );
+
       // TODO: SOL account is not associated token address
       const walletTokenAccountV = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -386,15 +384,12 @@ function App() {
         provider.wallet.publicKey
       );
 
-      // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress(
-        [Buffer.from(utils.bytes.utf8.encode('exchange'))],
-        exchange.programId
-      );
       // TODO: Not accurate
       const maxAmountA = bondDeposit * (10 ** mintInfoA.decimals);
       const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintInfoA.decimals))) * (10 ** mintInfoB.decimals);
       const minLiquidityC = amountB / 1000;
+      // eslint-disable-next-line
+      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
 
       const tx = await exchange.rpc.bond(
         new BN(maxAmountA.toFixed(0)),

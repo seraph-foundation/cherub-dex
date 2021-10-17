@@ -306,6 +306,10 @@ body {
 }
 
 /* Ant */
+.ant-notification-topLeft .ant-notification-notice, .ant-notification-bottomLeft .ant-notification-notice {
+    border-radius: 10px;
+}
+
 h5.ant-typography, .ant-typography h5 {
     font-size: 15px;
 }
