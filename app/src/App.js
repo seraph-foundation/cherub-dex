@@ -565,7 +565,7 @@ function App() {
                 <p><strong>Quantity</strong></p>
                 <Input className='InverseInput Input Dark' value={inverseQuantity} placeholder='0'
                   addonAfter={<Select defaultValue='USD' className='select-after'><Option value='USD'>USD</Option></Select>}
-                  onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}} />
+                  onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}}/>
                 <br/>
                 <p>Your current exchange rate is 1 USD = {exchangeRate} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark' optionType='button' buttonStyle='solid'
@@ -576,7 +576,7 @@ function App() {
                 <br/>
                 <br/>
                 <p><strong>{leverage}x Leverage</strong></p>
-                <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setInverseStep(2)}} />
+                <Slider defaultValue={1} min={1} onAfterChange={(e) => {setLeverage(e); setInverseStep(2)}}/>
                 <br/>
                 <Button size='large' disabled={!wallet.connected} onClick={approveInverse} className='InverseButton Button Dark' type='ghost'>
                   Approve
@@ -613,7 +613,7 @@ function App() {
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
             extra={<a href='/#/bond' className='CardLink' onClick={(e) => {}}>Positions</a>}>
-            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)} />
+            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
             <br/>
             <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
             <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
@@ -637,8 +637,8 @@ function App() {
       <>
         <Col span={4}>
           <Steps direction='vertical' current={stakeStep}>
-            <Step key='set' title='Quantity' description={stakeDescription} />
-            <Step key='deposit' title='Approve' description={approveDescription} />
+            <Step key='set' title='Quantity' description={stakeDescription}/>
+            <Step key='deposit' title='Approve' description={approveDescription}/>
           </Steps>
         </Col>
         <Col span={1}></Col>
@@ -647,7 +647,7 @@ function App() {
             <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
-                onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}} />
+                onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}}/>
               <br/>
               <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>Approve</Button>
@@ -715,7 +715,7 @@ function App() {
             <Card className='Card Dark' title='DAO' bordered={false}
               extra={<a href='/#/dao' className='CardLink' onClick={(e) => setDAOCard('statistics')}>Statistics</a>}>
               <List itemLayout='horizontal' dataSource={daoProposals} renderItem={item => (<List.Item><List.Item.Meta title={item.title}
-                description={item.description} />{item.icon}</List.Item>)}
+                description={item.description}/>{item.icon}</List.Item>)}
               />
             </Card>
           </div>
@@ -725,10 +725,6 @@ function App() {
       }
     </>
   );
-
-  useEffect(() => {
-    setMenu(getWindowRoute());
-  }, [setMenu]);
 
   useEffect(() => {
     if (!isBlockHeightIntervalSet) {
@@ -745,6 +741,18 @@ function App() {
   }, [isCountdownIntervalSet, setIsCountdownIntervalSet]);
 
   useEffect(() => {
+    setMenu(getWindowRoute());
+  }, [setMenu]);
+
+  useEffect(() => {
+    if (!isInverseDataSet) {
+      setIsInverseSet(true);
+      setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
+      getInverseDataCallback(DEFAULT_SYMBOL);
+    }
+  }, [currentExchange.token, currentExchange.accountV, getInverseDataCallback, isInverseDataSet]);
+
+  useEffect(() => {
     // TODO: This fires every second which is too often
     getDashboardDataCallback();
     getFactoryDataCallback();
@@ -757,19 +765,11 @@ function App() {
     }
   }, [getBalanceCallback, wallet.connected]);
 
-  useEffect(() => {
-    if (!isInverseDataSet) {
-      setIsInverseSet(true);
-      setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
-      getInverseDataCallback(DEFAULT_SYMBOL);
-    }
-  }, [currentExchange.token, currentExchange.accountV, getInverseDataCallback, isInverseDataSet]);
-
   return (
     <Layout className='App Dark'>
       { !IS_LOCALHOST ?
       <Alert type='info' className='Banner' message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.
-      </span> /> : null
+      </span>/> : null
       }
       <Header className='Header Dark'>
         <Row>

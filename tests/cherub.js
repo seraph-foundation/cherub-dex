@@ -1,9 +1,8 @@
+const { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
+const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 const anchor = require('@project-serum/anchor');
 const assert = require('assert');
 const fs = require('fs');
-const TokenInstructions = require('@project-serum/serum').TokenInstructions;
-
-const { ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 
 const exchangeIdl = require('../target/idl/exchange.json');
 const factoryIdl = require('../target/idl/factory.json');
@@ -29,19 +28,19 @@ describe('Cherub', () => {
   let mintAuthority = provider.wallet;
 
   // First exchange token is SOL
-  let token0A = null;
-  let token0B = null;
+  let token0A;
+  let token0B;
 
   // Second exchange token is CHRB
-  let token1A = null;
-  let token1B = null;
+  let token1A;
+  let token1B;
 
-  let tokenC = null;
-  let tokenS = null;
+  let tokenC;
+  let tokenS;
 
   const decimals0A = 9;
   const decimals0B = 9;
-  // First exchange token vault
+  // First exchange token vault is SOL
   const decimals0V = 9;
 
   const decimalsC = 9;
@@ -49,7 +48,7 @@ describe('Cherub', () => {
 
   const decimals1A = 9;
   const decimals1B = 9;
-  // Second exchange token is CHRB
+  // Second exchange token vault is CHRB
   const decimals1V = decimalsC;
 
   const exchangeAccount0 = anchor.web3.Keypair.generate();
@@ -59,32 +58,32 @@ describe('Cherub', () => {
   const pythAccount = anchor.web3.Keypair.generate();
   const traderAccount = anchor.web3.Keypair.generate();
 
-  let exchangeTokenAccount0A = null;
-  let exchangeTokenAccount0B = null;
-  let exchangeTokenAccount0V = null;
+  let exchangeTokenAccount0A;
+  let exchangeTokenAccount0B;
+  let exchangeTokenAccount0V;
 
-  let exchangeTokenAccount1A = null;
-  let exchangeTokenAccount1B = null;
-  let exchangeTokenAccount1V = null;
+  let exchangeTokenAccount1A;
+  let exchangeTokenAccount1B;
+  let exchangeTokenAccount1V;
 
-  let walletTokenAccountC = null;
-  let walletTokenAccountS = null;
+  let walletTokenAccountC;
+  let walletTokenAccountS;
 
-  let walletTokenAccount0A = null;
-  let walletTokenAccount0B = null;
-  let walletTokenAccount0V = null;
+  let walletTokenAccount0A;
+  let walletTokenAccount0B;
+  let walletTokenAccount0V;
 
-  let walletTokenAccount1A = null;
-  let walletTokenAccount1B = null;
-  let walletTokenAccount1V = null;
+  let walletTokenAccount1A;
+  let walletTokenAccount1B;
+  let walletTokenAccount1V;
 
-  let traderTokenAccount0A = null;
-  let traderTokenAccount0B = null;
-  let traderTokenAccount0V = null;
+  let traderTokenAccount0A;
+  let traderTokenAccount0B;
+  let traderTokenAccount0V;
 
-  let traderTokenAccount1A = null;
-  let traderTokenAccount1B = null;
-  let traderTokenAccount1V = null;
+  let traderTokenAccount1A;
+  let traderTokenAccount1B;
+  let traderTokenAccount1V;
 
   fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
@@ -126,13 +125,13 @@ describe('Cherub', () => {
     token0A = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimals0A, TOKEN_PROGRAM_ID);
     token0B = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimals0B, TOKEN_PROGRAM_ID);
 
-    // First exchange token is SOL
+    // First exchange token vault is SOL
     token0V = new Token(provider.connection, NATIVE_MINT, TOKEN_PROGRAM_ID, payerAccount);
 
     token1A = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimals1A, TOKEN_PROGRAM_ID);
     token1B = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimals1B, TOKEN_PROGRAM_ID);
 
-    // Second exchange token is CHRB
+    // Second exchange token vault is CHRB
     token1V = tokenC;
 
     walletTokenAccount0A = await token0A.createAssociatedTokenAccount(provider.wallet.publicKey);
@@ -183,7 +182,6 @@ describe('Cherub', () => {
         accountB: exchangeTokenAccount0B.toString(),
         accountV: exchangeTokenAccount0V.toString(),
         symbol: 'SOL',
-        token: token0V.publicKey.toString(),
         tokenA: token0A.publicKey.toString(),
         tokenB: token0B.publicKey.toString(),
         tokenV: token0V.publicKey.toString()
@@ -193,7 +191,6 @@ describe('Cherub', () => {
         accountB: exchangeTokenAccount1B.toString(),
         accountV: exchangeTokenAccount1V.toString(),
         symbol: 'CHRB',
-        token: token1V.publicKey.toString(),
         tokenA: token1A.publicKey.toString(),
         tokenB: token1B.publicKey.toString(),
         tokenV: token1V.publicKey.toString()
@@ -212,33 +209,27 @@ describe('Cherub', () => {
     let walletTokenAccountInfoA = await token0A.getAccountInfo(walletTokenAccount0A);
     let walletTokenAccountInfoB = await token0B.getAccountInfo(walletTokenAccount0B);
     let walletTokenAccountInfoV = await token0V.getAccountInfo(walletTokenAccount0V);
-
     assert.ok(walletTokenAccountInfoA.amount.toNumber() == amount0A);
     assert.ok(walletTokenAccountInfoB.amount.toNumber() == amount0B);
     assert.ok(walletTokenAccountInfoV.amount.toNumber() == amount0V);
 
     let exchangeTokenAccountInfoA = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let exchangeTokenAccountInfoB = await token0B.getAccountInfo(exchangeTokenAccount0B);
-
     assert.ok(exchangeTokenAccountInfoA.amount.toNumber() == 0);
     assert.ok(exchangeTokenAccountInfoB.amount.toNumber() == 0);
 
     let traderTokenAccountInfoA = await token0A.getAccountInfo(traderTokenAccount0A);
     let traderTokenAccountInfoB = await token0B.getAccountInfo(traderTokenAccount0B);
-
     assert.ok(traderTokenAccountInfoA.amount.toNumber() == traderAmount0A);
     assert.ok(traderTokenAccountInfoB.amount.toNumber() == traderAmount0B);
 
     let tokenInfo0A = await token0A.getMintInfo();
-
     assert.ok(tokenInfo0A.supply.toNumber() == traderAmount0A + amount0A);
 
     let tokenInfo0B = await token0B.getMintInfo();
-
     assert.ok(tokenInfo0B.supply.toNumber() == traderAmount0B + amount0B);
 
     let tokenInfoC = await tokenC.getMintInfo();
-
     assert.ok(tokenInfoC.supply.toNumber() == 0);
   });
 
@@ -255,7 +246,6 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)));
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString());
   });
@@ -286,17 +276,14 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let exchangeTokenAccountInfo0A = await token0A.getAccountInfo(exchangeTokenAccount0A);
-
     assert.ok(exchangeTokenAccountInfo0A.amount.eq(new anchor.BN(0)));
 
     let exchangeTokenAccountInfo0B = await token0B.getAccountInfo(exchangeTokenAccount0B);
-
     assert.ok(exchangeTokenAccountInfo0B.amount.eq(new anchor.BN(0)));
     assert.ok(exchangeTokenAccountInfo0A.owner.equals(pda));
     assert.ok(exchangeTokenAccountInfo0B.owner.equals(pda));
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
@@ -332,18 +319,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccountInfo0A = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccountInfo0A = await token0A.getAccountInfo(walletTokenAccount0A);
-
     assert.ok(exchangeTokenAccountInfo0A.amount.eq(new anchor.BN(initialMaxAmountA)));
     assert.ok(walletTokenAccountInfo0A.amount.eq(new anchor.BN(amount0A - initialMaxAmountA)));
 
     let exchangeTokenAccountInfo0B = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccountInfo0B = await token0B.getAccountInfo(walletTokenAccount0B);
-
     assert.ok(exchangeTokenAccountInfo0B.amount.eq(new anchor.BN(initialAmountB)));
     assert.ok(walletTokenAccountInfo0B.amount.eq(new anchor.BN(amount0B - initialAmountB)));
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC);
-
     assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted)));
   });
 
@@ -366,12 +350,10 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let factoryTokenAccountInfoC = await tokenC.getAccountInfo(factoryTokenAccountC);
-
     assert.ok(factoryTokenAccountInfoC.amount.eq(new anchor.BN(stakeAmount)));
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC);
     let walletTokenAccountInfoS = await tokenS.getAccountInfo(walletTokenAccountS);
-
     assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted - stakeAmount)));
     assert.ok(walletTokenAccountInfoS.amount.eq(new anchor.BN(stakeAmount)));
   });
@@ -408,18 +390,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccountInfo0A = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccountInfo0A = await token0A.getAccountInfo(walletTokenAccount0A);
-
     //assert.ok(exchangeTokenAccountInfo0A.amount.eq(new anchor.BN(initialMaxAmountA + additionalMaxAmountA)));
     //assert.ok(walletTokenAccountInfo0A.amount.eq(new anchor.BN(amount0A - initialMaxAmountA - additionalMaxAmountA)));
 
     let exchangeTokenAccountInfo0B = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccountInfo0B = await token0B.getAccountInfo(walletTokenAccount0B);
-
     //assert.ok(exchangeTokenAccountInfo0B.amount.eq(new anchor.BN(initialAmountB + additionalAmountB)));
     //assert.ok(walletTokenAccountInfo0B.amount.eq(new anchor.BN(amount0B - initialAmountB - additionalAmountB)));
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC);
-
     //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted + additionalBondMinted)));
   });
 
@@ -444,7 +423,6 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let traderInputAccountQuoteInfo = await exchange.account.quote.fetch(traderInputQuoteAccount.publicKey);
-
     //assert.ok(traderInputAccountQuoteInfo.price.eq(new anchor.BN(48 ** decimals0B)));
   });
 
@@ -469,7 +447,6 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let traderOutputQuoteAccountInfo = await exchange.account.quote.fetch(traderOutputQuoteAccount.publicKey);
-
     //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)));
   });
 
@@ -509,18 +486,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccountInfo0A = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccountInfo0A = await token0A.getAccountInfo(walletTokenAccount0A);
-
     //assert.ok(exchangeTokenAccountInfo0A.amount.eq(new anchor.BN(218)));
     //assert.ok(walletTokenAccountInfo0A.amount.eq(new anchor.BN(99782)));
 
     let exchangeTokenAccountInfo0B = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccountInfo0B = await token0B.getAccountInfo(walletTokenAccount0B);
-
     //assert.ok(exchangeTokenAccountInfo0B.amount.eq(new anchor.BN(131)));
     //assert.ok(walletTokenAccountInfo0B.amount.eq(new anchor.BN(99869)));
 
     let exchangeAccountInfo0 = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
-
     //assert.ok(exchangeAccountInfo0.lastPrice.eq(new anchor.BN(6)));
   });
 
@@ -560,18 +534,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccount0AInfo = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccount0AInfo = await token0A.getAccountInfo(walletTokenAccount0A);
-
     //assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(206)));
     //assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(99794)));
 
     let exchangeTokenAccount0BInfo = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await token0B.getAccountInfo(walletTokenAccount0B);
-
     //assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(150)));
     //assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(99850)));
 
     let exchangeAccount0Info = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
-
     //assert.ok(exchangeAccount0Info.lastPrice.eq(new anchor.BN(19)));
   });
 
@@ -601,8 +572,6 @@ describe('Cherub', () => {
   //  });
 
   //  const accountInfo = await provider.connection.getAccountInfo(pythAccount.publicKey);
-  //  console.log('data = ', accountInfo.data);
-
   //  assert.ok(accountInfo.data);
   //});
 
@@ -636,18 +605,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccount0AInfo = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccount0AInfo = await token0A.getAccountInfo(walletTokenAccount0A);
-
     //assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(0)));
     //assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(amount0A)));
 
     let exchangeTokenAccount0BInfo = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await token0B.getAccountInfo(walletTokenAccount0B);
-
     //assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(0)));
     //assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(amount0B)));
 
     let walletTokenAccountCInfo = await tokenC.getAccountInfo(walletTokenAccountC);
-
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
 
@@ -679,18 +645,14 @@ describe('Cherub', () => {
 
     let exchangeTokenAccount0AInfo = await token0A.getAccountInfo(exchangeTokenAccount0A);
     let walletTokenAccount0AInfo = await token0A.getAccountInfo(walletTokenAccount0A);
-
     //assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(additionalMaxAmountA)));
     //assert.ok(walletTokenAccount0AInfo.amount.eq(new anchor.BN(99850)));
 
     let exchangeTokenAccount0BInfo = await token0B.getAccountInfo(exchangeTokenAccount0B);
     let walletTokenAccount0BInfo = await token0B.getAccountInfo(walletTokenAccount0B);
-
-    //assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(75)));
     //assert.ok(walletTokenAccount0BInfo.amount.eq(new anchor.BN(99925)));
 
     let walletTokenAccountCInfo = await tokenC.getAccountInfo(walletTokenAccountC);
-
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
   });
 
@@ -720,17 +682,14 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx);
 
     let exchangeTokenAccount0AInfo = await token0A.getAccountInfo(exchangeTokenAccount0A);
-
     //assert.ok(exchangeTokenAccount0AInfo.amount.eq(new anchor.BN(0)));
 
     let exchangeTokenAccount0BInfo = await token0B.getAccountInfo(exchangeTokenAccount0B);
-
     //assert.ok(exchangeTokenAccount0BInfo.amount.eq(new anchor.BN(0)));
     //assert.ok(exchangeTokenAccount0AInfo.owner.equals(pda));
     //assert.ok(exchangeTokenAccount0BInfo.owner.equals(pda));
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-
     //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
@@ -766,18 +725,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccount1AInfo = await token1A.getAccountInfo(exchangeTokenAccount1A);
     let walletTokenAccount1AInfo = await token1A.getAccountInfo(walletTokenAccount1A);
-
     assert.ok(exchangeTokenAccount1AInfo.amount.eq(new anchor.BN(finalMaxAmountA)));
     assert.ok(walletTokenAccount1AInfo.amount.eq(new anchor.BN(amount1A - finalMaxAmountA)));
 
     let exchangeTokenAccount1BInfo = await token1B.getAccountInfo(exchangeTokenAccount1B);
     let walletTokenAccount1BInfo = await token1B.getAccountInfo(walletTokenAccount1B);
-
     assert.ok(exchangeTokenAccount1BInfo.amount.eq(new anchor.BN(finalAmountB)));
     assert.ok(walletTokenAccount1BInfo.amount.eq(new anchor.BN(amount1B - finalAmountB)));
 
     let walletTokenAccountCInfo = await tokenC.getAccountInfo(walletTokenAccountC);
-
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(finalBondMinted)));
   });
 });
