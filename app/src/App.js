@@ -768,8 +768,8 @@ function App() {
   return (
     <Layout className='App Dark'>
       { !IS_LOCALHOST ?
-      <Alert type='info' className='Banner' message=<span>You are currently using an unaudited piece of software via {network}. Use at your own risk.
-      </span>/> : null
+      <Alert type='info' className='Banner' message=<small>You are currently using an unaudited piece of software via {network}. Use at your own risk.
+      </small>/> : null
       }
       <Header className='Header Dark'>
         <Row>
