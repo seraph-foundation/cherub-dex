@@ -121,6 +121,7 @@ function getWindowRoute() {
 function App() {
   const [balance, setBalance] = useState(0);
   const [blockHeight, setBlockHeight] = useState(0);
+  const [bondCard, setBondCard] = useState('bond');
   const [bondDeposit, setBondDeposit] = useState();
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
@@ -328,7 +329,6 @@ function App() {
           },
           signers: [exchangePositionAccount]
         });
-
       const link = 'https://explorer.solana.com/tx/' + tx;
 
       message = 'Order Successfully Placed';
@@ -617,15 +617,22 @@ function App() {
     <Row>
       <Col span={8}></Col>
       <Col span={8} className='Cards'>
+        { bondCard === 'bond' ?
         <div className='site-card-border-less-wrapper'>
           <Card className='Card Dark' title={assetTitleModal} bordered={false}
-            extra={<a href='/#/bond' className='CardLink' onClick={(e) => {}}>Positions</a>}>
+            extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
             <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
             <br/>
             <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
             <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
           </Card>
+        </div> :
+        <div className='site-card-border-less-wrapper'>
+          <Card className='Card Dark' title={assetTitleModal} bordered={false}
+            extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('bond')}>Bond</a>}>
+          </Card>
         </div>
+        }
       </Col>
       <Col span={8}></Col>
     </Row>
@@ -787,8 +794,7 @@ function App() {
             </div>
           </Col>
           <Col span={12} className='ColCentered'>
-            <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
-              mode='horizontal'>
+            <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]} mode='horizontal'>
               <Menu.Item key='dao'>DAO</Menu.Item>
               <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'>Bond</Menu.Item>
@@ -830,15 +836,14 @@ function App() {
       <Footer className='Footer'><code className='BlockHeight'><small>• {blockHeight}</small></code>
       </Footer>
       <Modal title='Assets' footer={null} visible={isInverseAssetModalVisible} onCancel={() => {setIsInverseAssetModalVisible(false)}}>
-        <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true'
-          renderItem={exchange => (
-            <List.Item className='Asset ListItem'>
-              <List.Item.Meta title={exchange.symbol}
-                onClick={() => {setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false);
-                  setCurrentExchange(accounts.exchanges.find((x) => x.symbol === exchange.symbol)); }}/>
-            </List.Item>)}/>
-          </Modal>
-        </Layout>
+        <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true' renderItem={exchange => (
+          <List.Item className='Asset ListItem'>
+            <List.Item.Meta title={exchange.symbol} onClick={() => {
+              setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false);
+              setCurrentExchange(accounts.exchanges.find((x) => x.symbol === exchange.symbol)); }}/>
+        </List.Item>)}/>
+      </Modal>
+    </Layout>
   );
 }
 
