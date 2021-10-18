@@ -4,7 +4,10 @@ import './App.css';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
 import { BN, Program, Provider, utils } from '@project-serum/anchor';
 import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, notification } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
+import {
+  BankOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DollarOutlined, DownOutlined, HistoryOutlined, PieChartOutlined,
+  SettingOutlined
+} from '@ant-design/icons';
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js';
 import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
 import { Line } from 'react-chartjs-2';
@@ -794,13 +797,14 @@ function App() {
             </div>
           </Col>
           <Col span={12} className='ColCentered'>
-            <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]} mode='horizontal'>
-              <Menu.Item key='dao'>DAO</Menu.Item>
-              <Menu.Item key='inverse'>Inverse Perpetuals</Menu.Item>
-              <Menu.Item key='bond'>Bond</Menu.Item>
+            <Menu className='Menu Dark' onClick={(e) => {setMenu(e.key); window.location.href = '/#/' + e.key}} selectedKeys={[menu]}
+              mode='horizontal'>
+              <Menu.Item key='dao'><BankOutlined/>&nbsp; DAO</Menu.Item>
+              <Menu.Item key='inverse'><DollarOutlined/>&nbsp; Inverse Perpetuals</Menu.Item>
+              <Menu.Item key='bond'><HistoryOutlined/>&nbsp; Bond</Menu.Item>
               <Menu.Item key='stake'
                 onClick={() => {setInverseAsset(CHERUB.symbol); setCurrentExchange(accounts.exchanges.find((x) => x.symbol === CHERUB.symbol))}}>
-                Stake
+                <PieChartOutlined/>&nbsp; Stake
               </Menu.Item>
             </Menu>
           </Col>

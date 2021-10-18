@@ -296,20 +296,12 @@ describe('Cherub', () => {
     assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo1.data).price).eq(new anchor.BN(oracleInitPrice)));
   });
 
-  //it('Get SOL Price', async() => {
-  //  const pythProdKey = new anchor.web3.PublicKey('8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F');
-  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey('BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy');
-  //  await pyth.rpc.getPrice({
-  //    accounts: {
-  //      pyth: pythAccount.publicKey,
-  //      pythProductInfo: pythProdKey,
-  //      pythPriceInfo: pythSOLPriceProgKey
-  //    }
-  //  });
-
-  //  const accountInfo = await provider.connection.getAccountInfo(pythAccount.publicKey);
-  //  assert.ok(accountInfo.data);
-  //});
+  // TODO: Finish this (https://github.com/Synthetify/synthetify-protocol/search?p=3&q=pyth)
+  it('Set first oracle feed', async() => {
+    //const tx = await pyth.rpc.setPrice(new BN(newPrice * 10 ** -data.exponent), {
+    //  accounts: { price: priceFeed }
+    //});
+  });
 
   it('Factory initialized', async () => {
     const tx = await factory.rpc.initialize(exchange.programId, {
