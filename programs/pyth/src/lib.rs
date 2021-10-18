@@ -1,116 +1,73 @@
 use anchor_lang::prelude::*;
-use pyth_client::{CorpAction, PriceStatus, PriceType};
+mod utils;
+use utils::{Price, PriceStatus};
 
 declare_id!("Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod pyth {
+
+    use std::convert::TryInto;
     use super::*;
 
-    /// Initializes this program to "internally own" the input account
-    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>, price: i64, expo: i32, conf: u64) -> ProgramResult {
+        let mut price_oracle = Price::load(&ctx.accounts.price).unwrap();
+        price_oracle.agg.status = PriceStatus::Trading;
+        price_oracle.agg.price = price;
+        price_oracle.agg.conf = conf;
+        price_oracle.twap.val = price;
+        price_oracle.twac.val = conf.try_into().unwrap();
+        price_oracle.expo = expo;
+        price_oracle.ptype = utils::PriceType::Price;
         Ok(())
     }
 
-    /// Gets price
-    pub fn get_price(ctx: Context<GetPrice>) -> ProgramResult {
-        let pyth_product_info = &mut ctx.accounts.pyth_product_info;
-        let pyth_price_info = &mut ctx.accounts.pyth_price_info;
+    pub fn set_price(ctx: Context<SetPrice>, price: i64) -> ProgramResult {
+        let oracle = &ctx.accounts.price;
+        let mut price_oracle = Price::load(&oracle).unwrap();
+        price_oracle.agg.price = price.try_into().unwrap();
+        Ok(())
+    }
 
-        let pyth_product_data = &pyth_product_info.try_borrow_data()?;
-        let pyth_product = pyth_client::cast::<pyth_client::Product>(pyth_product_data);
-
-        if pyth_product.magic != pyth_client::MAGIC {
-            return Err(ErrorCode::ValidPythAccount.into());
+    pub fn set_trading(ctx: Context<SetPrice>, status: u8) -> ProgramResult {
+        let oracle = &ctx.accounts.price;
+        let mut price_oracle = Price::load(&oracle).unwrap();
+        match status {
+            0 => price_oracle.agg.status = PriceStatus::Unknown,
+            1 => price_oracle.agg.status = PriceStatus::Trading,
+            2 => price_oracle.agg.status = PriceStatus::Halted,
+            3 => price_oracle.agg.status = PriceStatus::Auction,
+            _ => {
+                msg!("Unknown status: {}", status);
+                return Err(ProgramError::Custom(1559));
+            }
         }
-        if pyth_product.atype != pyth_client::AccountType::Product as u32 {
-            return Err(ErrorCode::ValidProductAccount.into());
-        }
-        if pyth_product.ver != pyth_client::VERSION_2 {
-            return Err(ErrorCode::PythClientVersion.into());
-        }
-        if !pyth_product.px_acc.is_valid() {
-            return Err(ErrorCode::InvalidProductAccount.into());
-        }
+        Ok(())
+    }
 
-        let pyth_price_pubkey = Pubkey::new(&pyth_product.px_acc.val);
-        if &pyth_price_pubkey != pyth_price_info.key {
-            return Err(ErrorCode::ProductPriceAccount.into());
-        }
+    pub fn set_twap(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
+        let oracle = &ctx.accounts.price;
+        let mut price_oracle = Price::load(&oracle).unwrap();
+        price_oracle.twap.val = value.try_into().unwrap();
+        Ok(())
+    }
 
-        let pyth_price_data = &pyth_price_info.try_borrow_data()?;
-        let pyth_price = pyth_client::cast::<pyth_client::Price>(pyth_price_data);
-
-        msg!("price_account\t{:?}", pyth_price_info.key);
-        msg!("  price_type\t{}", get_price_type(&pyth_price.ptype));
-        msg!("  exponent\t{}", pyth_price.expo);
-        msg!("  status\t{}", get_status(&pyth_price.agg.status));
-        msg!("  corp_act\t{}", get_corp_act(&pyth_price.agg.corp_act));
-        msg!("  price\t{}", pyth_price.agg.price);
-        msg!("  conf\t{}", pyth_price.agg.conf);
-        msg!("  valid_slot\t{}", pyth_price.valid_slot);
-        msg!("  publish_slot\t{}", pyth_price.agg.pub_slot);
-
+    pub fn set_confidence(ctx: Context<SetPrice>, value: u64) -> ProgramResult {
+        let oracle = &ctx.accounts.price;
+        let mut price_oracle = Price::load(&oracle).unwrap();
+        price_oracle.agg.conf = value;
         Ok(())
     }
 }
 
-fn get_price_type(ptype: &PriceType) -> &'static str {
-    match ptype {
-        PriceType::Unknown => "unknown",
-        PriceType::Price => "price",
-    }
-}
-
-fn get_status(st: &PriceStatus) -> &'static str {
-    match st {
-        PriceStatus::Unknown => "unknown",
-        PriceStatus::Trading => "trading",
-        PriceStatus::Halted => "halted",
-        PriceStatus::Auction => "auction",
-    }
-}
-
-fn get_corp_act(cact: &CorpAction) -> &'static str {
-    match cact {
-        CorpAction::NoCorpAct => "nocorpact",
-    }
+#[derive(Accounts)]
+pub struct SetPrice<'info> {
+    #[account(mut)]
+    pub price: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    pub authority: AccountInfo<'info>,
-    /// Owned by program
-    #[account(init, payer = authority, space = 8 + 8)]
-    pub pyth: Account<'info, PythData>,
-    pub rent: Sysvar<'info, Rent>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct GetPrice<'info> {
-    /// Owned by program
     #[account(mut)]
-    pub pyth: AccountInfo<'info>,
-    pub pyth_product_info: AccountInfo<'info>,
-    pub pyth_price_info: AccountInfo<'info>,
-}
-
-#[account]
-pub struct PythData {
-    pub data: u64,
-}
-
-#[error]
-pub enum ErrorCode {
-    #[msg("Pyth product account provided is not a valid Pyth account")]
-    ValidPythAccount,
-    #[msg("Pyth product account provided is not a valid Pyth product account")]
-    ValidProductAccount,
-    #[msg("Pyth product account provided has a different version than the Pyth client")]
-    PythClientVersion,
-    #[msg("Pyth product price account is invalid")]
-    InvalidProductAccount,
-    #[msg("Pyth product price account does not match the Pyth price provided")]
-    ProductPriceAccount,
+    pub price: AccountInfo<'info>,
 }

@@ -10,10 +10,12 @@ import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-a
 import { Line } from 'react-chartjs-2';
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
+import { parsePriceData } from '@pythnetwork/client';
 import { useEffect, useCallback, useState } from 'react';
 
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
+import pythIdl from './pyth.json';
 
 const { Content, Footer, Header } = Layout;
 const { Option } = Select;
@@ -233,19 +235,18 @@ function App() {
     }
   }
 
-  function setDummyInverseData(lastPrice) {
-    const marketIndex = lastPrice * (Math.random() / 100 + 0.9);
+  function setDummyInverseData(lastPrice, indexPrice) {
     setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0));
-    setCurrentMarketPrice(lastPrice);
-    setFundingRate(lastPrice > 0 ? ((lastPrice - marketIndex) / 1000).toFixed(4) : 0);
+    setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0);
     setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
-    setIndexPrice(marketIndex.toFixed(2));
     setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
     setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0));
   }
 
   async function getInverseData(asset) {
     try {
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === asset);
+
       const provider = await getProviderCallback();
       const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
@@ -256,8 +257,14 @@ function App() {
       const mintAInfo = await tokenA.getMintInfo();
       const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
 
-      setDummyInverseData(lastPrice);
+      const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider);
+      const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle));
+      const indexPrice = parsePriceData(pythFeedAccountInfo.data).price;
+
+      setCurrentMarketPrice(lastPrice);
+      setIndexPrice(indexPrice.toFixed(2));
       setExchangeRate(lastPrice);
+      setDummyInverseData(lastPrice, indexPrice);
     } catch (err) {
       console.log('Error: ', err);
     }

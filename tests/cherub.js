@@ -3,6 +3,7 @@ const TokenInstructions = require('@project-serum/serum').TokenInstructions;
 const anchor = require('@project-serum/anchor');
 const assert = require('assert');
 const fs = require('fs');
+const { parsePriceData } = require('@pythnetwork/client');
 
 const exchangeIdl = require('../target/idl/exchange.json');
 const factoryIdl = require('../target/idl/factory.json');
@@ -55,8 +56,10 @@ describe('Cherub', () => {
   const exchangeAccount1 = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
   const payerAccount = anchor.web3.Keypair.generate();
-  const pythAccount = anchor.web3.Keypair.generate();
   const traderAccount = anchor.web3.Keypair.generate();
+
+  let oracleFeedAccount0;
+  let oracleFeedAccount1;
 
   let exchangeTokenAccount0A;
   let exchangeTokenAccount0B;
@@ -174,6 +177,9 @@ describe('Cherub', () => {
     await token1A.mintTo(walletTokenAccount1A, mintAuthority.publicKey, [mintAuthority.payer], amount1A);
     await token1B.mintTo(walletTokenAccount1B, mintAuthority.publicKey, [mintAuthority.payer], amount1B);
 
+    oracleFeedAccount0 = new anchor.web3.Account();
+    oracleFeedAccount1 = new anchor.web3.Account();
+
     // Useful for Anchor CLI and app
     fs.writeFileSync(accountsFile, JSON.stringify({
       exchanges: [{
@@ -181,6 +187,7 @@ describe('Cherub', () => {
         accountA: exchangeTokenAccount0A.toString(),
         accountB: exchangeTokenAccount0B.toString(),
         accountV: exchangeTokenAccount0V.toString(),
+        oracle: oracleFeedAccount0.publicKey.toString(),
         symbol: 'SOL',
         tokenA: token0A.publicKey.toString(),
         tokenB: token0B.publicKey.toString(),
@@ -190,6 +197,7 @@ describe('Cherub', () => {
         accountA: exchangeTokenAccount1A.toString(),
         accountB: exchangeTokenAccount1B.toString(),
         accountV: exchangeTokenAccount1V.toString(),
+        oracle: oracleFeedAccount1.publicKey.toString(),
         symbol: 'CHRB',
         tokenA: token1A.publicKey.toString(),
         tokenB: token1B.publicKey.toString(),
@@ -200,9 +208,6 @@ describe('Cherub', () => {
         accountC: factoryTokenAccountC.toString(),
         tokenC: tokenC.publicKey.toString(),
         tokenS: tokenS.publicKey.toString()
-      },
-      pyth: {
-        account: pythAccount.publicKey.toString()
       }
     }));
 
@@ -232,6 +237,79 @@ describe('Cherub', () => {
     let tokenInfoC = await tokenC.getMintInfo();
     assert.ok(tokenInfoC.supply.toNumber() == 0);
   });
+
+  it('Initializes first Pyth oracle', async () => {
+    const oracleInitPrice = 681.47;
+    const oracleConf = 0;
+    const oracleExpo = -9;
+    const tx = await pyth.rpc.initialize(
+      new anchor.BN(oracleInitPrice).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo))),
+      oracleExpo,
+      new anchor.BN(oracleConf), {
+        accounts: {
+          price: oracleFeedAccount0.publicKey
+        },
+        instructions: [
+          anchor.web3.SystemProgram.createAccount({
+            fromPubkey: pyth.provider.wallet.publicKey,
+            newAccountPubkey: oracleFeedAccount0.publicKey,
+            space: 3312,
+            lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
+            programId: pyth.programId
+          })
+        ],
+        signers: [oracleFeedAccount0]
+      });
+
+    console.log('Your transaction signature', tx);
+
+    const oracleFeedAccountInfo0 = await pyth.provider.connection.getAccountInfo(oracleFeedAccount0.publicKey);
+    assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo0.data).price).eq(new anchor.BN(oracleInitPrice)));
+  });
+
+  it('Initializes second Pyth oracle', async () => {
+    const oracleInitPrice = 903.49;
+    const oracleConf = 0;
+    const oracleExpo = -9;
+    const tx = await pyth.rpc.initialize(
+      new anchor.BN(oracleInitPrice).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo))),
+      oracleExpo,
+      new anchor.BN(oracleConf), {
+        accounts: {
+          price: oracleFeedAccount1.publicKey
+        },
+        instructions: [
+          anchor.web3.SystemProgram.createAccount({
+            fromPubkey: pyth.provider.wallet.publicKey,
+            newAccountPubkey: oracleFeedAccount1.publicKey,
+            space: 3312,
+            lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
+            programId: pyth.programId
+          })
+        ],
+        signers: [oracleFeedAccount1]
+      });
+
+    console.log('Your transaction signature', tx);
+
+    const oracleFeedAccountInfo1 = await pyth.provider.connection.getAccountInfo(oracleFeedAccount1.publicKey);
+    assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo1.data).price).eq(new anchor.BN(oracleInitPrice)));
+  });
+
+  //it('Get SOL Price', async() => {
+  //  const pythProdKey = new anchor.web3.PublicKey('8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F');
+  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey('BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy');
+  //  await pyth.rpc.getPrice({
+  //    accounts: {
+  //      pyth: pythAccount.publicKey,
+  //      pythProductInfo: pythProdKey,
+  //      pythPriceInfo: pythSOLPriceProgKey
+  //    }
+  //  });
+
+  //  const accountInfo = await provider.connection.getAccountInfo(pythAccount.publicKey);
+  //  assert.ok(accountInfo.data);
+  //});
 
   it('Factory initialized', async () => {
     const tx = await factory.rpc.initialize(exchange.programId, {
@@ -545,35 +623,6 @@ describe('Cherub', () => {
     let exchangeAccount0Info = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
     //assert.ok(exchangeAccount0Info.lastPrice.eq(new anchor.BN(19)));
   });
-
-  it('Initializes Pyth', async () => {
-    await pyth.rpc.initialize({
-      accounts: {
-        authority: provider.wallet.publicKey,
-        pyth: pythAccount.publicKey,
-        systemProgram: SystemProgram.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-      },
-      signers: [pythAccount]
-    });
-
-    assert.ok(true);
-  });
-
-  //it('Get SOL Price', async() => {
-  //  const pythProdKey = new anchor.web3.PublicKey('8yrQMUyJRnCJ72NWwMiPV9dNGw465Z8bKUvnUC8P5L6F');
-  //  const pythSOLPriceProgKey = new anchor.web3.PublicKey('BdgHsXrH1mXqhdosXavYxZgX6bGqTdj5mh2sxDhF8bJy');
-  //  await pyth.rpc.getPrice({
-  //    accounts: {
-  //      pyth: pythAccount.publicKey,
-  //      pythProductInfo: pythProdKey,
-  //      pythPriceInfo: pythSOLPriceProgKey
-  //    }
-  //  });
-
-  //  const accountInfo = await provider.connection.getAccountInfo(pythAccount.publicKey);
-  //  assert.ok(accountInfo.data);
-  //});
 
   const unbondAmountC = 87;
 
