@@ -2,8 +2,8 @@ import 'antd/dist/antd.css';
 import './App.css';
 
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
-import { BN, Program, Provider, utils } from '@project-serum/anchor';
 import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, notification } from 'antd';
+import { BN, Program, Provider, utils } from '@project-serum/anchor';
 import {
   BankOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DollarOutlined, DownOutlined, HistoryOutlined, PieChartOutlined,
   SettingOutlined
@@ -158,8 +158,6 @@ function App() {
   const [tokenCount, setTokenCount] = useState(0);
   const [turnaround24H, setTurnaround24H] = useState();
 
-  const wallet = useWallet();
-
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
   const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.tokenV, wallet.publicKey]);
@@ -167,6 +165,8 @@ function App() {
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
+
+  const wallet = useWallet();
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
