@@ -43,7 +43,7 @@ if (IS_LOCALHOST) {
 
 const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
 const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
-const githubUrl = 'https://www.github.com/cherub-so/cherub-protocol';
+const githubUrl = 'https://github.com/cherub-so/cherub-protocol';
 const logoText = 'cheruβ';
 const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };

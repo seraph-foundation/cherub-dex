@@ -18,3 +18,5 @@ test-ledger/
 target/
 
 .DS_Store
+
+app/build
