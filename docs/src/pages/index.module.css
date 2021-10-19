@@ -25,3 +25,7 @@
 a > span > svg {
     display: none !important;
 }
+
+.navbar__logo {
+    display: none;
+}
