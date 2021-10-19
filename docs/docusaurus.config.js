@@ -6,15 +6,15 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'cheruβ',
+  title: 'Cherub',
   tagline: 'Inverse Perpetuals (3, 3) DAO',
   url: 'https://www.cherub.so',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'cheruβ', // Usually your GitHub org/user name.
-  projectName: 'cheruβ', // Usually your repo name.
+  organizationName: 'Cherub', // Usually your GitHub org/user name.
+  projectName: 'Cherub', // Usually your repo name.
 
   presets: [
     [
@@ -40,7 +40,7 @@ const config = {
         defaultMode: 'dark',
       },
       navbar: {
-        title: 'cheruβ',
+        title: 'Cherub',
         logo: {
           alt: 'Cherub Logo',
           src: 'img/logo.svg',
@@ -51,6 +51,11 @@ const config = {
             docId: 'home',
             position: 'left',
             label: 'Docs',
+          },
+          {
+            href: 'https://app.cherub.so',
+            label: 'App',
+            position: 'right',
           },
           {
             href: 'https://www.twitter.com/pindarosothecat',

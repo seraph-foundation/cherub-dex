@@ -21,11 +21,3 @@
     align-items: center;
     justify-content: center;
 }
-
-a > span > svg {
-    display: none !important;
-}
-
-.navbar__logo {
-    display: none;
-}
