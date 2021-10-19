@@ -15,8 +15,14 @@ Inverse Perpetuals (3, 3) DAO
 Make sure cluster is set to `localnet` in `Anchor.toml`.
 
 ```bash
-anchor test --detach  # Run in a eparate terminal
-cd app && yarn start
+anchor test --detach
+```
+
+Start the frontend.
+
+```bash
+cd app
+yarn start
 ```
 
 ## Documentation
