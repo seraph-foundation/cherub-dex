@@ -1585,6 +1585,11 @@
     buffer-layout "^1.2.0"
     dotenv "10.0.0"
 
+"@solana/wallet-adapter-react@^0.12.5":
+  version "0.12.5"
+  resolved "https://registry.yarnpkg.com/@solana/wallet-adapter-react/-/wallet-adapter-react-0.12.5.tgz#277c1b839b6ee66cc84f2f094a11716460ddb5da"
+  integrity sha512-boXNsxi9d3x53ZFpnFtU9fqSfDYGXA7Lzn86gjskH4Q+a28Qy4N4/7x5h72jZIUEiJoauGb1ReqYiBJP5gN5UQ==
+
 "@solana/web3.js@^1.10.1", "@solana/web3.js@^1.21.0", "@solana/web3.js@^1.29.2":
   version "1.29.2"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.29.2.tgz#05c162f477c226ee3211f8ee8c1c6d4203e08f54"
