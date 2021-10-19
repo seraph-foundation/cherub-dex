@@ -83,14 +83,15 @@ body {
 }
 
 .Cards {
-    text-align: left;
-    box-shadow: 4px 3px 8px 1px #000;
     -webkit-box-shadow: 3px 3px 8px 1px #000;
+    border-radius: 10px;
+    box-shadow: 4px 3px 8px 1px #000;
+    text-align: left;
 }
 
 .ant-steps-item-icon {
-    box-shadow: 4px 3px 8px 1px #000;
     -webkit-box-shadow: 3px 3px 8px 1px #000;
+    box-shadow: 4px 3px 8px 1px #000;
 }
 
 .Connected {
@@ -313,6 +314,34 @@ body {
 }
 
 /* Ant */
+.ant-table {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid #262626;
+}
+
+.ant-table-thead > tr > th {
+    background-color: #1f1f1f;
+    color: white;
+    border-bottom: 1px solid #262626;
+}
+
+.ant-table-tbody > tr > td {
+    border-bottom: 0 solid #262626;
+}
+
+.ant-table-tbody > tr.ant-table-row:hover > td {
+    background: unset;
+}
+
+.ant-table-tbody > tr.ant-table-placeholder:hover > td {
+    background: unset;
+}
+
+.ant-empty-description {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+
 .ant-notification-topLeft .ant-notification-notice, .ant-notification-bottomLeft .ant-notification-notice {
     border-radius: 10px;
 }

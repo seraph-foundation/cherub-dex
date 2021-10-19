@@ -521,7 +521,7 @@ describe('Cherub', () => {
   });
 
   const bToAAmountB = 6 * (10 ** decimals0B);
-  const exchange0Position0Account = anchor.web3.Keypair.generate();
+  const exchangePositionAccount0 = anchor.web3.Keypair.generate();
 
   it('B to A input', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
@@ -542,14 +542,14 @@ describe('Cherub', () => {
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
           pda,
-          position: exchange0Position0Account.publicKey,
+          position: exchangePositionAccount0.publicKey,
           recipient: walletTokenAccount0A,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userA: walletTokenAccount0A,
           userB: walletTokenAccount0B
         },
-        signers: [exchange0Position0Account]
+        signers: [exchangePositionAccount0]
       });
 
     console.log('Your transaction signature', tx);
@@ -569,7 +569,7 @@ describe('Cherub', () => {
   });
 
   const aToBAmountA = 3 * (10 ** decimals0A);
-  const exchange0Position1Account = anchor.web3.Keypair.generate();
+  const exchangePositionAccount1 = anchor.web3.Keypair.generate();
 
   it('A to B input', async () => {
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
@@ -590,14 +590,14 @@ describe('Cherub', () => {
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
           pda,
-          position: exchange0Position1Account.publicKey,
+          position: exchangePositionAccount1.publicKey,
           recipient: walletTokenAccount0A,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userA: walletTokenAccount0A,
           userB: walletTokenAccount0B
         },
-        signers: [exchange0Position1Account]
+        signers: [exchangePositionAccount1]
       });
 
     console.log('Your transaction signature', tx);

@@ -1,9 +1,11 @@
 import 'antd/dist/antd.css';
-
+import '@solana/wallet-adapter-react-ui/styles.css';
 import './App.css';
 
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
-import { Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Typography, notification } from 'antd';
+import {
+  Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Table, Typography, notification
+} from 'antd';
 import { BN, Program, Provider, utils } from '@project-serum/anchor';
 import {
   BankOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DollarOutlined, DownOutlined, HistoryOutlined, PieChartOutlined,
@@ -70,6 +72,28 @@ const chartOptions = {
   }
 }
 
+const inversePositionsColumns = [{
+  title: 'Quantity',
+  dataIndex: 'quantity',
+  key: 'quantity'
+}, {
+  title: 'Entry',
+  dataIndex: 'entry',
+  key: 'entry'
+}, {
+  title: 'Equity',
+  dataIndex: 'equity',
+  key: 'equity'
+}, {
+  title: 'Direction',
+  dataIndex: 'direction',
+  key: 'direction'
+}, {
+  title: 'Status',
+  dataIndex: 'status',
+  key: 'status'
+}];
+
 const daoProposals = [{
   description: '4 • September 25th, 2021',
   icon: <ClockCircleOutlined className='ClockCircleOutlined'/>,
@@ -132,7 +156,7 @@ function App() {
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
   const [countdown, setCountdown] = useState('');
-  const [currentExchange, setCurrentExchange] = useState({ accountV: null, tokenV: null, symbol: null });
+  const [currentExchange, setCurrentExchange] = useState({ account: null, accountV: null, tokenV: null, symbol: null });
   const [currentMarketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
   const [exchangeRate, setExchangeRate] = useState(0);
@@ -143,12 +167,14 @@ function App() {
   const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false);
   const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
-  const [isInverseDataSet, setIsInverseSet] = useState(false);
+  const [isInverseDataSet, setIsInverseDataSet] = useState(false);
   const [indexPrice, setIndexPrice] = useState();
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL);
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
+  const [inversePositionAccount, setInversePositionAccount] = useState();
+  const [inversePositions, setInversePositions] = useState([]);
   const [inverseStep, setInverseStep] = useState(0);
   const [leverage, setLeverage] = useState(1);
   const [low24H, setLow24H] = useState();
@@ -166,8 +192,8 @@ function App() {
   const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.tokenV, wallet.publicKey]);
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
-  const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
+  const getPositionsCallback = useCallback(getPositions, [currentExchange.tokenA, getProviderCallback, inversePositionAccount, inversePositions]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -180,6 +206,32 @@ function App() {
         setBlockHeight(epochInfo.blockHeight);
       });
     });
+  }
+
+  async function getPositions() {
+    try {
+      if (inversePositionAccount) {
+        const provider = await getProviderCallback();
+
+        const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+        const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID, null);
+
+        const mintInfoA = await tokenA.getMintInfo();
+        const positionAccount = await exchange.account.positionData.fetch(new PublicKey(inversePositionAccount.publicKey));
+
+        // TODO: There should only be one position per exchange per wallet
+        setInversePositions([{
+          key: (inversePositions.length + 1).toString(),
+          quantity: (positionAccount.quantity.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
+          entry: (positionAccount.entry.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
+          equity: (positionAccount.equity.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
+          direction: positionAccount.direction.long ? 'Long' : 'Short',
+          status: positionAccount.status.open ? 'Open' : (positionAccount.status.closed ? 'Closed' : 'Liquidated')
+        }]);
+      }
+    } catch(e) {
+      console.log(e);
+    }
   }
 
   async function getBalance() {
@@ -201,18 +253,7 @@ function App() {
         setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2));
       }
     } catch (err) {
-      console.log('Error: ', err);
-    }
-  }
-
-  async function getFactoryData() {
-    try {
-      const provider = await getProviderCallback();
-      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
-      const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
-      setTokenCount(account.tokenCount.toNumber());
-    } catch (err) {
-      console.log('Error: ', err);
+      console.log(err);
     }
   }
 
@@ -220,21 +261,24 @@ function App() {
     try {
       const provider = await getProviderCallback();
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
 
       const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
       const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
       const mintInfoC = await tokenC.getMintInfo();
       const mintInfoS = await tokenS.getMintInfo();
+
       const supply = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals);
       const total = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals);
-
       setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
 
       const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2);
-
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * total));
+
+      const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
+      setTokenCount(account.tokenCount.toNumber());
     } catch (err) {
       console.log(err);
     }
@@ -271,7 +315,7 @@ function App() {
       setExchangeRate(lastPrice);
       setDummyInverseData(lastPrice, indexPrice);
     } catch (err) {
-      console.log('Error: ', err);
+      console.log(err);
     }
 
     setInverseStep(0);
@@ -304,12 +348,11 @@ function App() {
         provider.wallet.publicKey
       );
 
-      const aToBAmountA = inverseQuantity * leverage * (10 ** mintAInfo.decimals);
-      const equityA = inverseQuantity * (10 ** mintAInfo.decimals);
       // eslint-disable-next-line
       const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-      // TODO: Make PDA
-      const exchangePositionAccount = Keypair.generate();
+      const aToBAmountA = inverseQuantity * leverage * (10 ** mintAInfo.decimals);
+      const equityA = inverseQuantity * (10 ** mintAInfo.decimals);
+      const positionAccount = Keypair.generate();
 
       const tx = await exchange.rpc.aToBInput(
         new BN(aToBAmountA),
@@ -324,24 +367,24 @@ function App() {
             exchangeA: currentExchange.accountA,
             exchangeB: currentExchange.accountB,
             pda,
-            position: exchangePositionAccount.publicKey,
+            position: positionAccount.publicKey,
             recipient: walletTokenAccountA,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             userA: walletTokenAccountA,
             userB: walletTokenAccountB
           },
-          signers: [exchangePositionAccount]
+          signers: [positionAccount]
         });
       const link = 'https://explorer.solana.com/tx/' + tx;
 
       message = 'Order Successfully Placed';
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
 
+      setInversePositionAccount(positionAccount);
       setInverseStep(0);
       setLeverage(1);
       setInverseQuantity();
-
       getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
       description = 'Transaction error';
@@ -420,8 +463,7 @@ function App() {
             userB: walletTokenAccountB,
             userC: walletTokenAccountC,
             userV: walletTokenAccountV
-          },
-          signers: [provider.wallet.owner]
+          }
         });
       const link = 'https://explorer.solana.com/tx/' + tx;
 
@@ -608,6 +650,7 @@ function App() {
           <div className='site-card-border-less-wrapper'>
             <Card title={assetTitleModal} className='Card Dark' bordered={false}
               extra={<a href='/#/inverse' className='CardLink' onClick={() => setInverseCard('inverse')}>Inverse</a>}>
+              <Table dataSource={inversePositions} columns={inversePositionsColumns} pagination={false}/>
             </Card>
           </div>
         </Col>
@@ -764,7 +807,7 @@ function App() {
 
   useEffect(() => {
     if (!isInverseDataSet) {
-      setIsInverseSet(true);
+      setIsInverseDataSet(true);
       setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
       getInverseDataCallback(DEFAULT_SYMBOL);
     }
@@ -773,15 +816,15 @@ function App() {
   useEffect(() => {
     // TODO: This fires every second which is too often
     getDashboardDataCallback();
-    getFactoryDataCallback();
-  }, [getDashboardDataCallback, getFactoryDataCallback]);
+  }, [getDashboardDataCallback]);
 
   useEffect(() => {
     // TODO: This fires every second which is too often
     if (wallet.connected) {
       getBalanceCallback();
+      getPositionsCallback();
     }
-  }, [getBalanceCallback, wallet.connected]);
+  }, [getBalanceCallback, getPositionsCallback, wallet.connected]);
 
   return (
     <Layout className='App Dark'>
