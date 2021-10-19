@@ -661,28 +661,36 @@ function App() {
   );
 
   const bondView = (
-    <Row>
-      <Col span={8}></Col>
-      <Col span={8} className='Cards'>
-        { bondCard === 'bond' ?
-        <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title={assetTitleModal} bordered={false}
-            extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
-            <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
-            <br/>
-            <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
-            <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
-          </Card>
-        </div> :
-        <div className='site-card-border-less-wrapper'>
-          <Card className='Card Dark' title={assetTitleModal} bordered={false}
-            extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('bond')}>Bond</a>}>
-          </Card>
-        </div>
-        }
-      </Col>
-      <Col span={8}></Col>
-    </Row>
+    <>
+      { bondCard === 'bond' ?
+      <Row>
+        <Col span={8}></Col>
+        <Col span={8} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title={assetTitleModal} bordered={false}
+              extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
+              <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
+              <br/>
+              <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
+              <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
+            </Card>
+          </div>
+        </Col>
+        <Col span={8}></Col>
+      </Row> :
+      <Row>
+        <Col span={6}></Col>
+        <Col span={12} className='Cards'>
+          <div className='site-card-border-less-wrapper'>
+            <Card className='Card Dark' title={assetTitleModal} bordered={false}
+              extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('bond')}>Bond</a>}>
+            </Card>
+          </div>
+        </Col>
+        <Col span={6}></Col>
+      </Row>
+      }
+    </>
   );
 
   const stakeDescription = (
