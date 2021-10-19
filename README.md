@@ -1,6 +1,6 @@
 # Cherub
 
-*Inverse Perpetuals (3, 3) DAO*
+Inverse Perpetuals (3, 3) DAO
 
 ## Development
 
