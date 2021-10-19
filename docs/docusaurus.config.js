@@ -68,7 +68,7 @@ const config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/cherub-so/cherub-protocol',
           label: 'GitHub',
           position: 'right',
         },
