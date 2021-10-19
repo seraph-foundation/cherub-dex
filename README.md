@@ -1,3 +1,5 @@
+<a href="https://twitter.com/docusaurus"><img src="https://img.shields.io/badge/docs-0.0.1-x" alt="Docs Badge"/></a>
+
 # Cherub
 
 *Inverse Perpetuals (3, 3) DAO*
@@ -25,6 +27,15 @@ Make sure cluster is set to `localnet` in `Anchor.toml`.
 ```bash
 anchor test --detach  # Run in a eparate terminal
 cd app && yarn start
+```
+
+## Documentation
+
+This is currently handled with Docusauraus.
+
+```bash
+cd docs
+yarn start
 ```
 
 ### Support

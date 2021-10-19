@@ -1,13 +1,8 @@
 airdrop:
 	@while true; do solana airdrop 1; sleep 30; done
 
-airdrop-wallet:
-	@while true; do solana airdrop 1 7ADLt8RQX6W5v7L4voBxY9WcT7xRVis9rgbaUTpvEQ4w; sleep 30; done
-
 build-frontend:
 	@cd app && yarn build
-	@rm -rf docs
-	@cp -R app/build docs
 
 set-devnet:
 	@solana config set --url https://api.devnet.solana.com
@@ -19,9 +14,7 @@ setup:
 	@cargo install --git https://github.com/project-serum/anchor --tag v0.16.2 anchor-cli --locked
 
 test-localnet:
-	@anchor --provider.cluster http://127.0.0.1:8899 build
-	@anchor --provider.cluster http://127.0.0.1:8899 deploy
-	@anchor --provider.cluster http://127.0.0.1:8899 test --skip-local-validator --skip-deploy --skip-build
+	@anchor --provider.cluster http://127.0.0.1:8899 test
 
 test-skip:
 	@anchor test --skip-local-validator --skip-deploy --skip-build

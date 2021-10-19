@@ -1,4 +1,5 @@
 import 'antd/dist/antd.css';
+
 import './App.css';
 
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
@@ -235,7 +236,7 @@ function App() {
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * total));
     } catch (err) {
-      console.log('Error: ', err);
+      console.log(err);
     }
   }
 
@@ -343,9 +344,9 @@ function App() {
 
       getInverseDataCallback(currentExchange.symbol);
     } catch (err) {
-      message = 'Order Error';
       description = 'Transaction error';
-      console.log('Error: ', err);
+      message = 'Order Error';
+      console.log(err);
     }
 
     notification.open({message: message, description: description, duration: 0, placement: 'bottomLeft'});
@@ -431,7 +432,7 @@ function App() {
     } catch (err) {
       description = 'There was an error with your order';
       message = 'Order Error';
-      console.log('Error: ', err);
+      console.log(err);
     }
 
     notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'});
@@ -486,7 +487,7 @@ function App() {
     } catch (err) {
       description = 'Transaction error';
       message = 'Stake Error';
-      console.log('Error: ', err);
+      console.log(err);
     }
 
     setStakeStep(0);
