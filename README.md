@@ -1,6 +1,6 @@
-# Cherub
+<a href="https://docs.cherub.so"><img src="https://img.shields.io/badge/docs-0.0.1-x" alt="Docs Badge"/></a>
 
-<a href="https://twitter.com/docusaurus"><img src="https://img.shields.io/badge/docs-0.0.1-x" alt="Docs Badge"/></a>
+# Cherub
 
 *Inverse Perpetuals (3, 3) DAO*
 
