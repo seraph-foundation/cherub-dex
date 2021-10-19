@@ -158,6 +158,8 @@ function App() {
   const [tokenCount, setTokenCount] = useState(0);
   const [turnaround24H, setTurnaround24H] = useState();
 
+  const wallet = useWallet();
+
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
   const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.tokenV, wallet.publicKey]);
@@ -165,8 +167,6 @@ function App() {
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getFactoryDataCallback = useCallback(getFactoryData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
-
-  const wallet = useWallet();
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
