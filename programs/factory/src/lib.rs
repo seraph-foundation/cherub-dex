@@ -24,16 +24,10 @@ pub mod factory {
     }
 
     /// Creates an exchange for a new token pair
-    pub fn create_exchange(
-        ctx: Context<CreateExchange>,
-        token_a: Pubkey,
-        token_b: Pubkey,
-        token_c: Pubkey,
-        fee: u64,
-    ) -> ProgramResult {
+    pub fn create_exchange(ctx: Context<CreateExchange>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         factory.token_count = factory.token_count + 1;
-        exchange::cpi::create(ctx.accounts.into(), token_a, token_b, token_c, fee)?;
+        exchange::cpi::create(ctx.accounts.into(), fee)?;
         Ok(())
     }
 
@@ -69,12 +63,12 @@ pub struct CreateExchange<'info> {
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
+    pub exchange_v: AccountInfo<'info>,
     pub exchange_program: AccountInfo<'info>,
     #[account(mut)]
     pub factory: Account<'info, FactoryData>,
+    pub token_c: AccountInfo<'info>,
+    pub token_v: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
 }
 
@@ -133,9 +127,10 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
             exchange: accounts.exchange.clone(),
-            exchange_a: accounts.exchange_a.clone(),
-            exchange_b: accounts.exchange_b.clone(),
+            exchange_v: accounts.exchange_v.clone(),
             factory: accounts.factory.to_account_info(),
+            token_c: accounts.token_c.clone(),
+            token_v: accounts.token_v.clone(),
             token_program: accounts.token_program.clone(),
         };
         CpiContext::new(accounts.exchange_program.to_account_info(), cpi_accounts)

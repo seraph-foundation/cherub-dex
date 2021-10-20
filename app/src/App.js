@@ -193,7 +193,7 @@ function App() {
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
-  const getPositionsCallback = useCallback(getPositions, [currentExchange.tokenA, getProviderCallback, inversePositionAccount, inversePositions]);
+  const getPositionsCallback = useCallback(getPositions, [currentExchange.tokenV, getProviderCallback, inversePositionAccount, inversePositions]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -214,9 +214,9 @@ function App() {
         const provider = await getProviderCallback();
 
         const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-        const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID, null);
+        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null);
 
-        const mintInfoA = await tokenA.getMintInfo();
+        const mintInfoA = await tokenV.getMintInfo();
         const positionAccount = await exchange.account.positionData.fetch(new PublicKey(inversePositionAccount.publicKey));
 
         // TODO: There should only be one position per exchange per wallet
@@ -268,14 +268,14 @@ function App() {
       const mintInfoC = await tokenC.getMintInfo();
       const mintInfoS = await tokenS.getMintInfo();
 
-      const supply = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals);
-      const total = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals);
-      setCCirculatingSupplyTotal(supply.toFixed(0) + ' / ' + total.toFixed(0));
+      const supplyS = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals);
+      const supplyC = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals);
+      setCCirculatingSupplyTotal((supplyC - supplyS).toFixed(0) + ' / ' + supplyC.toFixed(0));
 
       const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account));
       const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2);
       setCCurrentPrice(currencyFormat(lastPrice / 1));
-      setCMarketCap(currencyFormat(lastPrice * total));
+      setCMarketCap(currencyFormat(lastPrice * supplyC));
 
       const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
       setTokenCount(account.tokenCount.toNumber());
@@ -301,9 +301,9 @@ function App() {
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
       const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
-      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenA;
-      const tokenA = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
-      const mintAInfo = await tokenA.getMintInfo();
+      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenV;
+      const tokenV = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
+      const mintAInfo = await tokenV.getMintInfo();
       const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
 
       const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider);
@@ -331,27 +331,20 @@ function App() {
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
       const exchangePublicKey = new PublicKey(currentExchange.account);
 
-      const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
-      const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
-      const mintAInfo = await tokenA.getMintInfo();
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
+      const mintInfoV = await tokenV.getMintInfo();
 
-      const walletTokenAccountA = await Token.getAssociatedTokenAddress(
+      const walletTokenAccountV = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
-        tokenA.publicKey,
-        provider.wallet.publicKey
-      );
-      const walletTokenAccountB = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenB.publicKey,
+        tokenV.publicKey,
         provider.wallet.publicKey
       );
 
       // eslint-disable-next-line
       const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-      const aToBAmountA = inverseQuantity * leverage * (10 ** mintAInfo.decimals);
-      const equityA = inverseQuantity * (10 ** mintAInfo.decimals);
+      const aToBAmountA = inverseQuantity * leverage * (10 ** mintInfoV.decimals);
+      const equityA = inverseQuantity * (10 ** mintInfoV.decimals);
       const positionAccount = Keypair.generate();
 
       const tx = await exchange.rpc.aToBInput(
@@ -364,15 +357,13 @@ function App() {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
             exchange: exchangePublicKey,
-            exchangeA: currentExchange.accountA,
-            exchangeB: currentExchange.accountB,
+            exchangeV: currentExchange.accountV,
             pda,
             position: positionAccount.publicKey,
-            recipient: walletTokenAccountA,
+            recipient: walletTokenAccountV,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
-            userA: walletTokenAccountA,
-            userB: walletTokenAccountB
+            userV: walletTokenAccountV
           },
           signers: [positionAccount]
         });
@@ -403,26 +394,11 @@ function App() {
       const provider = await getProviderCallback();
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
-      const tokenA = new Token(provider.connection, new PublicKey(currentExchange.tokenA), TOKEN_PROGRAM_ID);
-      const tokenB = new Token(provider.connection, new PublicKey(currentExchange.tokenB), TOKEN_PROGRAM_ID);
       const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
       const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
 
-      const mintInfoA = await tokenA.getMintInfo();
-      const mintInfoB = await tokenB.getMintInfo();
+      const mintInfoV = await tokenV.getMintInfo();
 
-      const walletTokenAccountA = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenA.publicKey,
-        provider.wallet.publicKey
-      );
-      const walletTokenAccountB = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenB.publicKey,
-        provider.wallet.publicKey
-      );
       const walletTokenAccountC = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
@@ -430,17 +406,22 @@ function App() {
         provider.wallet.publicKey
       );
 
-      // TODO: SOL account is not associated token address
-      const walletTokenAccountV = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenV.publicKey,
-        provider.wallet.publicKey
-      );
+      let walletTokenAccountV;
+      if (currentExchange.symbol === SOL.symbol) {
+        // SOL account is not associated token address
+        walletTokenAccountV = new PublicKey(accounts.user.sol);
+      } else {
+        walletTokenAccountV = await Token.getAssociatedTokenAddress(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          tokenV.publicKey,
+          provider.wallet.publicKey
+        );
+      }
 
       // TODO: Not accurate
-      const maxAmountA = bondDeposit * (10 ** mintInfoA.decimals);
-      const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintInfoA.decimals))) * (10 ** mintInfoB.decimals);
+      const maxAmountA = bondDeposit * (10 ** mintInfoV.decimals);
+      const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals);
       const minLiquidityC = amountB / 1000;
       // eslint-disable-next-line
       const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
@@ -454,13 +435,9 @@ function App() {
             authority: provider.wallet.publicKey,
             clock: SYSVAR_CLOCK_PUBKEY,
             exchange: currentExchange.account,
-            exchangeA: currentExchange.accountA,
-            exchangeB: currentExchange.accountB,
             exchangeV: currentExchange.accountV,
-            mint: new PublicKey(accounts.factory.tokenC),
+            mintC: new PublicKey(accounts.factory.tokenC),
             tokenProgram: TOKEN_PROGRAM_ID,
-            userA: walletTokenAccountA,
-            userB: walletTokenAccountB,
             userC: walletTokenAccountC,
             userV: walletTokenAccountV
           }

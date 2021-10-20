@@ -4,7 +4,7 @@
 //! Solana's BPF-modified LLVM, but more or less should be the same overall.
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
 declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -21,35 +21,23 @@ pub mod exchange {
     /// supported in contracts deployed using `initialize()` which is called
     /// once by the factory during contract creation.
     ///
-    /// factory Factory public key
-    /// token_a Token A public key
-    /// token_b Token B public key
-    /// token_c Token C public key
     /// fee Fee given in BPS
-    pub fn create(
-        ctx: Context<Create>,
-        token_a: Pubkey,
-        token_b: Pubkey,
-        token_c: Pubkey,
-        fee: u64,
-    ) -> ProgramResult {
+    pub fn create(ctx: Context<Create>, fee: u64) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = ctx.accounts.factory.key();
-        exchange.token_a = token_a;
-        exchange.token_b = token_b;
-        exchange.token_c = token_c;
         exchange.fee = fee;
         exchange.last_price = 0;
-        let (pda, _bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        token::set_authority(ctx.accounts.into_ctx_a(), AccountOwner, Some(pda))?;
-        token::set_authority(ctx.accounts.into_ctx_b(), AccountOwner, Some(pda))?;
-        // TODO: C authority
+        exchange.supply_a = 0;
+        exchange.supply_b = 0;
+        exchange.token_c = ctx.accounts.token_c.key();
+        exchange.token_v = ctx.accounts.token_v.key();
+        let (pda, _nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
         Ok(())
     }
 
     /// Deposit B and A at current ratio to mint C tokens.
     ///
-    /// min_liquidity_c does nothing when total C supply is 0
     /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
     /// amount_b Amount of B deposited
     /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
@@ -64,48 +52,45 @@ pub mod exchange {
     ) -> ProgramResult {
         let mut liquidity_minted = amount_b;
         let mut amount_a = max_amount_a;
-        if ctx.accounts.exchange_a.amount > 0 && ctx.accounts.exchange_b.amount > 0 {
+        if ctx.accounts.exchange.supply_a > 0 && ctx.accounts.exchange.supply_b > 0 {
             assert!(min_liquidity_c > 0);
-            amount_a = (amount_b as f64 * ctx.accounts.exchange_a.amount as f64
-                / ctx.accounts.exchange_b.amount as f64) as u64;
-            liquidity_minted = (amount_b as f64 * ctx.accounts.mint.supply as f64
-                / ctx.accounts.exchange_a.amount as f64) as u64;
+            amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
+                / ctx.accounts.exchange.supply_b as f64) as u64;
+            liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
+                / ctx.accounts.exchange.supply_a as f64) as u64;
             msg!(&format!(
                 "{} {} {} {}",
                 max_amount_a, amount_a, liquidity_minted, min_liquidity_c
             ));
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
-        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
+        exchange.supply_a += amount_a;
+        exchange.supply_b += liquidity_minted;
         Ok(())
     }
 
     /// Burn C tokens to withdraw B and A at current ratio.
     ///
     /// amount_c Amount of C burned
-    /// min_amount_a Minimum A withdrawn
-    /// min_amount_b Minimum B withdrawn
     /// deadline Time after which this transaction can no longer be executed
     #[access_control(unbond_future_deadline(&ctx, deadline) unbond_correct_tokens(&ctx))]
     pub fn unbond(ctx: Context<Unbond>, amount_c: u64, deadline: i64) -> ProgramResult {
-        let amount_a = amount_c * ctx.accounts.exchange_a.amount / ctx.accounts.mint.supply;
-        let amount_b = amount_c * ctx.accounts.exchange_b.amount / ctx.accounts.mint.supply;
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
-        token::transfer(
-            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
-        token::transfer(
-            ctx.accounts.into_ctx_b().with_signer(&[&seeds[..]]),
-            amount_b,
-        )?;
+        let amount_a = (amount_c as f64 * ctx.accounts.exchange.supply_a as f64
+            / ctx.accounts.mint_c.supply as f64) as u64;
+        let amount_b = (amount_c as f64 * ctx.accounts.exchange.supply_b as f64
+            / ctx.accounts.mint_c.supply as f64) as u64;
+        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        token::transfer(ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]), amount_a)?;
         token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
+        exchange.supply_a -= amount_a;
+        exchange.supply_b -= amount_b;
         Ok(())
     }
 
@@ -120,8 +105,8 @@ pub mod exchange {
         let quote = &mut ctx.accounts.quote;
         quote.price = get_input_price(
             amount_b,
-            ctx.accounts.exchange_b.amount,
-            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.fee,
         );
         Ok(())
@@ -138,8 +123,8 @@ pub mod exchange {
         let quote = &mut ctx.accounts.quote;
         quote.price = get_output_price(
             amount_a,
-            ctx.accounts.exchange_a.amount,
-            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange.supply_a,
+            ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.fee,
         );
         Ok(())
@@ -159,15 +144,13 @@ pub mod exchange {
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_b = get_input_price(
             amount_a,
-            ctx.accounts.exchange_a.amount - amount_a,
-            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange.supply_a - amount_a,
+            ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
-        token::mint_to(ctx.accounts.into_ctx_a(), amount_a)?;
-        token::mint_to(ctx.accounts.into_ctx_b(), amount_b)?;
+        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -181,6 +164,8 @@ pub mod exchange {
         position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
+        exchange.supply_a += amount_a;
+        exchange.supply_b -= amount_b;
         Ok(())
     }
 
@@ -198,15 +183,13 @@ pub mod exchange {
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_a = get_input_price(
             amount_b,
-            ctx.accounts.exchange_b.amount - amount_b,
-            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.supply_b - amount_b,
+            ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
-        token::mint_to(ctx.accounts.into_ctx_a(), amount_a)?;
-        token::mint_to(ctx.accounts.into_ctx_b(), amount_b)?;
+        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -220,6 +203,8 @@ pub mod exchange {
         position.unix_timestamp = ts;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
+        exchange.supply_a -= amount_a;
+        exchange.supply_b += amount_b;
         Ok(())
     }
 
@@ -235,14 +220,21 @@ pub mod exchange {
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_a = get_output_price(
             amount_b,
-            ctx.accounts.exchange_b.amount - amount_b,
-            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.supply_b - amount_b,
+            ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        // TODO: Finish
+        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        token::transfer(
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
+        exchange.supply_a -= amount_a;
+        exchange.supply_b += amount_b;
         Ok(())
     }
 
@@ -258,14 +250,21 @@ pub mod exchange {
         assert!(deadline.unwrap_or(ts) >= ts);
         let amount_b = get_output_price(
             amount_a,
-            ctx.accounts.exchange_a.amount - amount_a,
-            ctx.accounts.exchange_b.amount,
+            ctx.accounts.exchange.supply_a - amount_a,
+            ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        // TODO: Finish
+        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        token::transfer(
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
+            amount_b,
+        )?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
+        exchange.supply_a += amount_a;
+        exchange.supply_b -= amount_b;
         Ok(())
     }
 }
@@ -275,10 +274,10 @@ pub struct Create<'info> {
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
+    pub exchange_v: AccountInfo<'info>,
     pub factory: AccountInfo<'info>,
+    pub token_c: AccountInfo<'info>,
+    pub token_v: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
 }
 
@@ -290,45 +289,32 @@ pub struct Bond<'info> {
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
+    pub exchange_v: AccountInfo<'info>,
     #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_v: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub mint: Account<'info, Mint>,
+    pub mint_c: Account<'info, Mint>,
     pub token_program: AccountInfo<'info>,
-    #[account(mut, constraint = max_amount_a > 0)]
-    pub user_a: UncheckedAccount<'info>,
     #[account(mut, constraint = amount_b > 0)]
-    pub user_b: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_c: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_v: UncheckedAccount<'info>,
+    pub user_c: AccountInfo<'info>,
+    #[account(mut, constraint = max_amount_a > 0)]
+    pub user_v: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
-#[instruction(amount_c: u64)]
+#[instruction(max_amount_a: u64, amount_c: u64)]
 pub struct Unbond<'info> {
-    pub authority: UncheckedAccount<'info>,
+    pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
-    #[account(mut, constraint = mint.supply > 0)]
-    pub mint: Account<'info, Mint>,
     #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
-    pub pda: UncheckedAccount<'info>,
+    pub exchange_v: AccountInfo<'info>,
+    #[account(mut, constraint = mint_c.supply > 0)]
+    pub mint_c: Account<'info, Mint>,
     pub token_program: AccountInfo<'info>,
-    #[account(mut)]
-    pub user_a: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_b: UncheckedAccount<'info>,
     #[account(mut, constraint = amount_c > 0)]
-    pub user_c: UncheckedAccount<'info>,
+    pub user_c: AccountInfo<'info>,
+    #[account(mut, constraint = max_amount_a > 0)]
+    pub user_v: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -336,8 +322,6 @@ pub struct Unbond<'info> {
 pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
     pub exchange: Account<'info, ExchangeData>,
-    pub exchange_a: Account<'info, TokenAccount>,
-    pub exchange_b: Account<'info, TokenAccount>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
     pub quote: Account<'info, Quote>,
     pub system_program: Program<'info, System>,
@@ -350,15 +334,7 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub exchange_a: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub exchange_b: Account<'info, TokenAccount>,
-    #[account(mut)]
     pub exchange_v: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub mint_a: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub mint_b: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
     #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)]
     pub position: Account<'info, PositionData>,
@@ -372,17 +348,9 @@ pub struct Swap<'info> {
 
 /// Implements creation accounts
 impl<'info> Create<'info> {
-    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+    fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_a.to_account_info(),
-            current_authority: self.exchange.to_account_info(),
-        };
-        CpiContext::new(self.token_program.clone(), cpi_accounts)
-    }
-
-    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        let cpi_accounts = SetAuthority {
-            account_or_mint: self.exchange_b.to_account_info(),
+            account_or_mint: self.exchange_v.to_account_info(),
             current_authority: self.exchange.to_account_info(),
         };
         CpiContext::new(self.token_program.clone(), cpi_accounts)
@@ -391,27 +359,9 @@ impl<'info> Create<'info> {
 
 /// Implements adding liquidity accounts
 impl<'info> Bond<'info> {
-    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_a.to_account_info(),
-            to: self.exchange_a.to_account_info(),
-            authority: self.authority.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info(),
-            to: self.exchange_b.to_account_info(),
-            authority: self.authority.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
-            mint: self.mint.to_account_info(),
+            mint: self.mint_c.to_account_info(),
             to: self.user_c.to_account_info(),
             authority: self.authority.to_account_info(),
         };
@@ -430,28 +380,19 @@ impl<'info> Bond<'info> {
 
 /// Implements removing liquidity accounts
 impl<'info> Unbond<'info> {
-    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info(),
-            to: self.user_a.to_account_info(),
-            authority: self.pda.to_account_info(),
+    fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_accounts = Burn {
+            mint: self.mint_c.to_account_info(),
+            to: self.user_c.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
-    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.exchange_b.to_account_info(),
-            to: self.user_b.to_account_info(),
-            authority: self.pda.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info().clone(), cpi_accounts)
-    }
-
-    fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
-        let cpi_accounts = Burn {
-            mint: self.mint.to_account_info(),
-            to: self.user_c.to_account_info(),
+            from: self.exchange_v.to_account_info(),
+            to: self.user_v.to_account_info(),
             authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
@@ -460,24 +401,6 @@ impl<'info> Unbond<'info> {
 
 /// Implements swap accounts
 impl<'info> Swap<'info> {
-    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-        let cpi_accounts = MintTo {
-            mint: self.mint_a.to_account_info(),
-            to: self.exchange_a.to_account_info(),
-            authority: self.authority.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-        let cpi_accounts = MintTo {
-            mint: self.mint_b.to_account_info(),
-            to: self.exchange_b.to_account_info(),
-            authority: self.authority.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
     fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.user_v.to_account_info(),
@@ -494,9 +417,10 @@ pub struct ExchangeData {
     pub factory: Pubkey,
     pub fee: u64,
     pub last_price: u64,
-    pub token_a: Pubkey,
-    pub token_b: Pubkey,
+    pub supply_a: u64,
+    pub supply_b: u64,
     pub token_c: Pubkey,
+    pub token_v: Pubkey,
 }
 
 /// User account state for input and output price quotes.
@@ -515,9 +439,9 @@ pub enum Direction {
 /// Trade status must be one of these three
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum Status {
-    Open,
     Closed,
     Liquidated,
+    Open,
 }
 
 /// User position account state
@@ -527,8 +451,8 @@ pub struct PositionData {
     pub entry: u64,
     pub equity: u64,
     pub exit: u64,
-    pub status: Status,
     pub quantity: u64,
+    pub status: Status,
     pub unix_timestamp: i64,
 }
 
@@ -566,13 +490,7 @@ fn unbond_future_deadline<'info>(ctx: &Context<Unbond<'info>>, deadline: i64) ->
 
 /// Access control function for ensuring correct token accounts are used.
 fn bond_correct_tokens<'info>(ctx: &Context<Bond<'info>>) -> Result<()> {
-    if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
-    }
-    if !(ctx.accounts.exchange_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
-    }
-    if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {
+    if !(ctx.accounts.mint_c.key() == ctx.accounts.exchange.token_c.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     Ok(())
@@ -580,13 +498,7 @@ fn bond_correct_tokens<'info>(ctx: &Context<Bond<'info>>) -> Result<()> {
 
 /// Access control function for ensuring correct token accounts are used.
 fn unbond_correct_tokens<'info>(ctx: &Context<Unbond<'info>>) -> Result<()> {
-    if !(ctx.accounts.exchange_a.mint.key() == ctx.accounts.exchange.token_a.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
-    }
-    if !(ctx.accounts.exchange_b.mint.key() == ctx.accounts.exchange.token_b.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
-    }
-    if !(ctx.accounts.mint.key() == ctx.accounts.exchange.token_c.key()) {
+    if !(ctx.accounts.mint_c.key() == ctx.accounts.exchange.token_c.key()) {
         return Err(ErrorCode::CorrectTokens.into());
     }
     Ok(())
