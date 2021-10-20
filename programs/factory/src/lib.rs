@@ -110,18 +110,18 @@ pub struct Stake<'info> {
 impl<'info> Stake<'info> {
     fn into_ctx_c(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
+            authority: self.authority.to_account_info(),
             from: self.user_c.to_account_info(),
             to: self.factory_c.to_account_info(),
-            authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
     fn into_ctx_s(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
         let cpi_accounts = MintTo {
+            authority: self.authority.to_account_info(),
             mint: self.mint_s.to_account_info(),
             to: self.user_s.to_account_info(),
-            authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
@@ -132,11 +132,11 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
 {
     fn from(accounts: &mut CreateExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, Create<'info>> {
         let cpi_accounts = Create {
-            factory: accounts.factory.to_account_info(),
             exchange: accounts.exchange.clone(),
-            token_program: accounts.token_program.clone(),
             exchange_a: accounts.exchange_a.clone(),
             exchange_b: accounts.exchange_b.clone(),
+            factory: accounts.factory.to_account_info(),
+            token_program: accounts.token_program.clone(),
         };
         CpiContext::new(accounts.exchange_program.to_account_info(), cpi_accounts)
     }

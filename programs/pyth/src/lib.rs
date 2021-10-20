@@ -6,7 +6,6 @@ declare_id!("Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod pyth {
-
     use std::convert::TryInto;
     use super::*;
 

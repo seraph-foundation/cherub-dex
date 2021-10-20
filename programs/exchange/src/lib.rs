@@ -166,11 +166,12 @@ pub mod exchange {
         assert!(amount_b >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::mint_to(ctx.accounts.into_ctx_a(), amount_a)?;
+        token::mint_to(ctx.accounts.into_ctx_b(), amount_b)?;
         token::transfer(
-            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
         )?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
@@ -204,11 +205,12 @@ pub mod exchange {
         assert!(amount_a >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::mint_to(ctx.accounts.into_ctx_a(), amount_a)?;
+        token::mint_to(ctx.accounts.into_ctx_b(), amount_b)?;
         token::transfer(
-            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
         )?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
@@ -238,8 +240,7 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        // TODO: Finish
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         Ok(())
@@ -262,8 +263,7 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        token::transfer(ctx.accounts.into_ctx_a(), amount_a)?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        // TODO: Finish
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         Ok(())
@@ -274,12 +274,12 @@ pub mod exchange {
 pub struct Create<'info> {
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
-    pub factory: AccountInfo<'info>,
-    pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
+    pub factory: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
@@ -297,7 +297,7 @@ pub struct Bond<'info> {
     pub exchange_v: UncheckedAccount<'info>,
     #[account(mut)]
     pub mint: Account<'info, Mint>,
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: AccountInfo<'info>,
     #[account(mut, constraint = max_amount_a > 0)]
     pub user_a: UncheckedAccount<'info>,
     #[account(mut, constraint = amount_b > 0)]
@@ -312,9 +312,7 @@ pub struct Bond<'info> {
 #[instruction(amount_c: u64)]
 pub struct Unbond<'info> {
     pub authority: UncheckedAccount<'info>,
-    pub token_program: UncheckedAccount<'info>,
     pub clock: Sysvar<'info, Clock>,
-    pub pda: UncheckedAccount<'info>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut, constraint = mint.supply > 0)]
@@ -323,6 +321,8 @@ pub struct Unbond<'info> {
     pub exchange_a: Account<'info, TokenAccount>,
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
+    pub pda: UncheckedAccount<'info>,
+    pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub user_a: UncheckedAccount<'info>,
     #[account(mut)]
@@ -335,12 +335,12 @@ pub struct Unbond<'info> {
 #[instruction(amount_b: u64)]
 pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
-    pub system_program: Program<'info, System>,
     pub exchange: Account<'info, ExchangeData>,
-    #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
-    pub quote: Account<'info, Quote>,
     pub exchange_a: Account<'info, TokenAccount>,
     pub exchange_b: Account<'info, TokenAccount>,
+    #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
+    pub quote: Account<'info, Quote>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -354,16 +354,20 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub exchange_b: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub recipient: UncheckedAccount<'info>,
+    pub exchange_v: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub mint_a: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub mint_b: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
     #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)]
     pub position: Account<'info, PositionData>,
+    #[account(mut)]
+    pub recipient: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: AccountInfo<'info>,
     #[account(mut)]
-    pub user_a: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub user_b: UncheckedAccount<'info>,
+    pub user_v: UncheckedAccount<'info>,
 }
 
 /// Implements creation accounts
@@ -456,19 +460,28 @@ impl<'info> Unbond<'info> {
 
 /// Implements swap accounts
 impl<'info> Swap<'info> {
-    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.exchange_a.to_account_info(),
-            to: self.recipient.to_account_info(),
-            authority: self.pda.to_account_info(),
+    fn into_ctx_a(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.mint_a.to_account_info(),
+            to: self.exchange_a.to_account_info(),
+            authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }
 
-    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: self.user_b.to_account_info(),
+    fn into_ctx_b(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let cpi_accounts = MintTo {
+            mint: self.mint_b.to_account_info(),
             to: self.exchange_b.to_account_info(),
+            authority: self.authority.to_account_info(),
+        };
+        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
+    }
+
+    fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_v.to_account_info(),
+            to: self.exchange_v.to_account_info(),
             authority: self.authority.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)

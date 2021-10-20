@@ -541,13 +541,15 @@ describe('Cherub', () => {
           exchange: exchangeAccount0.publicKey,
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
+          exchangeV: exchangeTokenAccount0V,
+          mintA: token0A.publicKey,
+          mintB: token0B.publicKey,
           pda,
           position: exchangePositionAccount0.publicKey,
           recipient: walletTokenAccount0A,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
-          userA: walletTokenAccount0A,
-          userB: walletTokenAccount0B
+          userV: walletTokenAccount0V
         },
         signers: [exchangePositionAccount0]
       });
@@ -589,13 +591,15 @@ describe('Cherub', () => {
           exchange: exchangeAccount0.publicKey,
           exchangeA: exchangeTokenAccount0A,
           exchangeB: exchangeTokenAccount0B,
+          exchangeV: exchangeTokenAccount0V,
+          mintA: token0A.publicKey,
+          mintB: token0B.publicKey,
           pda,
           position: exchangePositionAccount1.publicKey,
           recipient: walletTokenAccount0A,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
-          userA: walletTokenAccount0A,
-          userB: walletTokenAccount0B
+          userV: walletTokenAccount0V
         },
         signers: [exchangePositionAccount1]
       });
@@ -658,13 +662,17 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(0)));
   });
 
+  const finalMaxAmount0A = 1600 * (10 ** decimals0A);
+  const finalAmount0B = 750 * (10 ** decimals0B);
+  const finalMinBond0C = 340 * (10 ** decimalsC);
+  const finalBondMinted0 = 350 * (10 ** decimalsC);
+
   it('Bond final', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.bond(
-      new anchor.BN(additionalMaxAmountA),
-      new anchor.BN(additionalAmountB),
-      // TODO: Not correct
-      new anchor.BN(additionalMinBondC / 10),
+      new anchor.BN(finalMaxAmount0A),
+      new anchor.BN(finalAmount0B),
+      new anchor.BN(finalMinBond0C),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -734,17 +742,17 @@ describe('Cherub', () => {
     //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)));
   });
 
-  const finalMaxAmountA = 1000 * (10 ** decimals1A);
-  const finalAmountB = 1000 * (10 ** decimals1B);
-  const finalMinBondC = 0;
-  const finalBondMinted = 1000 * (10 ** decimalsC);
+  const finalMaxAmount1A = 1000 * (10 ** decimals1A);
+  const finalAmount1B = 1000 * (10 ** decimals1B);
+  const finalMinBond1C = 0;
+  const finalBondMinted1 = 1000 * (10 ** decimalsC);
 
   it('Second exchange initial bond', async () => {
     const deadline = new anchor.BN(Date.now() / 1000);
     const tx = await exchange.rpc.bond(
-      new anchor.BN(finalMaxAmountA),
-      new anchor.BN(finalAmountB),
-      new anchor.BN(finalMinBondC),
+      new anchor.BN(finalMaxAmount1A),
+      new anchor.BN(finalAmount1B),
+      new anchor.BN(finalMinBond1C),
       deadline, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -766,15 +774,15 @@ describe('Cherub', () => {
 
     let exchangeTokenAccount1AInfo = await token1A.getAccountInfo(exchangeTokenAccount1A);
     let walletTokenAccount1AInfo = await token1A.getAccountInfo(walletTokenAccount1A);
-    assert.ok(exchangeTokenAccount1AInfo.amount.eq(new anchor.BN(finalMaxAmountA)));
-    assert.ok(walletTokenAccount1AInfo.amount.eq(new anchor.BN(amount1A - finalMaxAmountA)));
+    assert.ok(exchangeTokenAccount1AInfo.amount.eq(new anchor.BN(finalMaxAmount1A)));
+    assert.ok(walletTokenAccount1AInfo.amount.eq(new anchor.BN(amount1A - finalMaxAmount1A)));
 
     let exchangeTokenAccount1BInfo = await token1B.getAccountInfo(exchangeTokenAccount1B);
     let walletTokenAccount1BInfo = await token1B.getAccountInfo(walletTokenAccount1B);
-    assert.ok(exchangeTokenAccount1BInfo.amount.eq(new anchor.BN(finalAmountB)));
-    assert.ok(walletTokenAccount1BInfo.amount.eq(new anchor.BN(amount1B - finalAmountB)));
+    assert.ok(exchangeTokenAccount1BInfo.amount.eq(new anchor.BN(finalAmount1B)));
+    assert.ok(walletTokenAccount1BInfo.amount.eq(new anchor.BN(amount1B - finalAmount1B)));
 
     let walletTokenAccountCInfo = await tokenC.getAccountInfo(walletTokenAccountC);
-    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(finalBondMinted)));
+    //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(finalBondMinted1)));
   });
 });
