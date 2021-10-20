@@ -145,44 +145,6 @@ pub mod exchange {
         Ok(())
     }
 
-    /// Convert B to A.
-    ///
-    /// amount_b Amount B sold (exact input)
-    pub fn b_to_a_input(
-        ctx: Context<Swap>,
-        amount_b: u64,
-        deadline: Option<i64>,
-        direction: Direction,
-        equity: u64,
-    ) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
-        let amount_a = get_input_price(
-            amount_b,
-            ctx.accounts.exchange_b.amount - amount_b,
-            ctx.accounts.exchange_a.amount,
-            ctx.accounts.exchange.fee,
-        );
-        assert!(amount_a >= 1);
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
-        token::transfer(
-            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
-        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
-        let position = &mut ctx.accounts.position;
-        position.direction = direction;
-        position.entry = amount_b;
-        position.equity = equity;
-        position.quantity = amount_b;
-        position.status = Status::Open;
-        position.unix_timestamp = ts;
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
-        Ok(())
-    }
-
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
@@ -202,6 +164,44 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
+        let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
+        token::transfer(
+            ctx.accounts.into_ctx_a().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
+        token::transfer(ctx.accounts.into_ctx_b(), amount_b)?;
+        let position = &mut ctx.accounts.position;
+        position.direction = direction;
+        position.entry = amount_b;
+        position.equity = equity;
+        position.quantity = amount_b;
+        position.status = Status::Open;
+        position.unix_timestamp = ts;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
+        Ok(())
+    }
+
+    /// Convert B to A.
+    ///
+    /// amount_b Amount B sold (exact input)
+    pub fn b_to_a_input(
+        ctx: Context<Swap>,
+        amount_b: u64,
+        deadline: Option<i64>,
+        direction: Direction,
+        equity: u64,
+    ) -> ProgramResult {
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
+        let amount_a = get_input_price(
+            amount_b,
+            ctx.accounts.exchange_b.amount - amount_b,
+            ctx.accounts.exchange_a.amount,
+            ctx.accounts.exchange.fee,
+        );
+        assert!(amount_a >= 1);
         let (_pda, bump_seed) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[bump_seed]];
         token::transfer(

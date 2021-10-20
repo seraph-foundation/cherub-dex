@@ -312,7 +312,7 @@ function App() {
 
       setCurrentMarketPrice(lastPrice);
       setIndexPrice(indexPrice.toFixed(2));
-      setExchangeRate(lastPrice);
+      setExchangeRate((1 / lastPrice).toFixed(4));
       setDummyInverseData(lastPrice, indexPrice);
     } catch (err) {
       console.log(err);
