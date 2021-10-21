@@ -727,7 +727,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
+            <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{CHERUB.symbol}</Button> bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}}/>
@@ -739,7 +739,7 @@ function App() {
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
+        <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{CHERUB.symbol}</Button> bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
           <Table dataSource={stakePositions} columns={stakePositionsColumns} pagination={false}/>
         </Card>

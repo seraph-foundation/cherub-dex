@@ -318,6 +318,7 @@ body {
     background-color: transparent;
     color: rgba(255, 255, 255, 0.65) !important;
     border: 1px solid #262626;
+    border-top: 0 solid transparent;
 }
 
 .ant-table-thead > tr > th {
