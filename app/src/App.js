@@ -44,7 +44,7 @@ if (IS_LOCALHOST) {
 const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
 const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol';
-const logoText = 'cheruβ';
+const logoText = 'Cherub';
 const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
@@ -72,6 +72,20 @@ const chartOptions = {
   }
 }
 
+const bondPositionsColumns = [{
+  title: 'Quantity',
+  dataIndex: 'quantity',
+  key: 'quantity'
+}, {
+  title: 'Length',
+  dataIndex: 'length',
+  key: 'length'
+}, {
+  title: 'Status',
+  dataIndex: 'status',
+  key: 'status'
+}];
+
 const inversePositionsColumns = [{
   title: 'Quantity',
   dataIndex: 'quantity',
@@ -88,6 +102,20 @@ const inversePositionsColumns = [{
   title: 'Direction',
   dataIndex: 'direction',
   key: 'direction'
+}, {
+  title: 'Status',
+  dataIndex: 'status',
+  key: 'status'
+}];
+
+const stakePositionsColumns = [{
+  title: 'Quantity',
+  dataIndex: 'quantity',
+  key: 'quantity'
+}, {
+  title: 'APY',
+  dataIndex: 'apy',
+  key: 'apy'
 }, {
   title: 'Status',
   dataIndex: 'status',
@@ -151,13 +179,14 @@ function App() {
   const [blockHeight, setBlockHeight] = useState(0);
   const [bondCard, setBondCard] = useState('bond');
   const [bondDeposit, setBondDeposit] = useState();
+  // eslint-disable-next-line
+  const [bondPositions, setBondPositions] = useState([]);
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
   const [cCurrentPrice, setCCurrentPrice] = useState(0);
   const [cMarketCap, setCMarketCap] = useState(0);
   const [change24H, setChange24H] = useState();
   const [countdown, setCountdown] = useState('');
-  const [currentExchange, setCurrentExchange] = useState({ account: null, accountV: null, tokenV: null, symbol: null });
-  const [currentMarketPrice, setCurrentMarketPrice] = useState();
+  const [marketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
   const [exchangeRate, setExchangeRate] = useState(0);
   const [fundingRate, setFundingRate] = useState();
@@ -168,6 +197,7 @@ function App() {
   const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
   const [isInverseDataSet, setIsInverseDataSet] = useState(false);
+  const [isUserDataSet, setIsUserDataSet] = useState(false);
   const [indexPrice, setIndexPrice] = useState();
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL);
   const [inverseCard, setInverseCard] = useState('inverse');
@@ -182,6 +212,8 @@ function App() {
   const [stakeCard, setStakeCard] = useState('stake');
   const [stakeDeposit, setStakeDeposit] = useState();
   const [stakeStep, setStakeStep] = useState(0);
+  // eslint-disable-next-line
+  const [stakePositions, setStakePositions] = useState([]);
   const [tokenCount, setTokenCount] = useState(0);
   const [turnaround24H, setTurnaround24H] = useState();
 
@@ -189,11 +221,11 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider]);
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, currentExchange.tokenV, wallet.publicKey]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected, wallet.publicKey]);
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
-  const getPositionsCallback = useCallback(getPositions, [currentExchange.tokenV, getProviderCallback, inversePositionAccount, inversePositions]);
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositionAccount, inversePositions]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -211,8 +243,8 @@ function App() {
   async function getPositions() {
     try {
       if (inversePositionAccount) {
+        const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
         const provider = await getProviderCallback();
-
         const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
         const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null);
 
@@ -234,23 +266,26 @@ function App() {
     }
   }
 
-  async function getBalance() {
+  async function getBalance(asset) {
     try {
-      const provider = await getProviderCallback();
-      if (currentExchange.tokenV === SOL.tokenV) {
-        const balance = await provider.connection.getBalance(wallet.publicKey);
-        setBalance(balance / LAMPORTS_PER_SOL);
-      } else {
-        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
-        const walletTokenAccountV = await Token.getAssociatedTokenAddress(
-          ASSOCIATED_TOKEN_PROGRAM_ID,
-          TOKEN_PROGRAM_ID,
-          tokenV.publicKey,
-          provider.wallet.publicKey
-        );
-        const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV);
-        const mintInfoV = await tokenV.getMintInfo();
-        setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2));
+      if (wallet.connected) {
+        const currentExchange = accounts.exchanges.find((x) => x.symbol === asset);
+        const provider = await getProviderCallback();
+        if (currentExchange.tokenV === SOL.tokenV) {
+          const balance = await provider.connection.getBalance(wallet.publicKey);
+          setBalance(balance / LAMPORTS_PER_SOL);
+        } else {
+          const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
+          const walletTokenAccountV = await Token.getAssociatedTokenAddress(
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+            TOKEN_PROGRAM_ID,
+            tokenV.publicKey,
+            provider.wallet.publicKey
+          );
+          const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV);
+          const mintInfoV = await tokenV.getMintInfo();
+          setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2));
+        }
       }
     } catch (err) {
       console.log(err);
@@ -295,7 +330,6 @@ function App() {
   async function getInverseData(asset) {
     try {
       const currentExchange = accounts.exchanges.find((x) => x.symbol === asset);
-
       const provider = await getProviderCallback();
       const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
@@ -327,6 +361,7 @@ function App() {
     let description;
 
     try {
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
       const provider = await getProviderCallback();
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
       const exchangePublicKey = new PublicKey(currentExchange.account);
@@ -391,6 +426,7 @@ function App() {
     let description;
 
     try {
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
       const provider = await getProviderCallback();
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
 
@@ -421,7 +457,7 @@ function App() {
 
       // TODO: Not accurate
       const maxAmountA = bondDeposit * (10 ** mintInfoV.decimals);
-      const amountB = (maxAmountA / (currentMarketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals);
+      const amountB = (maxAmountA / (marketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals);
       const minLiquidityC = amountB / 1000;
       // eslint-disable-next-line
       const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
@@ -542,7 +578,7 @@ function App() {
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market / Index</small></p>
-        <Title level={5} className='Title Dark Green'>{currentMarketPrice}<span className='White'> / {indexPrice}</span></Title>
+        <Title level={5} className='Title Dark Green'>{marketPrice}<span className='White'> / {indexPrice}</span></Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change (%)</small></p>
@@ -570,14 +606,14 @@ function App() {
 
   const inverseQuantityDescription = (
     <small>Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
+        className='White'>{inverseQuantity > 0 ? (inverseQuantity / marketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
   );
 
   const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>);
 
   const leverageDescription = (
     <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {inverseQuantity > 0 ? (inverseQuantity / currentMarketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
+        {inverseQuantity > 0 ? (inverseQuantity / marketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
   );
 
   const inverseView = (
@@ -661,6 +697,7 @@ function App() {
           <div className='site-card-border-less-wrapper'>
             <Card className='Card Dark' title={assetTitleModal} bordered={false}
               extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('bond')}>Bond</a>}>
+              <Table dataSource={bondPositions} columns={bondPositionsColumns} pagination={false}/>
             </Card>
           </div>
         </Col>
@@ -704,6 +741,7 @@ function App() {
       <Col span={12} className='Cards'>
         <Card className='Card Dark' title={CHERUB.symbol} bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
+          <Table dataSource={stakePositions} columns={stakePositionsColumns} pagination={false}/>
         </Card>
       </Col>
       }
@@ -773,6 +811,10 @@ function App() {
   );
 
   useEffect(() => {
+    setMenu(getWindowRoute());
+  }, [setMenu]);
+
+  useEffect(() => {
     if (!isBlockHeightIntervalSet) {
       setIsBlockHeightIntervalSet(true);
       setInterval(getBlockHeightCallback, 10000);
@@ -787,29 +829,20 @@ function App() {
   }, [isCountdownIntervalSet, setIsCountdownIntervalSet]);
 
   useEffect(() => {
-    setMenu(getWindowRoute());
-  }, [setMenu]);
-
-  useEffect(() => {
     if (!isInverseDataSet) {
       setIsInverseDataSet(true);
-      setCurrentExchange(accounts.exchanges.find((x) => x.symbol === DEFAULT_SYMBOL));
+      getDashboardDataCallback();
       getInverseDataCallback(DEFAULT_SYMBOL);
     }
-  }, [currentExchange.token, currentExchange.accountV, getInverseDataCallback, isInverseDataSet]);
+  }, [getDashboardDataCallback, getInverseDataCallback, isInverseDataSet]);
 
   useEffect(() => {
-    // TODO: This fires every second which is too often
-    getDashboardDataCallback();
-  }, [getDashboardDataCallback]);
-
-  useEffect(() => {
-    // TODO: This fires every second which is too often
-    if (wallet.connected) {
-      getBalanceCallback();
+    if (wallet.connected && !isUserDataSet) {
+      setIsUserDataSet(true);
+      getBalanceCallback(DEFAULT_SYMBOL);
       getPositionsCallback();
     }
-  }, [getBalanceCallback, getPositionsCallback, wallet.connected]);
+  }, [getBalanceCallback, getPositionsCallback, isUserDataSet, wallet.connected]);
 
   return (
     <Layout className='App Dark'>
@@ -821,7 +854,7 @@ function App() {
         <Row>
           <Col span={6}>
             <div className='Logo Dark'>
-              <img src='/logo.svg' alt='Logo' className='LogoImage'/>
+              <img src='/logo.png' alt='Logo' className='LogoImage'/>
               <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{logoText}</strong>
             </div>
           </Col>
@@ -832,7 +865,7 @@ function App() {
               <Menu.Item key='inverse'><DollarOutlined/>&nbsp; Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'><HistoryOutlined/>&nbsp; Bond</Menu.Item>
               <Menu.Item key='stake'
-                onClick={() => {setInverseAsset(CHERUB.symbol); setCurrentExchange(accounts.exchanges.find((x) => x.symbol === CHERUB.symbol))}}>
+                onClick={() => {setInverseAsset(CHERUB.symbol); getBalance(CHERUB.symbol)}}>
                 <PieChartOutlined/>&nbsp; Stake
               </Menu.Item>
             </Menu>
@@ -872,8 +905,7 @@ function App() {
         <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true' renderItem={exchange => (
           <List.Item className='Asset ListItem'>
             <List.Item.Meta title={exchange.symbol} onClick={() => {
-              setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false);
-              setCurrentExchange(accounts.exchanges.find((x) => x.symbol === exchange.symbol)); }}/>
+              setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false); getBalance(exchange.symbol)}}/>
         </List.Item>)}/>
       </Modal>
     </Layout>
