@@ -16,11 +16,11 @@ describe('Cherub', () => {
 
   const provider = anchor.getProvider();
 
-  const isLocalnet = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
+  const IS_LOCALNET = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899';
 
-  const browserWalletPublicKey = new PublicKey('8iA8BGF7Fx5VT16dqu1Rbgmved7KSgpCaSEXojWgMFgp');
+  const walletPublicKey = new PublicKey('8iA8BGF7Fx5VT16dqu1Rbgmved7KSgpCaSEXojWgMFgp');
 
-  const accountsFile = isLocalnet ? './app/src/accounts-localnet.json' : 'accounts-devnet.json';
+  const accountsFile = IS_LOCALNET ? './app/src/accounts-localnet.json' : './app/src/accounts-devnet.json';
 
   const exchange = anchor.workspace.Exchange;
   const factory = anchor.workspace.Factory;
@@ -43,7 +43,6 @@ describe('Cherub', () => {
   const exchangeAccount0 = anchor.web3.Keypair.generate();
   const exchangeAccount1 = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
-  const payerAccount = anchor.web3.Keypair.generate();
   const traderAccount = anchor.web3.Keypair.generate();
 
   let oracleFeedAccount0;
@@ -65,7 +64,7 @@ describe('Cherub', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const walletAmount0V = 100000 * (10 ** decimals0V);
+  const walletAmount0V = IS_LOCALNET ? 100000 * (10 ** decimals0V) : 1 * LAMPORTS_PER_SOL;
   const walletAmount1V = 100000 * (10 ** decimals1V);
 
   const traderAmount0V = 50000 * (10 ** decimals0V);
@@ -84,15 +83,15 @@ describe('Cherub', () => {
   };
 
   it('State initialized', async () => {
-    // TODO: Airdrop only works on localnet?
-    await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(payerAccount.publicKey, amountAirdrop), 'confirmed');
-    await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(browserWalletPublicKey, amountAirdrop), 'confirmed');
+    if (IS_LOCALNET) {
+      await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(walletPublicKey, amountAirdrop), 'confirmed');
+    }
 
-    tokenC = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimalsC, TOKEN_PROGRAM_ID);
-    tokenS = await Token.createMint(provider.connection, payerAccount, mintAuthority.publicKey, null, decimalsS, TOKEN_PROGRAM_ID);
+    tokenC = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimalsC, TOKEN_PROGRAM_ID);
+    tokenS = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimalsS, TOKEN_PROGRAM_ID);
 
     // First exchange token vault is SOL
-    token0V = new Token(provider.connection, NATIVE_MINT, TOKEN_PROGRAM_ID, payerAccount);
+    token0V = new Token(provider.connection, NATIVE_MINT, TOKEN_PROGRAM_ID, provider.wallet.payer);
 
     // Second exchange token vault is CHRB
     token1V = tokenC;
@@ -107,7 +106,7 @@ describe('Cherub', () => {
       provider.connection,
       TOKEN_PROGRAM_ID,
       provider.wallet.publicKey,
-      payerAccount,
+      provider.wallet.payer,
       walletAmount0V
     );
     walletTokenAccount1V = walletTokenAccountC;
