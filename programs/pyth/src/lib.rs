@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-mod utils;
+pub mod utils;
 use utils::{Price, PriceStatus};
 
 declare_id!("Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");

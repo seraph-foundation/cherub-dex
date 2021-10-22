@@ -203,7 +203,6 @@ function App() {
   const [inverseCard, setInverseCard] = useState('inverse');
   const [inverseDirection, setInverseDirection] = useState('long');
   const [inverseQuantity, setInverseQuantity] = useState();
-  const [inversePositionAccount, setInversePositionAccount] = useState();
   const [inversePositions, setInversePositions] = useState([]);
   const [inverseStep, setInverseStep] = useState(0);
   const [leverage, setLeverage] = useState(1);
@@ -225,7 +224,7 @@ function App() {
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
-  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositionAccount, inversePositions]);
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositions]);
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment);
@@ -240,7 +239,7 @@ function App() {
     });
   }
 
-  async function getPositions() {
+  async function getPositions(inversePositionAccount) {
     try {
       if (inversePositionAccount) {
         const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
@@ -382,7 +381,7 @@ function App() {
       const equityA = inverseQuantity * (10 ** mintInfoV.decimals);
       const positionAccount = Keypair.generate();
 
-      const tx = await exchange.rpc.aToBInput(
+      const tx = await exchange.rpc.bToAInput(
         new BN(aToBAmountA),
         new BN(Date.now() + 5000 / 1000),
         inverseDirection === 'long' ? Direction.Long : Direction.Short,
@@ -407,11 +406,12 @@ function App() {
       message = 'Order Successfully Placed';
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
 
-      setInversePositionAccount(positionAccount);
       setInverseStep(0);
       setLeverage(1);
       setInverseQuantity();
-      getInverseDataCallback(currentExchange.symbol);
+      getInverseData(currentExchange.symbol);
+      getBalance(currentExchange.symbol);
+      getPositions(positionAccount);
     } catch (err) {
       description = 'Transaction error';
       message = 'Order Error';
@@ -483,7 +483,7 @@ function App() {
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
       message = 'Order Successfully Place';
 
-      getInverseDataCallback(currentExchange.symbol);
+      getInverseData(currentExchange.symbol);
     } catch (err) {
       description = 'There was an error with your order';
       message = 'Order Error';
@@ -684,7 +684,7 @@ function App() {
               extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
               <br/>
-              <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
+              <p>The current price is ${(marketPrice * 0.9).toFixed(2)} with a 5 day lockup period</p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
             </Card>
           </div>
@@ -732,7 +732,7 @@ function App() {
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}}/>
               <br/>
-              <p>Your current balance is <strong>{balance > 0 ? (balance / 1).toFixed(2) : 0}</strong></p>
+              <br/>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>Approve</Button>
             </Card>
           </div>
@@ -839,10 +839,10 @@ function App() {
   useEffect(() => {
     if (wallet.connected && !isUserDataSet) {
       setIsUserDataSet(true);
-      getBalanceCallback(DEFAULT_SYMBOL);
+      getBalanceCallback(inverseAsset ? inverseAsset : DEFAULT_SYMBOL);
       getPositionsCallback();
     }
-  }, [getBalanceCallback, getPositionsCallback, isUserDataSet, wallet.connected]);
+  }, [getBalanceCallback, getPositionsCallback, inverseAsset, isUserDataSet, wallet.connected]);
 
   return (
     <Layout className='App Dark'>

@@ -7,6 +7,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, MintTo, SetAuthority, Transfer};
 use spl_token::instruction::AuthorityType::AccountOwner;
 
+use pyth::utils::Price;
+
 declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 /// Exchange
@@ -85,7 +87,10 @@ pub mod exchange {
             / ctx.accounts.mint_c.supply as f64) as u64;
         let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
         let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
-        token::transfer(ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]), amount_a)?;
+        token::transfer(
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
         token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
@@ -97,7 +102,6 @@ pub mod exchange {
     /// Price function for B to A trades with an exact input.
     ///
     /// amount_b Amount of B sold
-    /// [quote.price] Amount of A needed to buy input B
     pub fn get_b_to_a_input_price(
         ctx: Context<GetBToAOutputPrice>,
         amount_b: u64,
@@ -115,7 +119,6 @@ pub mod exchange {
     /// Price function for B to A trades with an exact output.
     ///
     /// amount_a Amount of output A bough
-    /// [quote.price] Amount of B needed to buy output A
     pub fn get_b_to_a_output_price(
         ctx: Context<GetBToAOutputPrice>,
         amount_a: u64,
@@ -133,6 +136,9 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
+    /// deadline Time after which this transaction can no longer be executed
+    /// direction Trade can be long or short
+    /// equity Collateral used
     pub fn a_to_b_input(
         ctx: Context<Swap>,
         amount_a: u64,
@@ -172,6 +178,9 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
+    /// deadline Time after which this transaction can no longer be executed
+    /// direction Trade can be long or short
+    /// equity Collateral used for position
     pub fn b_to_a_input(
         ctx: Context<Swap>,
         amount_b: u64,
@@ -211,6 +220,7 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact output)
+    /// deadline Time after which this transaction can no longer be executed
     pub fn b_to_a_output(
         ctx: Context<Swap>,
         amount_b: u64,
@@ -241,6 +251,7 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact output)
+    /// deadline Time after which this transaction can no longer be executed
     pub fn a_to_b_output(
         ctx: Context<Swap>,
         amount_a: u64,
@@ -265,6 +276,35 @@ pub mod exchange {
         exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
         exchange.supply_b -= amount_b;
+        Ok(())
+    }
+
+    /// Liquidate position. When margin drops to zero this is the bankruptcy price.
+    /// The bankruptcy and liquidation price spread goes to the insurance fund.
+    /// Initial margin is set at the beginning and can be calculated using the
+    /// order quantity and position equity. Maintenance margin is used to keep
+    /// the position open.
+    ///
+    /// deadline Time after which this transaction can no longer be executed
+    pub fn liquidate(ctx: Context<Update>, deadline: Option<i64>) -> ProgramResult {
+        let ts = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ts) >= ts);
+        let oracle = Price::load(&ctx.accounts.oracle).unwrap();
+        let position = &mut ctx.accounts.position;
+        let pnl = match position.direction {
+            Direction::Long => {
+                (1.0 / position.entry as f64 - 1.0 / oracle.agg.price as f64)
+                    * position.quantity as f64
+                    * position.equity as f64
+            }
+            Direction::Short => {
+                (1.0 / oracle.agg.price as f64 - 1.0 / position.entry as f64)
+                    * position.quantity as f64
+                    * position.equity as f64
+            }
+        };
+        assert!(pnl <= 0.0);
+        position.status = Status::Liquidated;
         Ok(())
     }
 }
@@ -340,6 +380,24 @@ pub struct Swap<'info> {
     pub position: Account<'info, PositionData>,
     #[account(mut)]
     pub recipient: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: AccountInfo<'info>,
+    #[account(mut)]
+    pub user_v: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct Update<'info> {
+    pub authority: Signer<'info>,
+    pub clock: Sysvar<'info, Clock>,
+    #[account(mut)]
+    pub exchange: Account<'info, ExchangeData>,
+    #[account(mut)]
+    pub exchange_v: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub oracle: AccountInfo<'info>,
+    #[account(mut)]
+    pub position: Account<'info, PositionData>,
     pub system_program: Program<'info, System>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
