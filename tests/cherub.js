@@ -64,7 +64,7 @@ describe('Cherub', () => {
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
-  const walletAmount0V = IS_LOCALNET ? 100000 * (10 ** decimals0V) : 1 * LAMPORTS_PER_SOL;
+  const walletAmount0V = IS_LOCALNET ? 100000 * (10 ** decimals0V) : 0;
   const walletAmount1V = 100000 * (10 ** decimals1V);
 
   const traderAmount0V = 50000 * (10 ** decimals0V);
@@ -231,13 +231,6 @@ describe('Cherub', () => {
     assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo1.data).price).eq(new anchor.BN(oracleInitPrice1)));
   });
 
-  // TODO: Finish this (https://github.com/Synthetify/synthetify-protocol/search?p=3&q=pyth)
-  it('Set first oracle feed', async() => {
-    //const tx = await pyth.rpc.setPrice(new BN(newPrice * 10 ** -data.exponent), {
-    //  accounts: { price: priceFeed }
-    //});
-  });
-
   it('Factory initialized', async () => {
     const tx = await factory.rpc.initialize(exchange.programId, {
       accounts: {
@@ -270,8 +263,8 @@ describe('Cherub', () => {
           exchangeProgram: exchange.programId,
           factory: factoryAccount.publicKey,
           tokenC: tokenC.publicKey,
-          tokenV: token0V.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID
+          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenV: token0V.publicKey
         },
         instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount0)],
         signers: [factoryAccount.owner, exchangeAccount0]

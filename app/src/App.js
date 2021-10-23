@@ -44,7 +44,6 @@ if (IS_LOCALHOST) {
 const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
 const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol';
-const logoText = 'Cherub';
 const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet');
 const opts = { preflightCommitment: 'processed' };
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
@@ -854,8 +853,7 @@ function App() {
         <Row>
           <Col span={6}>
             <div className='Logo Dark'>
-              <img src='/logo.png' alt='Logo' className='LogoImage'/>
-              <strong className='LogoText' onClick={() => window.open(githubUrl, '_blank')}>{logoText}</strong>
+              <img onClick={() => window.open(githubUrl, '_blank')} src='/logo.png' alt='Logo' className='LogoImage'/>
             </div>
           </Col>
           <Col span={12} className='ColCentered'>
