@@ -201,12 +201,11 @@ describe('Cherub', () => {
     );
     const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
     const description = 'Add AAVE, SUSHI, YFI';
-    const tx = await dao.rpc.createProposal(deadline, description, {
+    const tx = await dao.rpc.propose(deadline, description, {
       accounts: {
         authority: provider.wallet.publicKey,
         clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
         dao: daoAccount.publicKey,
-        pda: pda,
         proposal: proposalAccount0.publicKey,
         systemProgram: SystemProgram.programId
       },
@@ -231,7 +230,7 @@ describe('Cherub', () => {
     );
     const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
     const description = 'Move SOL/COPE stake to SOL/MANGO';
-    const tx = await dao.rpc.createProposal(deadline, description, {
+    const tx = await dao.rpc.propose(deadline, description, {
       accounts: {
         authority: provider.wallet.publicKey,
         clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
@@ -239,16 +238,7 @@ describe('Cherub', () => {
         proposal: proposalAccount1.publicKey,
         systemProgram: SystemProgram.programId
       },
-      instructions: [
-          anchor.web3.SystemProgram.createAccount({
-            fromPubkey: dao.provider.wallet.publicKey,
-            newAccountPubkey: pda,
-            space: 3312,
-            lamports: await dao.provider.connection.getMinimumBalanceForRentExemption(3312),
-            programId: dao.programId
-          })
-      ]
-      //signers: [proposalAccount1]
+      signers: [proposalAccount1]
     });
 
     console.log('Your transaction signature', tx);

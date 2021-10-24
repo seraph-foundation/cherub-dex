@@ -16,11 +16,7 @@ pub mod dao {
     }
 
     /// Creates a new proposal
-    pub fn create_proposal(
-        ctx: Context<CreateProposal>,
-        deadline: i64,
-        description: String,
-    ) -> ProgramResult {
+    pub fn propose(ctx: Context<Propose>, deadline: i64, description: String) -> ProgramResult {
         let dao = &mut ctx.accounts.dao;
         dao.proposals += 1;
         let proposal = &mut ctx.accounts.proposal;
@@ -49,7 +45,7 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct CreateProposal<'info> {
+pub struct Propose<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
