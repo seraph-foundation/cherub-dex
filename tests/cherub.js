@@ -192,62 +192,56 @@ describe('Cherub', () => {
     assert.ok(daoAccountInfo.proposals.eq(new anchor.BN(0)));
   });
 
-  const proposalAccount0 =  anchor.web3.Keypair.generate();
-
   it('Creates a proposal', async () => {
-    const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode(0))],
+    const [proposalPda, bump] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(anchor.utils.bytes.utf8.encode('0'))],
       dao.programId
     );
     const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
     const description = 'Add AAVE, SUSHI, YFI';
-    const tx = await dao.rpc.propose(deadline, description, {
+    const tx = await dao.rpc.propose(bump, deadline, description, {
       accounts: {
         authority: provider.wallet.publicKey,
         clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
         dao: daoAccount.publicKey,
-        proposal: proposalAccount0.publicKey,
+        proposal: proposalPda,
         systemProgram: SystemProgram.programId
-      },
-      signers: [proposalAccount0]
+      }
     });
 
     console.log('Your transaction signature', tx);
 
-    let proposalAccountInfo = await dao.account.proposalData.fetch(proposalAccount0.publicKey)
-    assert.ok(proposalAccountInfo.votes.eq(new anchor.BN(0)));
-    assert.ok(proposalAccountInfo.description === description);
-    assert.ok(proposalAccountInfo.deadline.eq(deadline));
-    assert.ok(proposalAccountInfo.index.eq(new anchor.BN(0)));
+    let proposalPdaAccountInfo = await dao.account.proposalData.fetch(proposalPda);
+    assert.ok(proposalPdaAccountInfo.votes.eq(new anchor.BN(0)));
+    assert.ok(proposalPdaAccountInfo.description === description);
+    assert.ok(proposalPdaAccountInfo.deadline.eq(deadline));
+    assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(0)));
   });
 
-  const proposalAccount1 =  anchor.web3.Keypair.generate();
-
-  it('Creates another proposal', async () => {
-    const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+  it('Creates a second proposal', async () => {
+    const [proposalPda, bump] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode(1))],
       dao.programId
     );
     const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
     const description = 'Move SOL/COPE stake to SOL/MANGO';
-    const tx = await dao.rpc.propose(deadline, description, {
+    const tx = await dao.rpc.propose(bump, deadline, description, {
       accounts: {
         authority: provider.wallet.publicKey,
         clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
         dao: daoAccount.publicKey,
-        proposal: proposalAccount1.publicKey,
+        proposal: proposalPda,
         systemProgram: SystemProgram.programId
-      },
-      signers: [proposalAccount1]
+      }
     });
 
     console.log('Your transaction signature', tx);
 
-    let proposalAccountInfo = await dao.account.proposalData.fetch(proposalAccount1.publicKey)
-    assert.ok(proposalAccountInfo.votes.eq(new anchor.BN(0)));
-    assert.ok(proposalAccountInfo.description === description);
-    assert.ok(proposalAccountInfo.deadline.eq(deadline));
-    assert.ok(proposalAccountInfo.index.eq(new anchor.BN(0)));
+    let proposalPdaAccountInfo = await dao.account.proposalData.fetch(proposalPda)
+    assert.ok(proposalPdaAccountInfo.votes.eq(new anchor.BN(0)));
+    assert.ok(proposalPdaAccountInfo.description === description);
+    assert.ok(proposalPdaAccountInfo.deadline.eq(deadline));
+    assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(1)));
   });
 
   const oracleInitPrice0 = 681.47;

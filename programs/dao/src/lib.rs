@@ -16,13 +16,19 @@ pub mod dao {
     }
 
     /// Creates a new proposal
-    pub fn propose(ctx: Context<Propose>, deadline: i64, description: String) -> ProgramResult {
-        let dao = &mut ctx.accounts.dao;
-        dao.proposals += 1;
+    pub fn propose(
+        ctx: Context<Propose>,
+        bump: u8,
+        deadline: i64,
+        description: String,
+    ) -> ProgramResult {
         let proposal = &mut ctx.accounts.proposal;
         proposal.created = ctx.accounts.clock.unix_timestamp;
         proposal.deadline = deadline;
         proposal.description = description;
+        let dao = &mut ctx.accounts.dao;
+        proposal.index = dao.proposals;
+        dao.proposals += 1;
         Ok(())
     }
 
@@ -50,7 +56,13 @@ pub struct Propose<'info> {
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub dao: Account<'info, DaoData>,
-    #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 256)]
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8 + 8 + 256,
+        seeds = [dao.proposals.to_string().as_bytes()],
+        bump
+    )]
     pub proposal: Account<'info, ProposalData>,
     pub system_program: Program<'info, System>,
 }
