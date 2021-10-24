@@ -28,6 +28,11 @@ describe('Cherub', () => {
   const factory = anchor.workspace.Factory;
   const pyth = anchor.workspace.Pyth;
 
+  fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl));
+  fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
+  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
+  fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
+
   let mintAuthority = provider.wallet;
 
   let tokenC;
@@ -62,11 +67,6 @@ describe('Cherub', () => {
 
   let traderTokenAccount0V;
   let traderTokenAccount1V;
-
-  fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl));
-  fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
-  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
-  fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
 
   const walletAmount0V = IS_LOCALNET ? 100000 * (10 ** decimals0V) : 0;
   const walletAmount1V = 100000 * (10 ** decimals1V);
@@ -126,6 +126,9 @@ describe('Cherub', () => {
 
     // Useful for Anchor CLI and app
     fs.writeFileSync(accountsFile, JSON.stringify({
+      dao: {
+        account: daoAccount.publicKey.toString()
+      },
       exchanges: [{
         account: exchangeAccount0.publicKey.toString(),
         // TODO: Can be derived using associated token account
@@ -194,7 +197,7 @@ describe('Cherub', () => {
 
   it('Creates a proposal', async () => {
     const [proposalPda, bump] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode('0'))],
+      [Buffer.from(anchor.utils.bytes.utf8.encode(0))],
       dao.programId
     );
     const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
@@ -244,11 +247,10 @@ describe('Cherub', () => {
     assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(1)));
   });
 
-  const oracleInitPrice0 = 681.47;
-  const oracleConf0 = 0;
-  const oracleExpo0 = -9;
-
   it('Initializes first Pyth oracle', async () => {
+    const oracleInitPrice0 = 681.47;
+    const oracleConf0 = 0;
+    const oracleExpo0 = -9;
     const tx = await pyth.rpc.initialize(
       new anchor.BN(oracleInitPrice0).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo0))),
       oracleExpo0,
@@ -274,11 +276,10 @@ describe('Cherub', () => {
     assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo0.data).price).eq(new anchor.BN(oracleInitPrice0)));
   });
 
-  const oracleInitPrice1 = 903.49;
-  const oracleConf1 = 0;
-  const oracleExpo1 = -9;
-
   it('Initializes second Pyth oracle', async () => {
+    const oracleInitPrice1 = 903.49;
+    const oracleConf1 = 0;
+    const oracleExpo1 = -9;
     const tx = await pyth.rpc.initialize(
       new anchor.BN(oracleInitPrice1).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo1))),
       oracleExpo1,
@@ -321,9 +322,8 @@ describe('Cherub', () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString());
   });
 
-  const fee0 = new anchor.BN(3);
-
   it('Factory exchange created', async () => {
+    const fee0 = new anchor.BN(3);
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId
@@ -653,9 +653,8 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)));
   });
 
-  const fee1 = new anchor.BN(3);
-
   it('Factory second exchange created', async () => {
+    const fee1 = new anchor.BN(3);
     const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
       [Buffer.from(anchor.utils.bytes.utf8.encode('exchange'))],
       exchange.programId

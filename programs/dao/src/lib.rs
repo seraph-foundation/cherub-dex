@@ -8,14 +8,18 @@ declare_id!("G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod dao {
     use super::*;
 
-    /// Initializes the DAO account
+    /// Initializes the DAO account.
     pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
         let dao = &mut ctx.accounts.dao;
         dao.proposals = 0;
         Ok(())
     }
 
-    /// Creates a new proposal
+    /// Creates a new proposal.
+    ///
+    /// bump Nonce used for PDA
+    /// deadline Unix timestamp for proposal voting deadline
+    /// description Proposal
     pub fn propose(
         ctx: Context<Propose>,
         bump: u8,
@@ -32,7 +36,7 @@ pub mod dao {
         Ok(())
     }
 
-    /// Votes on a proposal
+    /// Votes on a proposal.
     pub fn vote(ctx: Context<Vote>) -> ProgramResult {
         let proposal = &mut ctx.accounts.proposal;
         assert!(ctx.accounts.clock.unix_timestamp <= proposal.deadline);

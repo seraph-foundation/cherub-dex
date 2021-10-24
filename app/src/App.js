@@ -19,6 +19,7 @@ import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/walle
 import { parsePriceData } from '@pythnetwork/client';
 import { useEffect, useCallback, useState } from 'react';
 
+import daoIdl from './dao.json';
 import exchangeIdl from './exchange.json';
 import factoryIdl from './factory.json';
 import pythIdl from './pyth.json';
@@ -121,24 +122,6 @@ const stakePositionsColumns = [{
   key: 'status'
 }];
 
-const daoProposals = [{
-  description: '4 • September 25th, 2021',
-  icon: <ClockCircleOutlined className='ClockCircleOutlined'/>,
-  title: 'Move SOL/COPE stake to SOL/MANGO'
-}, {
-  description: '3 • Executed September 12th, 2021',
-  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>,
-  title: 'Contributor Grant: Tim Su'
-}, {
-  description: '2 • Executed September 2nd, 2021',
-  icon: <CloseCircleOutlined className='CloseCircleOutlined'/>,
-  title: 'Add AAVE, SUSHI, YFI'
-}, {
-  description: '1 • Executed September 1st, 2021',
-  icon: <CheckCircleOutlined className='CheckCircleOutlined'/>,
-  title: 'Set Pause Guardian to Community Multi-Sig'
-}];
-
 const treasuryData = {
   datasets: [{
     backgroundColor: '#69c0ff',
@@ -187,6 +170,7 @@ function App() {
   const [countdown, setCountdown] = useState('');
   const [marketPrice, setCurrentMarketPrice] = useState();
   const [daoCard, setDAOCard] = useState('statistics');
+  const [daoProposals, setDaoProposals] = useState([]);
   const [exchangeRate, setExchangeRate] = useState(0);
   const [fundingRate, setFundingRate] = useState();
   // eslint-disable-next-line
@@ -310,8 +294,34 @@ function App() {
       setCCurrentPrice(currencyFormat(lastPrice / 1));
       setCMarketCap(currencyFormat(lastPrice * supplyC));
 
-      const account = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
-      setTokenCount(account.tokenCount.toNumber());
+      const factoryAccount = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
+      setTokenCount(factoryAccount.tokenCount.toNumber());
+
+      const dao = new Program(daoIdl, new PublicKey(daoIdl.metadata.address), provider);
+      const daoAccount = await dao.account.daoData.fetch(new PublicKey(accounts.dao.account));
+
+      const proposals = [];
+      for (var i = 0; i < daoAccount.proposals.toNumber(); i++) {
+        // eslint-disable-next-line
+        const [proposalPda, bump] = await PublicKey.findProgramAddress(
+          [Buffer.from(utils.bytes.utf8.encode(i))],
+          dao.programId
+        );
+        const proposalAccount = await dao.account.proposalData.fetch(proposalPda);
+        const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000);
+        let icon = <CloseCircleOutlined className='CloseCircleOutlined'/>;
+        if (deadlineDate > new Date()) {
+          icon = <CheckCircleOutlined className='ClockCircleOutlined'/>;
+        } else {
+          icon = <ClockCircleOutlined className='ClockCircleOutlined'/>;
+        }
+        proposals.push({
+          description: proposalAccount.index.toNumber() + ' • ' + deadlineDate,
+          icon: icon,
+          title: proposalAccount.description
+        });
+      }
+      setDaoProposals(proposals);
     } catch (err) {
       console.log(err);
     }
