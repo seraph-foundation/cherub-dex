@@ -8,6 +8,13 @@ wallet = "~/.config/solana/id.json"
 factory = "GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 exchange = "Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 pyth = "Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+dao = "G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[programs.devnet]
+factory = "GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+exchange = "Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+pyth = "Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+dao = "G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 
 [registry]
 url = "https://anchor.projectserum.com"

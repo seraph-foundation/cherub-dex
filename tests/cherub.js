@@ -5,6 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const { parsePriceData } = require('@pythnetwork/client');
 
+const daoIdl = require('../target/idl/dao.json');
 const exchangeIdl = require('../target/idl/exchange.json');
 const factoryIdl = require('../target/idl/factory.json');
 const pythIdl = require('../target/idl/pyth.json');
@@ -22,6 +23,7 @@ describe('Cherub', () => {
 
   const accountsFile = IS_LOCALNET ? './app/src/accounts-localnet.json' : './app/src/accounts-devnet.json';
 
+  const dao = anchor.workspace.Dao;
   const exchange = anchor.workspace.Exchange;
   const factory = anchor.workspace.Factory;
   const pyth = anchor.workspace.Pyth;
@@ -40,6 +42,7 @@ describe('Cherub', () => {
   // Second exchange token vault is CHRB
   const decimals1V = decimalsC;
 
+  const daoAccount = anchor.web3.Keypair.generate();
   const exchangeAccount0 = anchor.web3.Keypair.generate();
   const exchangeAccount1 = anchor.web3.Keypair.generate();
   const factoryAccount = anchor.web3.Keypair.generate();
@@ -60,6 +63,7 @@ describe('Cherub', () => {
   let traderTokenAccount0V;
   let traderTokenAccount1V;
 
+  fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl));
   fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl));
   fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl));
   fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl));
@@ -169,6 +173,82 @@ describe('Cherub', () => {
 
     let tokenInfoC = await tokenC.getMintInfo();
     assert.ok(tokenInfoC.supply.toNumber() == 0);
+  });
+
+  it('Initializes the DAO', async () => {
+    const tx = await dao.rpc.initialize({
+      accounts: {
+        authority: provider.wallet.publicKey,
+        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+        dao: daoAccount.publicKey,
+        systemProgram: SystemProgram.programId
+      },
+      signers: [daoAccount]
+    });
+
+    console.log('Your transaction signature', tx);
+
+    let daoAccountInfo = await dao.account.daoData.fetch(daoAccount.publicKey)
+    assert.ok(daoAccountInfo.proposals.eq(new anchor.BN(0)));
+  });
+
+  const proposalAccount0 =  anchor.web3.Keypair.generate();
+
+  it('Creates a proposal', async () => {
+    const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(anchor.utils.bytes.utf8.encode(0))],
+      dao.programId
+    );
+    const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
+    const description = 'Add AAVE, SUSHI, YFI';
+    const tx = await dao.rpc.createProposal(deadline, description, {
+      accounts: {
+        authority: provider.wallet.publicKey,
+        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+        dao: daoAccount.publicKey,
+        pda: pda,
+        proposal: proposalAccount0.publicKey,
+        systemProgram: SystemProgram.programId
+      },
+      signers: [proposalAccount0]
+    });
+
+    console.log('Your transaction signature', tx);
+
+    let proposalAccountInfo = await dao.account.proposalData.fetch(proposalAccount0.publicKey)
+    assert.ok(proposalAccountInfo.votes.eq(new anchor.BN(0)));
+    assert.ok(proposalAccountInfo.description === description);
+    assert.ok(proposalAccountInfo.deadline.eq(deadline));
+    assert.ok(proposalAccountInfo.index.eq(new anchor.BN(0)));
+  });
+
+  const proposalAccount1 =  anchor.web3.Keypair.generate();
+
+  it('Creates another proposal', async () => {
+    const [pda, nonce] = await anchor.web3.PublicKey.findProgramAddress(
+      [Buffer.from(anchor.utils.bytes.utf8.encode(1))],
+      dao.programId
+    );
+    const deadline = new anchor.BN((Date.now() + (60 * 60 * 24 * 3)) / 1000);
+    const description = 'Move SOL/COPE stake to SOL/MANGO';
+    const tx = await dao.rpc.createProposal(deadline, description, {
+      accounts: {
+        authority: provider.wallet.publicKey,
+        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+        dao: daoAccount.publicKey,
+        proposal: proposalAccount1.publicKey,
+        systemProgram: SystemProgram.programId
+      },
+      signers: [proposalAccount1]
+    });
+
+    console.log('Your transaction signature', tx);
+
+    let proposalAccountInfo = await dao.account.proposalData.fetch(proposalAccount1.publicKey)
+    assert.ok(proposalAccountInfo.votes.eq(new anchor.BN(0)));
+    assert.ok(proposalAccountInfo.description === description);
+    assert.ok(proposalAccountInfo.deadline.eq(deadline));
+    assert.ok(proposalAccountInfo.index.eq(new anchor.BN(0)));
   });
 
   const oracleInitPrice0 = 681.47;
