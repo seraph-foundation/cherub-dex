@@ -239,7 +239,16 @@ describe('Cherub', () => {
         proposal: proposalAccount1.publicKey,
         systemProgram: SystemProgram.programId
       },
-      signers: [proposalAccount1]
+      instructions: [
+          anchor.web3.SystemProgram.createAccount({
+            fromPubkey: dao.provider.wallet.publicKey,
+            newAccountPubkey: pda,
+            space: 3312,
+            lamports: await dao.provider.connection.getMinimumBalanceForRentExemption(3312),
+            programId: dao.programId
+          })
+      ]
+      //signers: [proposalAccount1]
     });
 
     console.log('Your transaction signature', tx);
