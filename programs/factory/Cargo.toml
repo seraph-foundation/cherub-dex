@@ -16,7 +16,7 @@ mainnet = []
 testnet = []
 devnet = []
 localnet = []
-default = ["localnet"]
+default = ["devnet"]
 
 [dependencies]
 anchor-lang = "0.16.2"

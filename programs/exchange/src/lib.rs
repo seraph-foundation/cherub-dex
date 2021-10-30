@@ -10,9 +10,9 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 use pyth::utils::Price;
 
 #[cfg(feature = "devnet")]
-declare_id!("5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ");
+declare_id!("8PY65Eu4Cv8xwfS6Qz6baFgDCfNiG8E977Yj2kQCDg9C");
 #[cfg(not(any(feature = "devnet")))]
-declare_id!("5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ");
+declare_id!("2Psde5E6oLMKoU5RiLKozQMpwRq9TGP2gKCosWV8UebW");
 
 /// Exchange
 #[program]
@@ -359,6 +359,7 @@ pub struct Unbond<'info> {
     pub exchange_v: AccountInfo<'info>,
     #[account(mut, constraint = mint_c.supply > 0)]
     pub mint_c: Account<'info, Mint>,
+    pub pda: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     #[account(mut, constraint = amount_c > 0)]
     pub user_c: AccountInfo<'info>,
@@ -467,7 +468,7 @@ impl<'info> Unbond<'info> {
         let cpi_accounts = Transfer {
             from: self.exchange_v.to_account_info(),
             to: self.user_v.to_account_info(),
-            authority: self.authority.to_account_info(),
+            authority: self.pda.to_account_info(),
         };
         CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
     }

@@ -2,9 +2,9 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
 #[cfg(feature = "devnet")]
-declare_id!("4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38");
+declare_id!("2JYkXVNXs24fwWPXsU3wPjL9PZn93aKxcDNpzocwi5RU");
 #[cfg(not(any(feature = "devnet")))]
-declare_id!("4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38");
+declare_id!("3H69j4Jat4upLchz9yFoDzVdeVMVDFYSuyVC7ZsrqipY");
 
 /// DAO
 #[program]
@@ -12,9 +12,8 @@ pub mod dao {
     use super::*;
 
     /// Initializes the DAO account.
-    pub fn initialize(ctx: Context<Initialize>, authority: Pubkey) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
         let dao = &mut ctx.accounts.dao;
-        dao.authority = authority;
         dao.proposals = 0;
         Ok(())
     }
@@ -87,7 +86,6 @@ pub struct Vote<'info> {
 
 #[account]
 pub struct DaoData {
-    pub authority: Pubkey,
     pub proposals: u64,
 }
 

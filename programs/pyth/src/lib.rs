@@ -3,9 +3,9 @@ pub mod utils;
 use utils::{Price, PriceStatus};
 
 #[cfg(feature = "devnet")]
-declare_id!("BGVfTwcM2dTzvCTyYCoEdYdXWdYSYKGhkcEhBssJPakn");
+declare_id!("FVtRxMZPkkTm4zVr1MNi8HPKLYXLSt14oE1LydGketK6");
 #[cfg(not(any(feature = "devnet")))]
-declare_id!("BGVfTwcM2dTzvCTyYCoEdYdXWdYSYKGhkcEhBssJPakn");
+declare_id!("8K39TqyCiv429v6KKmyQ82u9enwSuPH8TJdi3g5fCSwk");
 
 #[program]
 pub mod pyth {
