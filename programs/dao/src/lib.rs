@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
-declare_id!("G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+#[cfg(feature = "devnet")]
+declare_id!("4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38");
+#[cfg(not(any(feature = "devnet")))]
+declare_id!("4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38");
 
 /// DAO
 #[program]
@@ -9,8 +12,9 @@ pub mod dao {
     use super::*;
 
     /// Initializes the DAO account.
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>, authority: Pubkey) -> ProgramResult {
         let dao = &mut ctx.accounts.dao;
+        dao.authority = authority;
         dao.proposals = 0;
         Ok(())
     }
@@ -47,9 +51,9 @@ pub mod dao {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
-    pub clock: Sysvar<'info, Clock>,
-    #[account(init, payer = authority, space = 8 + 8)]
+    #[account(init, payer = authority, space = 8 + 40)]
     pub dao: Account<'info, DaoData>,
     pub system_program: Program<'info, System>,
 }
@@ -63,7 +67,7 @@ pub struct Propose<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 8 + 8 + 8 + 256,
+        space = 8 + 8 + 8 + 8 + 8 + 256,
         seeds = [dao.proposals.to_string().as_bytes()],
         bump
     )]
@@ -83,6 +87,7 @@ pub struct Vote<'info> {
 
 #[account]
 pub struct DaoData {
+    pub authority: Pubkey,
     pub proposals: u64,
 }
 

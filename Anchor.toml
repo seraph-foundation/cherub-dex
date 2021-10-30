@@ -1,20 +1,18 @@
-anchor_version = "0.16.2"
-
 [provider]
-cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+cluster = "devnet"
+wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [programs.localnet]
-factory = "GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-exchange = "Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-pyth = "Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-dao = "G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+dao = "4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38"
+exchange = "5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ"
+factory = "5ZmVJ4j5iZTyBJKMKpfDqxMr1wfKVNYHheZC4tKWdeaC"
+pyth = "BGVfTwcM2dTzvCTyYCoEdYdXWdYSYKGhkcEhBssJPakn"
 
 [programs.devnet]
-factory = "GyuPaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-exchange = "Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-pyth = "Gz9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-dao = "G79PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+dao = "4NQzmUoot2wLACXbkSZLLUAVCfjBxAx9M6sVmCSHaE38"
+exchange = "5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ"
+factory = "5ZmVJ4j5iZTyBJKMKpfDqxMr1wfKVNYHheZC4tKWdeaC"
+pyth = "BGVfTwcM2dTzvCTyYCoEdYdXWdYSYKGhkcEhBssJPakn"
 
 [registry]
 url = "https://anchor.projectserum.com"

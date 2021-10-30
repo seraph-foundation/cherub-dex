@@ -9,7 +9,10 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 
 use pyth::utils::Price;
 
-declare_id!("Gx9PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+#[cfg(feature = "devnet")]
+declare_id!("5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ");
+#[cfg(not(any(feature = "devnet")))]
+declare_id!("5wruGah8XQEhtpALeQufRYrQSYW6FpUYw3NfWr18AHXZ");
 
 /// Exchange
 #[program]
@@ -142,9 +145,11 @@ pub mod exchange {
     pub fn a_to_b_input(
         ctx: Context<Swap>,
         amount_a: u64,
+        bump: u8,
         deadline: Option<i64>,
         direction: Direction,
         equity: u64,
+        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -184,9 +189,11 @@ pub mod exchange {
     pub fn b_to_a_input(
         ctx: Context<Swap>,
         amount_b: u64,
+        bump: u8,
         deadline: Option<i64>,
         direction: Direction,
         equity: u64,
+        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -225,6 +232,7 @@ pub mod exchange {
         ctx: Context<Swap>,
         amount_b: u64,
         deadline: Option<i64>,
+        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -256,6 +264,7 @@ pub mod exchange {
         ctx: Context<Swap>,
         amount_a: u64,
         deadline: Option<i64>,
+        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -368,6 +377,7 @@ pub struct GetBToAOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(index: u64, bump: u8)]
 pub struct Swap<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
@@ -376,7 +386,13 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub exchange_v: UncheckedAccount<'info>,
     pub pda: UncheckedAccount<'info>,
-    #[account(init, payer = authority, space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)]
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8,
+        seeds = [exchange.token_v.key().as_ref(), authority.key().as_ref()],
+        bump
+    )]
     pub position: Account<'info, PositionData>,
     #[account(mut)]
     pub recipient: UncheckedAccount<'info>,
