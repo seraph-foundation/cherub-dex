@@ -19,9 +19,6 @@ declare_id!("2Psde5E6oLMKoU5RiLKozQMpwRq9TGP2gKCosWV8UebW");
 pub mod exchange {
     use super::*;
 
-    // TODO: This should use token pk for exchange PDAs
-    const EXCHANGE_PDA_SEED: &[u8] = b"exchange";
-
     /// This function acts as a contract constructor which is not currently
     /// supported in contracts deployed using `initialize()` which is called
     /// once by the factory during contract creation.
@@ -36,7 +33,7 @@ pub mod exchange {
         exchange.supply_b = 0;
         exchange.token_c = ctx.accounts.token_c.key();
         exchange.token_v = ctx.accounts.token_v.key();
-        let (pda, _nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
+        let (pda, _) = Pubkey::find_program_address(&[exchange.token_v.as_ref()], ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
         Ok(())
     }
@@ -88,8 +85,9 @@ pub mod exchange {
             / ctx.accounts.mint_c.supply as f64) as u64;
         let amount_b = (amount_c as f64 * ctx.accounts.exchange.supply_b as f64
             / ctx.accounts.mint_c.supply as f64) as u64;
-        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        let (_, nonce) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -149,7 +147,6 @@ pub mod exchange {
         deadline: Option<i64>,
         direction: Direction,
         equity: u64,
-        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -160,8 +157,9 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        let (_, nonce) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -193,7 +191,6 @@ pub mod exchange {
         deadline: Option<i64>,
         direction: Direction,
         equity: u64,
-        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -204,8 +201,9 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        let (_, nonce) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -232,7 +230,6 @@ pub mod exchange {
         ctx: Context<Swap>,
         amount_b: u64,
         deadline: Option<i64>,
-        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -243,8 +240,9 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        let (_, nonce) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -264,7 +262,6 @@ pub mod exchange {
         ctx: Context<Swap>,
         amount_a: u64,
         deadline: Option<i64>,
-        index: u64,
     ) -> ProgramResult {
         let ts = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ts) >= ts);
@@ -275,8 +272,9 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        let (_pda, nonce) = Pubkey::find_program_address(&[EXCHANGE_PDA_SEED], ctx.program_id);
-        let seeds = &[&EXCHANGE_PDA_SEED[..], &[nonce]];
+        let (_, nonce) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_b,
@@ -378,29 +376,29 @@ pub struct GetBToAOutputPrice<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(index: u64, bump: u8)]
+#[instruction(bump: u8)]
 pub struct Swap<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
-    pub exchange_v: UncheckedAccount<'info>,
-    pub pda: UncheckedAccount<'info>,
+    pub exchange_v: AccountInfo<'info>,
+    pub pda: AccountInfo<'info>,
     #[account(
         init,
         payer = authority,
         space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8,
-        seeds = [exchange.token_v.key().as_ref(), authority.key().as_ref()],
+        seeds = [b"position", exchange.token_v.as_ref(), authority.key.as_ref()],
         bump
     )]
     pub position: Account<'info, PositionData>,
     #[account(mut)]
-    pub recipient: UncheckedAccount<'info>,
+    pub recipient: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
-    pub user_v: UncheckedAccount<'info>,
+    pub user_v: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

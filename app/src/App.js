@@ -11,7 +11,7 @@ import {
   BankOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DollarOutlined, DownOutlined, HistoryOutlined, PieChartOutlined,
   SettingOutlined
 } from '@ant-design/icons'
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js'
 import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react'
 import { Line } from 'react-chartjs-2'
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
@@ -116,10 +116,6 @@ const stakePositionsColumns = [{
   title: 'APY',
   dataIndex: 'apy',
   key: 'apy'
-}, {
-  title: 'Status',
-  dataIndex: 'status',
-  key: 'status'
 }]
 
 const treasuryData = {
@@ -203,11 +199,11 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider])
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected, wallet.publicKey])
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected])
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback])
-  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositions])
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset])
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment)
@@ -222,25 +218,52 @@ function App() {
     })
   }
 
-  async function getPositions(inversePositionAccount) {
+  async function getPositions() {
+    const provider = await getProviderCallback()
+
     try {
-      if (inversePositionAccount) {
-        const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
-        const provider = await getProviderCallback()
-        const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
-        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
+      const mintInfoV = await tokenV.getMintInfo()
 
-        const mintInfoA = await tokenV.getMintInfo()
-        const positionAccount = await exchange.account.positionData.fetch(new PublicKey(inversePositionAccount.publicKey))
+      // eslint-disable-next-line
+      const [positionPda, positionBump] = await PublicKey.findProgramAddress(
+        [Buffer.from(utils.bytes.utf8.encode('position')), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
+        exchange.programId
+      )
+      const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
 
-        // TODO: There should only be one position per exchange per wallet
+      if (positionDataAccount) {
         setInversePositions([{
-          key: (inversePositions.length + 1).toString(),
-          quantity: (positionAccount.quantity.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
-          entry: (positionAccount.entry.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
-          equity: (positionAccount.equity.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
-          direction: positionAccount.direction.long ? 'Long' : 'Short',
-          status: positionAccount.status.open ? 'Open' : (positionAccount.status.closed ? 'Closed' : 'Liquidated')
+          direction: positionDataAccount.direction.long ? 'Long' : 'Short',
+          entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+          equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+          key: 0,
+          quantity: (positionDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+          status: positionDataAccount.status.open ? 'Open' : (positionDataAccount.status.closed ? 'Closed' : 'Liquidated')
+        }])
+      }
+    } catch(e) {
+      console.log(e)
+    }
+
+    try {
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID, null)
+      const walletTokenAccountS = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenS.publicKey,
+        provider.wallet.publicKey
+      )
+      const accountInfoS = await tokenS.getAccountInfo(walletTokenAccountS)
+      const mintInfoS = await tokenS.getMintInfo()
+      const amountS = accountInfoS.amount.toNumber()
+      if (amountS > 0) {
+        setStakePositions([{
+          quantity: (amountS / (10 ** mintInfoS.decimals)).toFixed(2),
+          apy: '12%',
+          key: 0
         }])
       }
     } catch(e) {
@@ -253,21 +276,16 @@ function App() {
       if (wallet.connected) {
         const currentExchange = accounts.exchanges.find((x) => x.symbol === asset)
         const provider = await getProviderCallback()
-        if (currentExchange.tokenV === SOL.tokenV) {
-          const balance = await provider.connection.getBalance(wallet.publicKey)
-          setBalance(balance / LAMPORTS_PER_SOL)
-        } else {
-          const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
-          const walletTokenAccountV = await Token.getAssociatedTokenAddress(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
-            tokenV.publicKey,
-            provider.wallet.publicKey
-          )
-          const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
-          const mintInfoV = await tokenV.getMintInfo()
-          setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2))
-        }
+        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
+        const walletTokenAccountV = await Token.getAssociatedTokenAddress(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          tokenV.publicKey,
+          provider.wallet.publicKey
+        )
+        const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
+        const mintInfoV = await tokenV.getMintInfo()
+        setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2))
       }
     } catch (err) {
       console.log(err)
@@ -309,14 +327,15 @@ function App() {
         )
         const proposalAccount = await dao.account.proposalData.fetch(proposalPda)
         const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000)
-        let icon = <CloseCircleOutlined className='CloseCircleOutlined'/>
+        let icon = (<CloseCircleOutlined className='CloseCircleOutlined'/>)
         if (deadlineDate > new Date()) {
           icon = <CheckCircleOutlined className='ClockCircleOutlined'/>
         } else {
           icon = <ClockCircleOutlined className='ClockCircleOutlined'/>
         }
+        let deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'})
         proposals.push({
-          description: proposalAccount.index.toNumber() + ' • ' + deadlineDate,
+          description: proposalAccount.index.toNumber() + ' • ' + deadline,
           icon: icon,
           title: proposalAccount.description
         })
@@ -418,9 +437,9 @@ function App() {
       setInverseStep(0)
       setLeverage(1)
       setInverseQuantity()
+      getPositions()
       getInverseData(currentExchange.symbol)
       getBalance(currentExchange.symbol)
-      getPositions(positionAccount)
     } catch (err) {
       description = 'Transaction error'
       message = 'Order Error'
@@ -546,6 +565,11 @@ function App() {
       )
       const link = 'https://explorer.solana.com/tx/' + tx
 
+      setStakeStep(0)
+      setStakeDeposit()
+      getBalance()
+      getPositions()
+
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
       message = 'Stake Successfully Placed'
     } catch (err) {
@@ -553,9 +577,6 @@ function App() {
       message = 'Stake Error'
       console.log(err)
     }
-
-    setStakeStep(0)
-    setStakeDeposit()
 
     notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'})
   }
@@ -693,7 +714,7 @@ function App() {
               extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
               <br/>
-              <p>The current price is ${(marketPrice * 0.9).toFixed(2)} with a 5 day lockup period</p>
+              <p>Your current rate is ${(marketPrice * 0.9).toFixed(2)} with a 5 day lockup period</p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
             </Card>
           </div>
