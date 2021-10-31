@@ -1,60 +1,60 @@
-import 'antd/dist/antd.css';
-import '@solana/wallet-adapter-react-ui/styles.css';
-import './App.css';
+import 'antd/dist/antd.css'
+import '@solana/wallet-adapter-react-ui/styles.css'
+import './App.css'
 
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } from '@solana/spl-token'
 import {
   Alert, Button, Card, Col, Dropdown, Input, Layout, List, Modal, Menu, Radio, Row, Select, Slider, Steps, Table, Typography, notification
-} from 'antd';
-import { BN, Program, Provider, utils } from '@project-serum/anchor';
+} from 'antd'
+import { BN, Program, Provider, utils } from '@project-serum/anchor'
 import {
   BankOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DollarOutlined, DownOutlined, HistoryOutlined, PieChartOutlined,
   SettingOutlined
-} from '@ant-design/icons';
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js';
-import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react';
-import { Line } from 'react-chartjs-2';
-import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets';
-import { parsePriceData } from '@pythnetwork/client';
-import { useEffect, useCallback, useState } from 'react';
+} from '@ant-design/icons'
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js'
+import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react'
+import { Line } from 'react-chartjs-2'
+import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets'
+import { parsePriceData } from '@pythnetwork/client'
+import { useEffect, useCallback, useState } from 'react'
 
-import daoIdl from './dao.json';
-import exchangeIdl from './exchange.json';
-import factoryIdl from './factory.json';
-import pythIdl from './pyth.json';
+import daoIdl from './dao.json'
+import exchangeIdl from './exchange.json'
+import factoryIdl from './factory.json'
+import pythIdl from './pyth.json'
 
-const { Content, Footer, Header } = Layout;
-const { Option } = Select;
-const { Step } = Steps;
-const { Title } = Typography;
+const { Content, Footer, Header } = Layout
+const { Option } = Select
+const { Step } = Steps
+const { Title } = Typography
 
-const LOCALHOST = 'http://localhost:3000';
-const LOCALNET = 'http://127.0.0.1:8899';
+const LOCALHOST = 'http://localhost:3000'
+const LOCALNET = 'http://127.0.0.1:8899'
 
-const IS_LOCALHOST = window.location.origin === LOCALHOST;
+const IS_LOCALHOST = window.location.origin === LOCALHOST
 
-let accounts = {};
+let accounts = {}
 
 if (IS_LOCALHOST) {
-  accounts = require('./accounts-localnet.json');
+  accounts = require('./accounts-localnet.json')
 } else {
-  accounts = require('./accounts-devnet.json');
+  accounts = require('./accounts-devnet.json')
 }
 
-const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB');
-const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL');
-const githubUrl = 'https://github.com/cherub-so/cherub-protocol';
-const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet');
-const opts = { preflightCommitment: 'processed' };
-const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()];
+const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB')
+const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL')
+const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
+const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet')
+const opts = { preflightCommitment: 'processed' }
+const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()]
 
-const DEFAULT_SYMBOL = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol;
+const DEFAULT_SYMBOL = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol
 
 const Direction = {
   Long: { long: {} },
   Short: { short: {} }
-};
+}
 
 const chartOptions = {
   scales: {
@@ -84,7 +84,7 @@ const bondPositionsColumns = [{
   title: 'Status',
   dataIndex: 'status',
   key: 'status'
-}];
+}]
 
 const inversePositionsColumns = [{
   title: 'Quantity',
@@ -106,7 +106,7 @@ const inversePositionsColumns = [{
   title: 'Status',
   dataIndex: 'status',
   key: 'status'
-}];
+}]
 
 const stakePositionsColumns = [{
   title: 'Quantity',
@@ -120,7 +120,7 @@ const stakePositionsColumns = [{
   title: 'Status',
   dataIndex: 'status',
   key: 'status'
-}];
+}]
 
 const treasuryData = {
   datasets: [{
@@ -130,7 +130,7 @@ const treasuryData = {
     fill: true
   }],
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-};
+}
 
 const tvdData = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -140,98 +140,98 @@ const tvdData = {
     data: [0, 5, 10, 33, 35, 51, 54, 76],
     fill: true
   }]
-};
+}
 
 function currencyFormat(x) {
-  return '$' + x.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+  return '$' + x.toFixed(0).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
 }
 
 function getWindowRoute() {
-  const routes = ['dao', 'inverse', 'stake', 'bond'];
+  const routes = ['dao', 'inverse', 'stake', 'bond']
   if (window.location.href.split('#/').length === 2 && routes.indexOf(window.location.href.split('#/')[1]) >= 0) {
-    return window.location.href.split('#/')[1];
+    return window.location.href.split('#/')[1]
   } else {
     // First route is default route
-    return routes[0];
+    return routes[0]
   }
 }
 
 function App() {
-  const [balance, setBalance] = useState(0);
-  const [blockHeight, setBlockHeight] = useState(0);
-  const [bondCard, setBondCard] = useState('bond');
-  const [bondDeposit, setBondDeposit] = useState();
+  const [balance, setBalance] = useState(0)
+  const [blockHeight, setBlockHeight] = useState(0)
+  const [bondCard, setBondCard] = useState('bond')
+  const [bondDeposit, setBondDeposit] = useState()
   // eslint-disable-next-line
-  const [bondPositions, setBondPositions] = useState([]);
-  const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0');
-  const [cCurrentPrice, setCCurrentPrice] = useState(0);
-  const [cMarketCap, setCMarketCap] = useState(0);
-  const [change24H, setChange24H] = useState();
-  const [countdown, setCountdown] = useState('');
-  const [marketPrice, setCurrentMarketPrice] = useState();
-  const [daoCard, setDAOCard] = useState('statistics');
-  const [daoProposals, setDaoProposals] = useState([]);
-  const [exchangeRate, setExchangeRate] = useState(0);
-  const [fundingRate, setFundingRate] = useState();
+  const [bondPositions, setBondPositions] = useState([])
+  const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0')
+  const [cCurrentPrice, setCCurrentPrice] = useState(0)
+  const [cMarketCap, setCMarketCap] = useState(0)
+  const [change24H, setChange24H] = useState()
+  const [countdown, setCountdown] = useState('')
+  const [marketPrice, setCurrentMarketPrice] = useState()
+  const [daoCard, setDAOCard] = useState('statistics')
+  const [daoProposals, setDaoProposals] = useState([])
+  const [exchangeRate, setExchangeRate] = useState(0)
+  const [fundingRate, setFundingRate] = useState()
   // eslint-disable-next-line
-  const [gasFee, setGasFee] = useState();
-  const [high24H, setHigh24H] = useState();
-  const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false);
-  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false);
-  const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false);
-  const [isInverseDataSet, setIsInverseDataSet] = useState(false);
-  const [isUserDataSet, setIsUserDataSet] = useState(false);
-  const [indexPrice, setIndexPrice] = useState();
-  const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL);
-  const [inverseCard, setInverseCard] = useState('inverse');
-  const [inverseDirection, setInverseDirection] = useState('long');
-  const [inverseQuantity, setInverseQuantity] = useState();
-  const [inversePositions, setInversePositions] = useState([]);
-  const [inverseStep, setInverseStep] = useState(0);
-  const [leverage, setLeverage] = useState(1);
-  const [low24H, setLow24H] = useState();
-  const [menu, setMenu] = useState('');
-  const [stakeCard, setStakeCard] = useState('stake');
-  const [stakeDeposit, setStakeDeposit] = useState();
-  const [stakeStep, setStakeStep] = useState(0);
+  const [gasFee, setGasFee] = useState()
+  const [high24H, setHigh24H] = useState()
+  const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false)
+  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false)
+  const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false)
+  const [isInverseDataSet, setIsInverseDataSet] = useState(false)
+  const [isUserDataSet, setIsUserDataSet] = useState(false)
+  const [indexPrice, setIndexPrice] = useState()
+  const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL)
+  const [inverseCard, setInverseCard] = useState('inverse')
+  const [inverseDirection, setInverseDirection] = useState('long')
+  const [inverseQuantity, setInverseQuantity] = useState()
+  const [inversePositions, setInversePositions] = useState([])
+  const [inverseStep, setInverseStep] = useState(0)
+  const [leverage, setLeverage] = useState(1)
+  const [low24H, setLow24H] = useState()
+  const [menu, setMenu] = useState('')
+  const [stakeCard, setStakeCard] = useState('stake')
+  const [stakeDeposit, setStakeDeposit] = useState()
+  const [stakeStep, setStakeStep] = useState(0)
   // eslint-disable-next-line
-  const [stakePositions, setStakePositions] = useState([]);
-  const [tokenCount, setTokenCount] = useState(0);
-  const [turnaround24H, setTurnaround24H] = useState();
+  const [stakePositions, setStakePositions] = useState([])
+  const [tokenCount, setTokenCount] = useState(0)
+  const [turnaround24H, setTurnaround24H] = useState()
 
-  const wallet = useWallet();
+  const wallet = useWallet()
 
-  const getProviderCallback = useCallback(getProvider, [getProvider]);
+  const getProviderCallback = useCallback(getProvider, [getProvider])
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected, wallet.publicKey]);
-  const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback]);
-  const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback]);
-  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback]);
-  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositions]);
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected, wallet.publicKey])
+  const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
+  const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
+  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback])
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset, inversePositions])
 
   async function getProvider() {
-    const connection = new Connection(network, opts.preflightCommitment);
-    return new Provider(connection, wallet, opts.preflightCommitment);
+    const connection = new Connection(network, opts.preflightCommitment)
+    return new Provider(connection, wallet, opts.preflightCommitment)
   }
 
   function getBlockHeight() {
     getProviderCallback().then((provider) => {
       provider.connection.getEpochInfo().then(function(epochInfo) {
-        setBlockHeight(epochInfo.blockHeight);
-      });
-    });
+        setBlockHeight(epochInfo.blockHeight)
+      })
+    })
   }
 
   async function getPositions(inversePositionAccount) {
     try {
       if (inversePositionAccount) {
-        const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
-        const provider = await getProviderCallback();
-        const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null);
+        const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
+        const provider = await getProviderCallback()
+        const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
+        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
 
-        const mintInfoA = await tokenV.getMintInfo();
-        const positionAccount = await exchange.account.positionData.fetch(new PublicKey(inversePositionAccount.publicKey));
+        const mintInfoA = await tokenV.getMintInfo()
+        const positionAccount = await exchange.account.positionData.fetch(new PublicKey(inversePositionAccount.publicKey))
 
         // TODO: There should only be one position per exchange per wallet
         setInversePositions([{
@@ -241,154 +241,154 @@ function App() {
           equity: (positionAccount.equity.toNumber() / (10 ** mintInfoA.decimals)).toFixed(2),
           direction: positionAccount.direction.long ? 'Long' : 'Short',
           status: positionAccount.status.open ? 'Open' : (positionAccount.status.closed ? 'Closed' : 'Liquidated')
-        }]);
+        }])
       }
     } catch(e) {
-      console.log(e);
+      console.log(e)
     }
   }
 
   async function getBalance(asset) {
     try {
       if (wallet.connected) {
-        const currentExchange = accounts.exchanges.find((x) => x.symbol === asset);
-        const provider = await getProviderCallback();
+        const currentExchange = accounts.exchanges.find((x) => x.symbol === asset)
+        const provider = await getProviderCallback()
         if (currentExchange.tokenV === SOL.tokenV) {
-          const balance = await provider.connection.getBalance(wallet.publicKey);
-          setBalance(balance / LAMPORTS_PER_SOL);
+          const balance = await provider.connection.getBalance(wallet.publicKey)
+          setBalance(balance / LAMPORTS_PER_SOL)
         } else {
-          const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
+          const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
           const walletTokenAccountV = await Token.getAssociatedTokenAddress(
             ASSOCIATED_TOKEN_PROGRAM_ID,
             TOKEN_PROGRAM_ID,
             tokenV.publicKey,
             provider.wallet.publicKey
-          );
-          const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV);
-          const mintInfoV = await tokenV.getMintInfo();
-          setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2));
+          )
+          const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
+          const mintInfoV = await tokenV.getMintInfo()
+          setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2))
         }
       }
     } catch (err) {
-      console.log(err);
+      console.log(err)
     }
   }
 
   async function getDashboardData() {
     try {
-      const provider = await getProviderCallback();
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+      const provider = await getProviderCallback()
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
+      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider)
 
-      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
-      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
-      const mintInfoC = await tokenC.getMintInfo();
-      const mintInfoS = await tokenS.getMintInfo();
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID)
+      const mintInfoC = await tokenC.getMintInfo()
+      const mintInfoS = await tokenS.getMintInfo()
 
-      const supplyS = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals);
-      const supplyC = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals);
-      setCCirculatingSupplyTotal((supplyC - supplyS).toFixed(0) + ' / ' + supplyC.toFixed(0));
+      const supplyS = mintInfoS.supply.toNumber() / (10 ** mintInfoS.decimals)
+      const supplyC = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals)
+      setCCirculatingSupplyTotal((supplyC - supplyS).toFixed(0) + ' / ' + supplyC.toFixed(0))
 
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account));
-      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2);
-      setCCurrentPrice(currencyFormat(lastPrice / 1));
-      setCMarketCap(currencyFormat(lastPrice * supplyC));
+      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account))
+      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2)
+      setCCurrentPrice(currencyFormat(lastPrice / 1))
+      setCMarketCap(currencyFormat(lastPrice * supplyC))
 
-      const factoryAccount = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account));
-      setTokenCount(factoryAccount.tokenCount.toNumber());
+      const factoryAccount = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account))
+      setTokenCount(factoryAccount.tokenCount.toNumber())
 
-      const dao = new Program(daoIdl, new PublicKey(daoIdl.metadata.address), provider);
-      const daoAccount = await dao.account.daoData.fetch(new PublicKey(accounts.dao.account));
+      const dao = new Program(daoIdl, new PublicKey(daoIdl.metadata.address), provider)
+      const daoAccount = await dao.account.daoData.fetch(new PublicKey(accounts.dao.account))
 
-      const proposals = [];
+      const proposals = []
       for (var i = 0; i < daoAccount.proposals.toNumber(); i++) {
         // eslint-disable-next-line
         const [proposalPda, bump] = await PublicKey.findProgramAddress(
           [Buffer.from(utils.bytes.utf8.encode(i))],
           dao.programId
-        );
-        const proposalAccount = await dao.account.proposalData.fetch(proposalPda);
-        const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000);
-        let icon = <CloseCircleOutlined className='CloseCircleOutlined'/>;
+        )
+        const proposalAccount = await dao.account.proposalData.fetch(proposalPda)
+        const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000)
+        let icon = <CloseCircleOutlined className='CloseCircleOutlined'/>
         if (deadlineDate > new Date()) {
-          icon = <CheckCircleOutlined className='ClockCircleOutlined'/>;
+          icon = <CheckCircleOutlined className='ClockCircleOutlined'/>
         } else {
-          icon = <ClockCircleOutlined className='ClockCircleOutlined'/>;
+          icon = <ClockCircleOutlined className='ClockCircleOutlined'/>
         }
         proposals.push({
           description: proposalAccount.index.toNumber() + ' • ' + deadlineDate,
           icon: icon,
           title: proposalAccount.description
-        });
+        })
       }
-      setDaoProposals(proposals);
+      setDaoProposals(proposals)
     } catch (err) {
-      console.log(err);
+      console.log(err)
     }
   }
 
   function setDummyInverseData(lastPrice, indexPrice) {
-    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0));
-    setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0);
-    setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2));
-    setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2));
-    setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0));
+    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0))
+    setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0)
+    setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2))
+    setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2))
+    setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0))
   }
 
   async function getInverseData(asset) {
     try {
-      const currentExchange = accounts.exchanges.find((x) => x.symbol === asset);
-      const provider = await getProviderCallback();
-      const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account);
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === asset)
+      const provider = await getProviderCallback()
+      const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account)
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
 
-      const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey);
-      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenV;
-      const tokenV = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null);
-      const mintAInfo = await tokenV.getMintInfo();
-      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2);
+      const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey)
+      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenV
+      const tokenV = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null)
+      const mintAInfo = await tokenV.getMintInfo()
+      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2)
 
-      const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider);
-      const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle));
-      const indexPrice = parsePriceData(pythFeedAccountInfo.data).price;
+      const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider)
+      const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle))
+      const indexPrice = parsePriceData(pythFeedAccountInfo.data).price
 
-      setCurrentMarketPrice(lastPrice);
-      setIndexPrice(indexPrice.toFixed(2));
-      setExchangeRate((1 / lastPrice).toFixed(4));
-      setDummyInverseData(lastPrice, indexPrice);
+      setCurrentMarketPrice(lastPrice)
+      setIndexPrice(indexPrice.toFixed(2))
+      setExchangeRate((1 / lastPrice).toFixed(4))
+      setDummyInverseData(lastPrice, indexPrice)
     } catch (err) {
-      console.log(err);
+      console.log(err)
     }
 
-    setInverseStep(0);
-    setInverseQuantity();
+    setInverseStep(0)
+    setInverseQuantity()
   }
 
   async function approveInverse() {
-    let message;
-    let description;
+    let message
+    let description
 
     try {
-      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
-      const provider = await getProviderCallback();
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
-      const exchangePublicKey = new PublicKey(currentExchange.account);
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
+      const provider = await getProviderCallback()
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
+      const exchangePublicKey = new PublicKey(currentExchange.account)
 
-      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
-      const mintInfoV = await tokenV.getMintInfo();
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
+      const mintInfoV = await tokenV.getMintInfo()
 
       const walletTokenAccountV = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenV.publicKey,
         provider.wallet.publicKey
-      );
+      )
 
       // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
-      const aToBAmountA = inverseQuantity * leverage * (10 ** mintInfoV.decimals);
-      const equityA = inverseQuantity * (10 ** mintInfoV.decimals);
-      const positionAccount = Keypair.generate();
+      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId)
+      const aToBAmountA = inverseQuantity * leverage * (10 ** mintInfoV.decimals)
+      const equityA = inverseQuantity * (10 ** mintInfoV.decimals)
+      const positionAccount = Keypair.generate()
 
       const tx = await exchange.rpc.bToAInput(
         new BN(aToBAmountA),
@@ -409,67 +409,67 @@ function App() {
             userV: walletTokenAccountV
           },
           signers: [positionAccount]
-        });
-      const link = 'https://explorer.solana.com/tx/' + tx;
+        })
+      const link = 'https://explorer.solana.com/tx/' + tx
 
-      message = 'Order Successfully Placed';
-      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
+      message = 'Order Successfully Placed'
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
 
-      setInverseStep(0);
-      setLeverage(1);
-      setInverseQuantity();
-      getInverseData(currentExchange.symbol);
-      getBalance(currentExchange.symbol);
-      getPositions(positionAccount);
+      setInverseStep(0)
+      setLeverage(1)
+      setInverseQuantity()
+      getInverseData(currentExchange.symbol)
+      getBalance(currentExchange.symbol)
+      getPositions(positionAccount)
     } catch (err) {
-      description = 'Transaction error';
-      message = 'Order Error';
-      console.log(err);
+      description = 'Transaction error'
+      message = 'Order Error'
+      console.log(err)
     }
 
-    notification.open({message: message, description: description, duration: 0, placement: 'bottomLeft'});
+    notification.open({message: message, description: description, duration: 0, placement: 'bottomLeft'})
   }
 
   async function approveBond() {
-    let message;
-    let description;
+    let message
+    let description
 
     try {
-      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset);
-      const provider = await getProviderCallback();
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider);
+      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
+      const provider = await getProviderCallback()
+      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
 
-      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
-      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID);
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
 
-      const mintInfoV = await tokenV.getMintInfo();
+      const mintInfoV = await tokenV.getMintInfo()
 
       const walletTokenAccountC = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenC.publicKey,
         provider.wallet.publicKey
-      );
+      )
 
-      let walletTokenAccountV;
+      let walletTokenAccountV
       if (currentExchange.symbol === SOL.symbol) {
         // SOL account is not associated token address
-        walletTokenAccountV = new PublicKey(accounts.user.sol);
+        walletTokenAccountV = new PublicKey(accounts.user.sol)
       } else {
         walletTokenAccountV = await Token.getAssociatedTokenAddress(
           ASSOCIATED_TOKEN_PROGRAM_ID,
           TOKEN_PROGRAM_ID,
           tokenV.publicKey,
           provider.wallet.publicKey
-        );
+        )
       }
 
       // TODO: Not accurate
-      const maxAmountA = bondDeposit * (10 ** mintInfoV.decimals);
-      const amountB = (maxAmountA / (marketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals);
-      const minLiquidityC = amountB / 1000;
+      const maxAmountA = bondDeposit * (10 ** mintInfoV.decimals)
+      const amountB = (maxAmountA / (marketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals)
+      const minLiquidityC = amountB / 1000
       // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId);
+      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId)
 
       const tx = await exchange.rpc.bond(
         new BN(maxAmountA.toFixed(0)),
@@ -486,50 +486,50 @@ function App() {
             userC: walletTokenAccountC,
             userV: walletTokenAccountV
           }
-        });
-      const link = 'https://explorer.solana.com/tx/' + tx;
+        })
+      const link = 'https://explorer.solana.com/tx/' + tx
 
-      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
-      message = 'Order Successfully Place';
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
+      message = 'Order Successfully Place'
 
-      getInverseData(currentExchange.symbol);
+      getInverseData(currentExchange.symbol)
     } catch (err) {
-      description = 'There was an error with your order';
-      message = 'Order Error';
-      console.log(err);
+      description = 'There was an error with your order'
+      message = 'Order Error'
+      console.log(err)
     }
 
-    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'});
+    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'})
 
-    setBondDeposit();
+    setBondDeposit()
   }
 
   async function approveStake() {
-    let description;
-    let message;
+    let description
+    let message
 
     try {
-      const provider = await getProviderCallback();
-      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider);
+      const provider = await getProviderCallback()
+      const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider)
 
-      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID);
-      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID);
-      const mintInfoC = await tokenC.getMintInfo();
+      const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
+      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID)
+      const mintInfoC = await tokenC.getMintInfo()
 
       const walletTokenAccountC = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenC.publicKey,
         provider.wallet.publicKey
-      );
+      )
       const walletTokenAccountS = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenS.publicKey,
         provider.wallet.publicKey
-      );
+      )
 
-      const amountC = stakeDeposit * (10 ** mintInfoC.decimals);
+      const amountC = stakeDeposit * (10 ** mintInfoC.decimals)
 
       const tx = await factory.rpc.stake(
         new BN(amountC), {
@@ -543,32 +543,32 @@ function App() {
             userS: walletTokenAccountS,
           }
         }
-      );
-      const link = 'https://explorer.solana.com/tx/' + tx;
+      )
+      const link = 'https://explorer.solana.com/tx/' + tx
 
-      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>);
-      message = 'Stake Successfully Placed';
+      description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
+      message = 'Stake Successfully Placed'
     } catch (err) {
-      description = 'Transaction error';
-      message = 'Stake Error';
-      console.log(err);
+      description = 'Transaction error'
+      message = 'Stake Error'
+      console.log(err)
     }
 
-    setStakeStep(0);
-    setStakeDeposit();
+    setStakeStep(0)
+    setStakeDeposit()
 
-    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'});
+    notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'})
   }
 
   function calculateCountdown() {
-    const today = new Date();
-    const deadline = new Date();
-    deadline.setHours(24, 0, 0, 0);
-    const delta = deadline.getTime() - today.getTime();
-    const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
-    const secs = Math.floor((delta % (1000 * 60)) / 1000);
-    setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2));
+    const today = new Date()
+    const deadline = new Date()
+    deadline.setHours(24, 0, 0, 0)
+    const delta = deadline.getTime() - today.getTime()
+    const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60))
+    const secs = Math.floor((delta % (1000 * 60)) / 1000)
+    setCountdown(('0' + hours).slice(-2) + ':' + ('0' + mins).slice(-2) + ':' + ('0' + secs).slice(-2))
   }
 
   const settingsMenu = (
@@ -576,11 +576,11 @@ function App() {
       <Menu.Item key='github' onClick={() => window.open(githubUrl, '_blank')}>GitHub</Menu.Item>
       <Menu.Item key='discord'>Discord</Menu.Item>
     </Menu>
-  );
+  )
 
   const assetTitleModal = (
     <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
-  );
+  )
 
   const inverseStatsBar = (
     <Row className='InverseStatsBar'>
@@ -611,19 +611,19 @@ function App() {
       </Col>
       <Col span={3}></Col>
     </Row>
-  );
+  )
 
   const inverseQuantityDescription = (
     <small>Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
         className='White'>{inverseQuantity > 0 ? (inverseQuantity / marketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
-  );
+  )
 
-  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>);
+  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>)
 
   const leverageDescription = (
     <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
         {inverseQuantity > 0 ? (inverseQuantity / marketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
-  );
+  )
 
   const inverseView = (
     <>
@@ -680,7 +680,7 @@ function App() {
         <Col span={6}></Col>
       </Row>
     </>
-  );
+  )
 
   const bondView = (
     <>
@@ -714,13 +714,13 @@ function App() {
       </Row>
       }
     </>
-  );
+  )
 
   const stakeDescription = (
     <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {CHERUB.symbol.toUpperCase()}</span>&nbsp;
       is set to earn <span className='White'>12% APY</span>
     </small>
-  );
+  )
 
   const stakeView = (
     <Row>
@@ -756,7 +756,7 @@ function App() {
       }
       <Col span={6}></Col>
     </Row>
-  );
+  )
 
   const daoView = (
     <>
@@ -817,41 +817,41 @@ function App() {
       </Row>
       }
     </>
-  );
+  )
 
   useEffect(() => {
-    setMenu(getWindowRoute());
-  }, [setMenu]);
+    setMenu(getWindowRoute())
+  }, [setMenu])
 
   useEffect(() => {
     if (!isBlockHeightIntervalSet) {
-      setIsBlockHeightIntervalSet(true);
-      setInterval(getBlockHeightCallback, 10000);
+      setIsBlockHeightIntervalSet(true)
+      setInterval(getBlockHeightCallback, 10000)
     }
-  }, [isBlockHeightIntervalSet, getBlockHeightCallback]);
+  }, [isBlockHeightIntervalSet, getBlockHeightCallback])
 
   useEffect(() => {
     if (!isCountdownIntervalSet) {
-      setIsCountdownIntervalSet(true);
-      setInterval(calculateCountdown, 1000);
+      setIsCountdownIntervalSet(true)
+      setInterval(calculateCountdown, 1000)
     }
-  }, [isCountdownIntervalSet, setIsCountdownIntervalSet]);
+  }, [isCountdownIntervalSet, setIsCountdownIntervalSet])
 
   useEffect(() => {
     if (!isInverseDataSet) {
-      setIsInverseDataSet(true);
-      getDashboardDataCallback();
-      getInverseDataCallback(DEFAULT_SYMBOL);
+      setIsInverseDataSet(true)
+      getDashboardDataCallback()
+      getInverseDataCallback(DEFAULT_SYMBOL)
     }
-  }, [getDashboardDataCallback, getInverseDataCallback, isInverseDataSet]);
+  }, [getDashboardDataCallback, getInverseDataCallback, isInverseDataSet])
 
   useEffect(() => {
     if (wallet.connected && !isUserDataSet) {
-      setIsUserDataSet(true);
-      getBalanceCallback(inverseAsset ? inverseAsset : DEFAULT_SYMBOL);
-      getPositionsCallback();
+      setIsUserDataSet(true)
+      getBalanceCallback(inverseAsset ? inverseAsset : DEFAULT_SYMBOL)
+      getPositionsCallback()
     }
-  }, [getBalanceCallback, getPositionsCallback, inverseAsset, isUserDataSet, wallet.connected]);
+  }, [getBalanceCallback, getPositionsCallback, inverseAsset, isUserDataSet, wallet.connected])
 
   return (
     <Layout className='App Dark'>
@@ -917,7 +917,7 @@ function App() {
         </List.Item>)}/>
       </Modal>
     </Layout>
-  );
+  )
 }
 
 const AppWithProvider = () => (
@@ -928,6 +928,6 @@ const AppWithProvider = () => (
       </WalletModalProvider>
     </WalletProvider>
   </ConnectionProvider>
-);
+)
 
-export default AppWithProvider;
+export default AppWithProvider

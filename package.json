@@ -1,6 +1,6 @@
 {
   "name": "cherub-protocol",
-  "author": "Pindaroso",
+  "author": "Pindaroso <me@pindaroso.com>",
   "version": "0.1.0",
   "description": "Inverse Perpetuals (3, 3) DAO",
   "scripts": {

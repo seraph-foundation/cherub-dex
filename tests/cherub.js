@@ -25,15 +25,13 @@ describe('Cherub', () => {
   const factory = anchor.workspace.Factory
   const pyth = anchor.workspace.Pyth
 
-  fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl))
-  fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl))
-  fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl))
-  fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl))
-
   let mintAuthority = provider.wallet
 
   let tokenC
   let tokenS
+
+  let token0V
+  let token1V
 
   const decimalsC = 9
   const decimalsS = 9
@@ -46,8 +44,8 @@ describe('Cherub', () => {
   const exchangeAccount1 = anchor.web3.Keypair.generate()
   const factoryAccount = anchor.web3.Keypair.generate()
 
-  let oracleFeedAccount0
-  let oracleFeedAccount1
+  let oracleAccount0 = anchor.web3.Keypair.generate()
+  let oracleAccount1 = anchor.web3.Keypair.generate()
 
   let exchangeTokenAccount0V
   let exchangeTokenAccount1V
@@ -87,7 +85,7 @@ describe('Cherub', () => {
     token0V = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimals0V, TOKEN_PROGRAM_ID)
     token1V = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimals1V, TOKEN_PROGRAM_ID)
 
-    factoryTokenAccountC = await tokenC.createAccount(provider.wallet.publicKey)
+    factoryTokenAccountC = await tokenC.createAssociatedTokenAccount(factoryAccount.publicKey)
 
     walletTokenAccountC = await tokenC.createAssociatedTokenAccount(provider.wallet.publicKey)
     walletTokenAccountS = await tokenS.createAssociatedTokenAccount(provider.wallet.publicKey)
@@ -98,42 +96,10 @@ describe('Cherub', () => {
     exchangeTokenAccount0V = await token0V.createAssociatedTokenAccount(exchangeAccount0.publicKey)
     exchangeTokenAccount1V = await token1V.createAssociatedTokenAccount(exchangeAccount1.publicKey)
 
-    oracleFeedAccount0 = new anchor.web3.Account()
-    oracleFeedAccount1 = new anchor.web3.Account()
+    await token0V.mintTo(walletTokenAccount0V, mintAuthority.publicKey, [], walletAmount0V);
+    await token1V.mintTo(walletTokenAccount1V, mintAuthority.publicKey, [], walletAmount1V);
 
-    await token0V.mintTo(walletTokenAccount0V, provider.wallet.publicKey, [], walletAmount0V);
-    await token1V.mintTo(walletTokenAccount1V, provider.wallet.publicKey, [], walletAmount1V);
-
-    // Useful for Anchor CLI and app
-    fs.writeFileSync(accountsFile, JSON.stringify({
-      dao: {
-        account: daoAccount.publicKey.toString()
-      },
-      exchanges: [{
-        account: exchangeAccount0.publicKey.toString(),
-        // TODO: Can be derived using associated token account
-        accountV: exchangeTokenAccount0V.toString(),
-        oracle: oracleFeedAccount0.publicKey.toString(),
-        symbol: 'SOL',
-        tokenV: token0V.publicKey.toString()
-      }, {
-        account: exchangeAccount1.publicKey.toString(),
-        // TODO: Can be derived using associated token account
-        accountV: exchangeTokenAccount1V.toString(),
-        oracle: oracleFeedAccount1.publicKey.toString(),
-        symbol: 'CHRB',
-        tokenV: token1V.publicKey.toString()
-      }],
-      factory: {
-        account: factoryAccount.publicKey.toString(),
-        accountC: factoryTokenAccountC.toString(),
-        tokenC: tokenC.publicKey.toString(),
-        tokenS: tokenS.publicKey.toString()
-      },
-      user: {
-        sol: walletTokenAccount0V.toString()
-      }
-    }))
+    console.log('Your wallet was airdropped', airdropAmount / LAMPORTS_PER_SOL, 'SOL')
 
     let walletTokenAccountInfoV = await token0V.getAccountInfo(walletTokenAccount0V)
     assert.ok(walletTokenAccountInfoV.amount.toNumber() == walletAmount0V)
@@ -151,6 +117,43 @@ describe('Cherub', () => {
 
     let tokenInfoC = await tokenC.getMintInfo()
     assert.ok(tokenInfoC.supply.toNumber() == 0)
+
+    let tokenInfoS = await tokenS.getMintInfo()
+    assert.ok(tokenInfoS.supply.toNumber() == 0)
+  })
+
+  it('State: Save', async () => {
+    fs.writeFileSync(accountsFile, JSON.stringify({
+      dao: {
+        account: daoAccount.publicKey.toString()
+      },
+      exchanges: [{
+        account: exchangeAccount0.publicKey.toString(),
+        accountV: exchangeTokenAccount0V.toString(),
+        oracle: oracleAccount0.publicKey.toString(),
+        symbol: 'SOL',
+        tokenV: token0V.publicKey.toString()
+      }, {
+        account: exchangeAccount1.publicKey.toString(),
+        accountV: exchangeTokenAccount1V.toString(),
+        oracle: oracleAccount1.publicKey.toString(),
+        symbol: 'CHRB',
+        tokenV: token1V.publicKey.toString()
+      }],
+      factory: {
+        account: factoryAccount.publicKey.toString(),
+        accountC: factoryTokenAccountC.toString(),
+        tokenC: tokenC.publicKey.toString(),
+        tokenS: tokenS.publicKey.toString()
+      }
+    }))
+
+    console.log('Your accounts have been written to', accountsFile)
+
+    fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl))
+    fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl))
+    fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl))
+    fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl))
   })
 
   it('DAO: Initializes', async () => {
@@ -230,24 +233,24 @@ describe('Cherub', () => {
       oracleExpo0,
       new anchor.BN(oracleConf0), {
         accounts: {
-          price: oracleFeedAccount0.publicKey
+          price: oracleAccount0.publicKey
         },
         instructions: [
           anchor.web3.SystemProgram.createAccount({
             fromPubkey: pyth.provider.wallet.publicKey,
-            newAccountPubkey: oracleFeedAccount0.publicKey,
+            newAccountPubkey: oracleAccount0.publicKey,
             space: 3312,
             lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
             programId: pyth.programId
           })
         ],
-        signers: [oracleFeedAccount0]
+        signers: [oracleAccount0]
       })
 
     console.log('Your transaction signature', tx)
 
-    const oracleFeedAccountInfo0 = await pyth.provider.connection.getAccountInfo(oracleFeedAccount0.publicKey)
-    assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo0.data).price).eq(new anchor.BN(oracleInitPrice0)))
+    const oracleAccountInfo0 = await pyth.provider.connection.getAccountInfo(oracleAccount0.publicKey)
+    assert.ok(new anchor.BN(parsePriceData(oracleAccountInfo0.data).price).eq(new anchor.BN(oracleInitPrice0)))
   })
 
   it('Pyth: Initializes second oracle', async () => {
@@ -259,24 +262,24 @@ describe('Cherub', () => {
       oracleExpo1,
       new anchor.BN(oracleConf1), {
         accounts: {
-          price: oracleFeedAccount1.publicKey
+          price: oracleAccount1.publicKey
         },
         instructions: [
           anchor.web3.SystemProgram.createAccount({
             fromPubkey: pyth.provider.wallet.publicKey,
-            newAccountPubkey: oracleFeedAccount1.publicKey,
+            newAccountPubkey: oracleAccount1.publicKey,
             space: 3312,
             lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
             programId: pyth.programId
           })
         ],
-        signers: [oracleFeedAccount1]
+        signers: [oracleAccount1]
       })
 
     console.log('Your transaction signature', tx)
 
-    const oracleFeedAccountInfo1 = await pyth.provider.connection.getAccountInfo(oracleFeedAccount1.publicKey)
-    assert.ok(new anchor.BN(parsePriceData(oracleFeedAccountInfo1.data).price).eq(new anchor.BN(oracleInitPrice1)))
+    const oracleAccountInfo1 = await pyth.provider.connection.getAccountInfo(oracleAccount1.publicKey)
+    assert.ok(new anchor.BN(parsePriceData(oracleAccountInfo1.data).price).eq(new anchor.BN(oracleInitPrice1)))
   })
 
   it('Factory: Initializes', async () => {
