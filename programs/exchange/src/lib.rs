@@ -9,10 +9,7 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 
 use pyth::utils::Price;
 
-#[cfg(feature = "devnet")]
-declare_id!("J2WkWo3HM45ifKKrG6Q5siV2V3zfRhKab1NhCgdV57VQ");
-#[cfg(not(any(feature = "devnet")))]
-declare_id!("2Psde5E6oLMKoU5RiLKozQMpwRq9TGP2gKCosWV8UebW");
+declare_id!("7wcUmVSTQEWhz7j4ut5mMvFzZDgoyextTjY7DGtAYgdN");
 
 /// Exchange
 #[program]

@@ -223,9 +223,9 @@ describe('Cherub', () => {
   })
 
   it('DAO: Creates proposal (index 1)', async () => {
+    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([toBuffer(1)], dao.programId)
     const deadline = (Date.now() + (60 * 60 * 24 * 4)) / 1000
     const description = 'Move SOL/COPE stake to SOL/MANGO'
-    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([toBuffer(1)], dao.programId)
     const tx = await dao.rpc.propose(proposalBump, new anchor.BN(deadline), description, {
       accounts: {
         authority: provider.wallet.publicKey,
@@ -321,8 +321,8 @@ describe('Cherub', () => {
   })
 
   it('Factory: Creates exchange (index 0)', async () => {
-    const fee0 = 3
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const fee0 = 3
     const tx = await factory.rpc.createExchange(
       new anchor.BN(fee0), {
         accounts: {
@@ -562,11 +562,11 @@ describe('Cherub', () => {
   const aToBAmountA = 3 * (10 ** decimals1V)
 
   it('Exchange (index 0): A to B input', async () => {
-    const deadline = Date.now() / 1000
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
       toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(0)
     ], exchange.programId)
+    const deadline = Date.now() / 1000
     const tx = await exchange.rpc.aToBInput(
       new anchor.BN(aToBAmountA),
       positionBump,
@@ -603,11 +603,11 @@ describe('Cherub', () => {
   const bToAAmountB = 6 * (10 ** decimals0V)
 
   it('Exchange (index 0): B to A input', async () => {
-    const deadline = Date.now() / 1000
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
       toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(1)
     ], exchange.programId)
+    const deadline = Date.now() / 1000
     const tx = await exchange.rpc.bToAInput(
       new anchor.BN(bToAAmountB),
       positionBump,
@@ -716,8 +716,8 @@ describe('Cherub', () => {
   })
 
   it('Factory: Creates exchange (index 1)', async () => {
-    const fee1 = 3
     const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress([token1V.publicKey.toBuffer()], exchange.programId)
+    const fee1 = 3
     const tx = await factory.rpc.createExchange(
       new anchor.BN(fee1), {
         accounts: {

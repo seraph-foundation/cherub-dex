@@ -8,10 +8,7 @@ use anchor_spl::token::{self, Mint, MintTo, TokenAccount, Transfer};
 
 use exchange::{self, Create, ExchangeData};
 
-#[cfg(feature = "devnet")]
-declare_id!("CDFYYHHiuhBVYPf8UL42TCn4XnpFoPhiFEzKj8GuBVgL");
-#[cfg(not(any(feature = "devnet")))]
-declare_id!("2euwxQkkuAvVsaF3kvKuJMKb72KKDM8aHVM2pUuBC82R");
+declare_id!("3g1faa22VqQxatvFBcMTCp4fpKFsxTEnwpW6MAvCPsG5");
 
 /// Factory
 #[program]

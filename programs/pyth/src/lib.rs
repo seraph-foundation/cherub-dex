@@ -2,10 +2,7 @@ use anchor_lang::prelude::*;
 pub mod utils;
 use utils::{Price, PriceStatus};
 
-#[cfg(feature = "devnet")]
-declare_id!("GLncE8HkQtnVP9ZcwCia4PHdveWAJ2ERoovH1E4ruLyX");
-#[cfg(not(any(feature = "devnet")))]
-declare_id!("8K39TqyCiv429v6KKmyQ82u9enwSuPH8TJdi3g5fCSwk");
+declare_id!("3sCEFk7G6WkwREWYLaHnu1xN7cAWU7MbtZB5YEgoxUNx");
 
 #[program]
 pub mod pyth {

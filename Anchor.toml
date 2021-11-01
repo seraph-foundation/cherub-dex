@@ -9,10 +9,10 @@ factory = "2euwxQkkuAvVsaF3kvKuJMKb72KKDM8aHVM2pUuBC82R"
 pyth = "8K39TqyCiv429v6KKmyQ82u9enwSuPH8TJdi3g5fCSwk"
 
 [programs.devnet]
-dao = "H6SCeRrELFXgFPAJZTsaAvkNr9oZTTBgF1ofMGVcZSmD"
-exchange = "J2WkWo3HM45ifKKrG6Q5siV2V3zfRhKab1NhCgdV57VQ"
-factory = "CDFYYHHiuhBVYPf8UL42TCn4XnpFoPhiFEzKj8GuBVgL"
-pyth = "GLncE8HkQtnVP9ZcwCia4PHdveWAJ2ERoovH1E4ruLyX"
+dao = "8PwBf4MonxVfJadkpSu8bLRksx4C9XfvuTDx5RzPouPj"
+exchange = "7wcUmVSTQEWhz7j4ut5mMvFzZDgoyextTjY7DGtAYgdN"
+factory = "3g1faa22VqQxatvFBcMTCp4fpKFsxTEnwpW6MAvCPsG5"
+pyth = "3sCEFk7G6WkwREWYLaHnu1xN7cAWU7MbtZB5YEgoxUNx"
 
 [registry]
 url = "https://anchor.projectserum.com"

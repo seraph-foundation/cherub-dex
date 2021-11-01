@@ -12,16 +12,32 @@ Inverse Perpetuals (3, 3) DAO
 
 **Running**
 
+A solana wallet and SOL are required to start.
+
+```bash
+solana-keygen new
+solana airdrop 5
+```
+
 Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on the command.
 
 ```bash
-yarn test:localnet
+yarn protocol:test:localnet
 ```
 
-Start the frontend app.
+Start the app.
 
 ```bash
-yarn start:app
+yarn app:start
+```
+
+To deploy the entire protocol, follow below.
+
+```bash
+yarn protocol:build:devnet
+yarn protocol:deploy:devnet
+# Update Anchor.toml and the program id declarations with the deployment public keys
+yarn protocol:test:devnet
 ```
 
 ## Documentation

@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
-#[cfg(feature = "devnet")]
-declare_id!("H6SCeRrELFXgFPAJZTsaAvkNr9oZTTBgF1ofMGVcZSmD");
-#[cfg(not(any(feature = "devnet")))]
-declare_id!("3H69j4Jat4upLchz9yFoDzVdeVMVDFYSuyVC7ZsrqipY");
+declare_id!("8PwBf4MonxVfJadkpSu8bLRksx4C9XfvuTDx5RzPouPj");
 
 /// DAO
 #[program]
