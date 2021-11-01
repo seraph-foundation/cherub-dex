@@ -7,6 +7,7 @@
     "airdrop": "while true; do solana airdrop 1; sleep 30; done",
     "build:app": "cd app && yarn build",
     "start:app": "cd app && yarn start",
+    "start:docs": "cd docs && yarn start",
     "test:devnet": "solana config set --url https://api.devnet.solana.com && anchor test -- --features \"devnet\"",
     "test:localnet": "solana config set --url http://127.0.0.1:8899 && anchor test --detach -- --features \"localnet\""
   },

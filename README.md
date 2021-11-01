@@ -7,15 +7,15 @@ Inverse Perpetuals (3, 3) DAO
 **Requirements**
 
 - Anchor 0.16.2
-- Solana 1.7.12
+- Solana 1.8.0
 - Node 14.18.0
 
 **Running**
 
-Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`.
+Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on the command.
 
 ```bash
-yarn test:localnet # Or test:devnet
+yarn test:localnet
 ```
 
 Start the frontend app.
