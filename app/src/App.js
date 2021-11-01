@@ -651,6 +651,7 @@ function App() {
 
       getBalance(DEFAULT_SYMBOL)
       getPositions(DEFAULT_SYMBOL)
+      getDashboardData()
 
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
       message = 'Stake Successfully Placed'
