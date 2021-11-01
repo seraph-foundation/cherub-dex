@@ -29,27 +29,22 @@ const { Option } = Select
 const { Step } = Steps
 const { Title } = Typography
 
-const LOCALHOST = 'http://localhost:3000'
-const LOCALNET = 'http://127.0.0.1:8899'
-
-const IS_LOCALHOST = window.location.origin === LOCALHOST
+const IS_LOCALNET = window.location.origin === 'http://localhost:3000'
 
 let accounts = {}
 
-if (IS_LOCALHOST) {
+if (IS_LOCALNET) {
   accounts = require('./accounts-localnet.json')
 } else {
   accounts = require('./accounts-devnet.json')
 }
 
-const C = { symbol: 'CHRB' }
-const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL')
+const C_SYMBOL = 'CHRB'
+const DEFAULT_SYMBOL = accounts.exchanges[0].symbol
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
-const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet')
+const network = IS_LOCALNET ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()]
-
-const DEFAULT_SYMBOL = SOL.symbol
 
 const Direction = {
   Long: { long: {} },
@@ -241,6 +236,7 @@ function App() {
       factoryMetaDataAccountInfo = await factory.account.metaData.fetch(walletMetaPda)
     } catch (err) {
       console.log(err)
+      return
     }
 
     try {
@@ -413,9 +409,9 @@ function App() {
         } else {
           icon = <ClockCircleOutlined className='ClockCircleOutlined'/>
         }
-        let deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'})
+        let deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric'})
         proposals.push({
-          description: <><code>{proposalAccount.index.toNumber()}</code> • {deadline}</>,
+          description: <><code>{proposalAccount.index.toNumber()}</code> • Voting deadline is {deadline}</>,
           icon: icon,
           title: proposalAccount.description,
           key: proposalAccount.index
@@ -865,7 +861,7 @@ function App() {
   )
 
   const stakeDescription = (
-    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {C.symbol.toUpperCase()}</span>&nbsp;
+    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {C_SYMBOL.toUpperCase()}</span>&nbsp;
       is set to earn <span className='White'>12% APY</span>
     </small>
   )
@@ -884,18 +880,18 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{C.symbol}</Button> bordered={false}
+            <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{C_SYMBOL}</Button> bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}}/>
-              <p>Your current balance is {cBalance} {C.symbol}</p>
+              <p>Your current balance is {cBalance} {C_SYMBOL}</p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveStake}>Approve</Button>
             </Card>
           </div>
         </Col>
       </> :
       <Col span={12} className='Cards'>
-        <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{C.symbol}</Button> bordered={false}
+        <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{C_SYMBOL}</Button> bordered={false}
           extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('stake')}>Stake</a>}>
           <Table dataSource={stakePositions} columns={stakePositionsColumns} pagination={false}/>
         </Card>
@@ -920,7 +916,7 @@ function App() {
                   <Title level={3} className='Title Dark'>{cMarketCap}</Title>
                 </Col>
                 <Col span={6}>
-                  <p>{C.symbol} Price</p>
+                  <p>{C_SYMBOL} Price</p>
                   <Title level={3} className='Title Dark'>{cCurrentPrice}</Title>
                 </Col>
                 <Col span={6}>
@@ -1004,7 +1000,7 @@ function App() {
 
   return (
     <Layout className='App Dark'>
-      { !IS_LOCALHOST ?
+      { !IS_LOCALNET ?
       <Alert type='info' className='Banner' message=<small>You are currently using an unaudited piece of software via {network}. Use at your own risk.
       </small>/> : null
       }

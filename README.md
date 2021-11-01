@@ -12,14 +12,14 @@ Inverse Perpetuals (3, 3) DAO
 
 **Running**
 
-A solana wallet and SOL are required to start.
+A Solana wallet and SOL are required to get started.
 
 ```bash
 solana-keygen new
 solana airdrop 5
 ```
 
-Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on the command.
+Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on your environment.
 
 ```bash
 yarn protocol:test:localnet

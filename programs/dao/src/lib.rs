@@ -26,6 +26,7 @@ pub mod dao {
         deadline: i64,
         description: String,
     ) -> ProgramResult {
+        assert!(ctx.accounts.clock.unix_timestamp < deadline);
         let proposal = &mut ctx.accounts.proposal;
         proposal.created = ctx.accounts.clock.unix_timestamp;
         proposal.deadline = deadline;
