@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
 #[cfg(feature = "devnet")]
-declare_id!("2JYkXVNXs24fwWPXsU3wPjL9PZn93aKxcDNpzocwi5RU");
+declare_id!("H6SCeRrELFXgFPAJZTsaAvkNr9oZTTBgF1ofMGVcZSmD");
 #[cfg(not(any(feature = "devnet")))]
 declare_id!("3H69j4Jat4upLchz9yFoDzVdeVMVDFYSuyVC7ZsrqipY");
 

@@ -10,7 +10,7 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 use pyth::utils::Price;
 
 #[cfg(feature = "devnet")]
-declare_id!("8PY65Eu4Cv8xwfS6Qz6baFgDCfNiG8E977Yj2kQCDg9C");
+declare_id!("J2WkWo3HM45ifKKrG6Q5siV2V3zfRhKab1NhCgdV57VQ");
 #[cfg(not(any(feature = "devnet")))]
 declare_id!("2Psde5E6oLMKoU5RiLKozQMpwRq9TGP2gKCosWV8UebW");
 
@@ -40,17 +40,19 @@ pub mod exchange {
 
     /// Deposit B and A at current ratio to mint C tokens.
     ///
-    /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
     /// amount_b Amount of B deposited
-    /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
+    /// bump PDA curve nonce
     /// deadline Time after which this transaction can no longer be executed
+    /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
+    /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
     #[access_control(bond_future_deadline(&ctx, deadline) bond_correct_tokens(&ctx))]
     pub fn bond(
         ctx: Context<Bond>,
-        max_amount_a: u64,
         amount_b: u64,
-        min_liquidity_c: u64,
+        bump: u8,
         deadline: i64,
+        max_amount_a: u64,
+        min_liquidity_c: u64,
     ) -> ProgramResult {
         let mut liquidity_minted = amount_b;
         let mut amount_a = max_amount_a;
@@ -72,6 +74,11 @@ pub mod exchange {
         exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
         exchange.supply_b += liquidity_minted;
+        let bond = &mut ctx.accounts.bond;
+        bond.quantity = amount_b;
+        bond.unix_timestamp = ctx.accounts.clock.unix_timestamp;
+        let meta = &mut ctx.accounts.meta;
+        meta.bonds += 1;
         Ok(())
     }
 
@@ -175,6 +182,8 @@ pub mod exchange {
         exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
         exchange.supply_b -= amount_b;
+        let meta = &mut ctx.accounts.meta;
+        meta.positions += 1;
         Ok(())
     }
 
@@ -219,6 +228,8 @@ pub mod exchange {
         exchange.last_price = amount_b;
         exchange.supply_a -= amount_a;
         exchange.supply_b += amount_b;
+        let meta = &mut ctx.accounts.meta;
+        meta.positions += 1;
         Ok(())
     }
 
@@ -314,6 +325,16 @@ pub mod exchange {
         position.status = Status::Liquidated;
         Ok(())
     }
+
+    /// Meta. Sets exchange user account up.
+    ///
+    /// bump Random seed used to bump PDA off curve
+    pub fn meta(ctx: Context<Meta>, bump: u8) -> ProgramResult {
+        let meta = &mut ctx.accounts.meta;
+        meta.bonds = 0;
+        meta.positions = 0;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -329,14 +350,24 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(max_amount_a: u64, amount_b: u64)]
+#[instruction(amount_b: u64, bump: u8, max_amount_a: u64)]
 pub struct Bond<'info> {
     pub authority: Signer<'info>,
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8,
+        seeds = [b"bond", exchange.token_v.as_ref(), authority.key.as_ref(), meta.bonds.to_string().as_bytes()],
+        bump
+    )]
+    pub bond: Account<'info, BondData>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub exchange_v: AccountInfo<'info>,
+    #[account(mut)]
+    pub meta: Account<'info, MetaData>,
     #[account(mut)]
     pub mint_c: Account<'info, Mint>,
     pub token_program: AccountInfo<'info>,
@@ -344,6 +375,7 @@ pub struct Bond<'info> {
     pub user_c: AccountInfo<'info>,
     #[account(mut, constraint = max_amount_a > 0)]
     pub user_v: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -371,7 +403,7 @@ pub struct GetBToAOutputPrice<'info> {
     pub authority: Signer<'info>,
     pub exchange: Account<'info, ExchangeData>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
-    pub quote: Account<'info, Quote>,
+    pub quote: Account<'info, QuoteData>,
     pub system_program: Program<'info, System>,
 }
 
@@ -384,12 +416,14 @@ pub struct Swap<'info> {
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
     pub exchange_v: AccountInfo<'info>,
+    #[account(mut)]
+    pub meta: Account<'info, MetaData>,
     pub pda: AccountInfo<'info>,
     #[account(
         init,
         payer = authority,
         space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8,
-        seeds = [b"position", exchange.token_v.as_ref(), authority.key.as_ref()],
+        seeds = [b"position", exchange.token_v.as_ref(), authority.key.as_ref(), meta.positions.to_string().as_bytes()],
         bump
     )]
     pub position: Account<'info, PositionData>,
@@ -417,6 +451,22 @@ pub struct Update<'info> {
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub user_v: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(bump: u8)]
+pub struct Meta<'info> {
+    pub authority: Signer<'info>,
+    pub exchange: Account<'info, ExchangeData>,
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8,
+        seeds = [b"meta", exchange.token_v.as_ref(), authority.key.as_ref()],
+        bump
+    )]
+    pub meta: Account<'info, MetaData>,
+    pub system_program: Program<'info, System>,
 }
 
 /// Implements creation accounts
@@ -498,7 +548,7 @@ pub struct ExchangeData {
 
 /// User account state for input and output price quotes.
 #[account]
-pub struct Quote {
+pub struct QuoteData {
     pub price: u64,
 }
 
@@ -515,6 +565,20 @@ pub enum Status {
     Closed,
     Liquidated,
     Open,
+}
+
+/// User meta account state describing positions and bonds
+#[account]
+pub struct MetaData {
+    pub bonds: u64,
+    pub positions: u64,
+}
+
+/// User bond account state
+#[account]
+pub struct BondData {
+    pub quantity: u64,
+    pub unix_timestamp: i64,
 }
 
 /// User position account state

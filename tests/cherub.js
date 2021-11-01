@@ -9,7 +9,7 @@ const exchangeIdl = require('../target/idl/exchange.json')
 const factoryIdl = require('../target/idl/factory.json')
 const pythIdl = require('../target/idl/pyth.json')
 
-const { LAMPORTS_PER_SOL, PublicKey, SystemProgram } = anchor.web3
+const { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } = anchor.web3
 
 describe('Cherub', () => {
   anchor.setProvider(anchor.Provider.env())
@@ -39,13 +39,12 @@ describe('Cherub', () => {
   const decimals0V = 9
   const decimals1V = 9
 
-  const daoAccount = anchor.web3.Keypair.generate()
-  const exchangeAccount0 = anchor.web3.Keypair.generate()
-  const exchangeAccount1 = anchor.web3.Keypair.generate()
-  const factoryAccount = anchor.web3.Keypair.generate()
-
-  let oracleAccount0 = anchor.web3.Keypair.generate()
-  let oracleAccount1 = anchor.web3.Keypair.generate()
+  let daoAccount
+  let exchangeAccount0
+  let exchangeAccount1
+  let factoryAccount
+  let oracleAccount0
+  let oracleAccount1
 
   let exchangeTokenAccount0V
   let exchangeTokenAccount1V
@@ -56,7 +55,16 @@ describe('Cherub', () => {
   let walletTokenAccount0V
   let walletTokenAccount1V
 
-  const airdropAmount = IS_LOCALNET ? 500 * LAMPORTS_PER_SOL : 5 * LAMPORTS_PER_SOL
+  let walletMetaPdaFactory
+  let walletMetaBumpFactory
+
+  let walletMetaPda0
+  let walletMetaBump0
+
+  let walletMetaPda1
+  let walletMetaBump1
+
+  const walletAmountAirdrop = IS_LOCALNET ? 500 * LAMPORTS_PER_SOL : 5 * LAMPORTS_PER_SOL
 
   const walletAmount0V = 100000 * (10 ** decimals0V)
   const walletAmount1V = 100000 * (10 ** decimals1V)
@@ -76,8 +84,19 @@ describe('Cherub', () => {
     return new Promise(resolve => setTimeout(resolve, milliseconds))
   }
 
-  it('State: Initializes', async () => {
-    await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(provider.wallet.publicKey, airdropAmount), 'confirmed')
+  const toBuffer = (x) => {
+    return Buffer.from(anchor.utils.bytes.utf8.encode(x))
+  }
+
+  it('State: Creates initial accounts and mints tokens', async () => {
+    daoAccount = anchor.web3.Keypair.generate()
+    exchangeAccount0 = anchor.web3.Keypair.generate()
+    exchangeAccount1 = anchor.web3.Keypair.generate()
+    factoryAccount = anchor.web3.Keypair.generate()
+    oracleAccount0 = anchor.web3.Keypair.generate()
+    oracleAccount1 = anchor.web3.Keypair.generate()
+
+    await provider.connection.confirmTransaction(await provider.connection.requestAirdrop(provider.wallet.publicKey, walletAmountAirdrop), 'confirmed')
 
     tokenC = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimalsC, TOKEN_PROGRAM_ID)
     tokenS = await Token.createMint(provider.connection, provider.wallet.payer, mintAuthority.publicKey, null, decimalsS, TOKEN_PROGRAM_ID)
@@ -96,10 +115,10 @@ describe('Cherub', () => {
     exchangeTokenAccount0V = await token0V.createAssociatedTokenAccount(exchangeAccount0.publicKey)
     exchangeTokenAccount1V = await token1V.createAssociatedTokenAccount(exchangeAccount1.publicKey)
 
-    await token0V.mintTo(walletTokenAccount0V, mintAuthority.publicKey, [], walletAmount0V);
-    await token1V.mintTo(walletTokenAccount1V, mintAuthority.publicKey, [], walletAmount1V);
+    await token0V.mintTo(walletTokenAccount0V, mintAuthority.publicKey, [], walletAmount0V)
+    await token1V.mintTo(walletTokenAccount1V, mintAuthority.publicKey, [], walletAmount1V)
 
-    console.log('Your wallet was airdropped', airdropAmount / LAMPORTS_PER_SOL, 'SOL')
+    console.log('Your wallet was airdropped', (walletAmountAirdrop / LAMPORTS_PER_SOL).toString(), 'SOL')
 
     let walletTokenAccountInfoV = await token0V.getAccountInfo(walletTokenAccount0V)
     assert.ok(walletTokenAccountInfoV.amount.toNumber() == walletAmount0V)
@@ -122,7 +141,7 @@ describe('Cherub', () => {
     assert.ok(tokenInfoS.supply.toNumber() == 0)
   })
 
-  it('State: Save', async () => {
+  it('State: Saves state', async () => {
     fs.writeFileSync(accountsFile, JSON.stringify({
       dao: {
         account: daoAccount.publicKey.toString()
@@ -137,7 +156,7 @@ describe('Cherub', () => {
         account: exchangeAccount1.publicKey.toString(),
         accountV: exchangeTokenAccount1V.toString(),
         oracle: oracleAccount1.publicKey.toString(),
-        symbol: 'CHRB',
+        symbol: 'BTC',
         tokenV: token1V.publicKey.toString()
       }],
       factory: {
@@ -148,12 +167,20 @@ describe('Cherub', () => {
       }
     }))
 
-    console.log('Your accounts have been written to', accountsFile)
+    console.log('Your', IS_LOCALNET ? 'localnet' : 'devnet', 'accounts have been written to file')
 
     fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl))
     fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl))
     fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl))
     fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl))
+
+    // TODO: Save seeds
+    // daoAccount
+    // exchangeAccount0
+    // exchangeAccount1
+    // factoryAccount
+    // oracleAccount0
+    // oracleAccount1
   })
 
   it('DAO: Initializes', async () => {
@@ -172,8 +199,8 @@ describe('Cherub', () => {
     assert.ok(daoAccountInfo.proposals.eq(new anchor.BN(0)))
   })
 
-  it('DAO: Creates first proposal', async () => {
-    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(anchor.utils.bytes.utf8.encode(0))], dao.programId)
+  it('DAO: Creates proposal (index 0)', async () => {
+    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([toBuffer(0)], dao.programId)
     const deadline = (Date.now() + (60 * 60 * 24 * 3)) / 1000
     const description = 'Add AAVE, SUSHI, YFI'
     const tx = await dao.rpc.propose(proposalBump, new anchor.BN(deadline), description, {
@@ -195,10 +222,10 @@ describe('Cherub', () => {
     assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(0)))
   })
 
-  it('DAO: Creates second proposal', async () => {
-    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([Buffer.from(anchor.utils.bytes.utf8.encode(1))], dao.programId)
+  it('DAO: Creates proposal (index 1)', async () => {
     const deadline = (Date.now() + (60 * 60 * 24 * 4)) / 1000
     const description = 'Move SOL/COPE stake to SOL/MANGO'
+    const [proposalPda, proposalBump] = await anchor.web3.PublicKey.findProgramAddress([toBuffer(1)], dao.programId)
     const tx = await dao.rpc.propose(proposalBump, new anchor.BN(deadline), description, {
       accounts: {
         authority: provider.wallet.publicKey,
@@ -218,10 +245,10 @@ describe('Cherub', () => {
     assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(1)))
   })
 
-  it('Pyth: Initializes first oracle', async () => {
-    const oracleInitPrice0 = 681.47
+  it('Pyth (index 0): Initializes oracle', async () => {
     const oracleConf0 = 0
     const oracleExpo0 = -9
+    const oracleInitPrice0 = 681.47
     const tx = await pyth.rpc.initialize(
       new anchor.BN(oracleInitPrice0).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo0))),
       oracleExpo0,
@@ -247,10 +274,10 @@ describe('Cherub', () => {
     assert.ok(new anchor.BN(parsePriceData(oracleAccountInfo0.data).price).eq(new anchor.BN(oracleInitPrice0)))
   })
 
-  it('Pyth: Initializes second oracle', async () => {
-    const oracleInitPrice1 = 903.49
+  it('Pyth (index 1): Initializes oracle', async () => {
     const oracleConf1 = 0
     const oracleExpo1 = -9
+    const oracleInitPrice1 = 903.49
     const tx = await pyth.rpc.initialize(
       new anchor.BN(oracleInitPrice1).mul(new anchor.BN(10).pow(new anchor.BN(-oracleExpo1))),
       oracleExpo1,
@@ -293,9 +320,9 @@ describe('Cherub', () => {
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString())
   })
 
-  it('Factory: Creates first exchange', async () => {
+  it('Factory: Creates exchange (index 0)', async () => {
     const fee0 = 3
-    const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const tx = await factory.rpc.createExchange(
       new anchor.BN(fee0), {
         accounts: {
@@ -315,29 +342,57 @@ describe('Cherub', () => {
 
     let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
     assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(0)))
-    assert.ok(exchangeTokenAccountInfo0V.owner.equals(pda))
+    assert.ok(exchangeTokenAccountInfo0V.owner.equals(exchangePda))
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
     assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)))
   })
 
-  const initialMaxAmountA = 10000 * (10 ** decimals0V)
-  const initialAmountB = 10000 * (10 ** decimals0V)
-  const initialMinBondC = 0
-  const initialBondMinted = 10000 * (10 ** decimalsC)
+  it('Exchange (index 0): Meta', async () => {
+    [walletMetaPda0, walletMetaBump0] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('meta'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
+      exchange.programId
+    )
+    const tx = await exchange.rpc.meta(walletMetaBump0, {
+      accounts: {
+        authority: provider.wallet.publicKey,
+        exchange: exchangeAccount0.publicKey,
+        meta: walletMetaPda0,
+        systemProgram: SystemProgram.programId
+      }
+    })
 
-  it('Exchange: Bonds', async () => {
+    console.log('Your transaction signature', tx)
+
+    let metaDataAccountInfo = await exchange.account.metaData.fetch(walletMetaPda0)
+    assert.ok(metaDataAccountInfo.positions.eq(new anchor.BN(0)))
+    assert.ok(metaDataAccountInfo.bonds.eq(new anchor.BN(0)))
+  })
+
+  const initialAmountB = 10000 * (10 ** decimals0V)
+  const initialBondMinted = 10000 * (10 ** decimalsC)
+  const initialMaxAmountA = 10000 * (10 ** decimals0V)
+  const initialMinBondC = 0
+
+  it('Exchange (index 0): Bonds (index 0)', async () => {
+    const [bondPda, bondBump] = await anchor.web3.PublicKey.findProgramAddress([
+      toBuffer('bond'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(0)
+    ], exchange.programId)
     const tx = await exchange.rpc.bond(
-      new anchor.BN(initialMaxAmountA),
       new anchor.BN(initialAmountB),
-      new anchor.BN(initialMinBondC),
-      new anchor.BN(Date.now() / 1000), {
+      bondBump,
+      new anchor.BN(Date.now() / 1000),
+      new anchor.BN(initialMaxAmountA),
+      new anchor.BN(initialMinBondC), {
         accounts: {
           authority: provider.wallet.publicKey,
+          bond: bondPda,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount0.publicKey,
           exchangeV: exchangeTokenAccount0V,
+          meta: walletMetaPda0,
           mintC: tokenC.publicKey,
+          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
@@ -353,17 +408,49 @@ describe('Cherub', () => {
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC)
     assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted)))
+
+    let metaDataAccountInfo = await exchange.account.metaData.fetch(walletMetaPda0)
+    assert.ok(metaDataAccountInfo.bonds.eq(new anchor.BN(1)))
+  })
+
+  it('Factory: Meta', async () => {
+    [walletMetaPdaFactory, walletMetaBumpFactory] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('meta'), provider.wallet.publicKey.toBuffer()],
+      factory.programId
+    )
+    const tx = await factory.rpc.meta(walletMetaBumpFactory, {
+      accounts: {
+        authority: provider.wallet.publicKey,
+        factory: factoryAccount.publicKey,
+        meta: walletMetaPdaFactory,
+        systemProgram: SystemProgram.programId
+      }
+    })
+
+    console.log('Your transaction signature', tx)
+
+    let metaDataAccountInfo = await factory.account.metaData.fetch(walletMetaPdaFactory)
+    assert.ok(metaDataAccountInfo.stakes.eq(new anchor.BN(0)))
   })
 
   const stakeAmount = initialBondMinted / 2
 
-  it('Factory: Stakes', async () => {
+  it('Factory: Stakes (index 0)', async () => {
+    const [stakePda, stakeBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('stake'), provider.wallet.publicKey.toBuffer(), toBuffer(0)],
+      factory.programId
+    )
     const tx = await factory.rpc.stake(
-      new anchor.BN(stakeAmount), {
+      new anchor.BN(stakeAmount),
+      stakeBump, {
         accounts: {
           authority: provider.wallet.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           factoryC: factoryTokenAccountC,
+          meta: walletMetaPdaFactory,
           mintS: tokenS.publicKey,
+          stake: stakePda,
+          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userS: walletTokenAccountS
@@ -380,6 +467,9 @@ describe('Cherub', () => {
     let walletTokenAccountInfoS = await tokenS.getAccountInfo(walletTokenAccountS)
     assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted - stakeAmount)))
     assert.ok(walletTokenAccountInfoS.amount.eq(new anchor.BN(stakeAmount)))
+
+    let metaDataAccountInfo = await factory.account.metaData.fetch(walletMetaPdaFactory)
+    assert.ok(metaDataAccountInfo.stakes.eq(new anchor.BN(1)))
   })
 
   const additionalMaxAmountA = 15000 * (10 ** decimals0V)
@@ -387,19 +477,27 @@ describe('Cherub', () => {
   const additionalMinBondC = 375 * (10 ** decimalsC)
   const additionalBondMinted = 375 * (10 ** decimalsC)
 
-  it('Exchange: Bonds additional', async () => {
-    const deadline = new anchor.BN(Date.now() / 1000)
+  it('Exchange (index 0): Bonds (index 1)', async () => {
+    const [bondPda, bondBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('bond'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(1)],
+      exchange.programId
+    )
+    const deadline = Date.now() / 1000
     const tx = await exchange.rpc.bond(
-      new anchor.BN(additionalMaxAmountA),
       new anchor.BN(additionalAmountB),
-      new anchor.BN(additionalMinBondC),
-      deadline, {
+      bondBump,
+      new anchor.BN(deadline),
+      new anchor.BN(additionalMaxAmountA),
+      new anchor.BN(additionalMinBondC), {
         accounts: {
           authority: provider.wallet.publicKey,
+          bond: bondPda,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount0.publicKey,
           exchangeV: exchangeTokenAccount0V,
+          meta: walletMetaPda0,
           mintC: tokenC.publicKey,
+          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
@@ -414,13 +512,13 @@ describe('Cherub', () => {
     assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(walletAmount0V - initialMaxAmountA - additionalMaxAmountA)))
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC)
-    //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(initialBondMinted + additionalBondMinted)))
+    //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN()))
   })
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate()
   const aToBAmount = 10 * (10 ** decimals0V)
 
-  it('Exchange: Gets input price', async () => {
+  it('Exchange (index 0): Gets input price', async () => {
     const tx = await exchange.rpc.getBToAInputPrice(
       new anchor.BN(aToBAmount),
       {
@@ -435,14 +533,14 @@ describe('Cherub', () => {
 
     console.log('Your transaction signature', tx)
 
-    let traderInputAccountQuoteInfo = await exchange.account.quote.fetch(traderInputQuoteAccount.publicKey)
-    //assert.ok(traderInputAccountQuoteInfo.price.eq(new anchor.BN(48 ** decimals0B)))
+    let traderInputAccountQuoteInfo = await exchange.account.quoteData.fetch(traderInputQuoteAccount.publicKey)
+    //assert.ok(traderInputAccountQuoteInfo.price.eq(new anchor.BN(0)))
   })
 
   const traderOutputQuoteAccount = anchor.web3.Keypair.generate()
   const bToAAmount = 5 * (10 ** decimals0V)
 
-  it('Exchange: Gets output price', async () => {
+  it('Exchange (index 0): Gets output price', async () => {
     const tx = await exchange.rpc.getBToAOutputPrice(
       new anchor.BN(bToAAmount),
       {
@@ -457,19 +555,18 @@ describe('Cherub', () => {
 
     console.log('Your transaction signature', tx)
 
-    let traderOutputQuoteAccountInfo = await exchange.account.quote.fetch(traderOutputQuoteAccount.publicKey)
-    //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(4)))
+    let traderOutputQuoteAccountInfo = await exchange.account.quoteData.fetch(traderOutputQuoteAccount.publicKey)
+    //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(0)))
   })
 
   const aToBAmountA = 3 * (10 ** decimals1V)
 
-  it('Exchange: A to B input', async () => {
-    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
-    const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from(anchor.utils.bytes.utf8.encode('position')), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
-      exchange.programId
-    )
+  it('Exchange (index 0): A to B input', async () => {
     const deadline = Date.now() / 1000
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
+      toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(0)
+    ], exchange.programId)
     const tx = await exchange.rpc.aToBInput(
       new anchor.BN(aToBAmountA),
       positionBump,
@@ -484,6 +581,7 @@ describe('Cherub', () => {
           exchangeV: exchangeTokenAccount0V,
           pda: exchangePda,
           position: positionPda,
+          meta: walletMetaPda0,
           recipient: walletTokenAccount0V,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -504,59 +602,49 @@ describe('Cherub', () => {
 
   const bToAAmountB = 6 * (10 ** decimals0V)
 
-  //it('Exchange: B to A input', async () => {
-  //  const index = 1
-  //  const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress(
-  //    [token0V.publicKey.toBuffer()],
-  //    exchange.programId
-  //  )
-  //  const [positionPda, bump] = await anchor.web3.PublicKey.findProgramAddress(
-  //    [token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
-  //    exchange.programId
-  //  )
-  //  const deadline = Date.now() / 1000
-  //  const tx = await exchange.rpc.bToAInput(
-  //    new anchor.BN(bToAAmountB),
-  //    bump,
-  //    new anchor.BN(deadline),
-  //    Direction.Long,
-  //    new anchor.BN(bToAAmountB),
-  //    new anchor.BN(index),
-  //    {
-  //      accounts: {
-  //        authority: provider.wallet.publicKey,
-  //        clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
-  //        exchange: exchangeAccount0.publicKey,
-  //        exchangeV: exchangeTokenAccount0V,
-  //        pda,
-  //        position: positionPda,
-  //        recipient: walletTokenAccount0V,
-  //        systemProgram: SystemProgram.programId,
-  //        tokenProgram: TOKEN_PROGRAM_ID,
-  //        userV: walletTokenAccount0V
-  //      }
-  //    })
+  it('Exchange (index 0): B to A input', async () => {
+    const deadline = Date.now() / 1000
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
+      toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(1)
+    ], exchange.programId)
+    const tx = await exchange.rpc.bToAInput(
+      new anchor.BN(bToAAmountB),
+      positionBump,
+      new anchor.BN(deadline),
+      Direction.Long,
+      new anchor.BN(bToAAmountB),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          exchange: exchangeAccount0.publicKey,
+          exchangeV: exchangeTokenAccount0V,
+          meta: walletMetaPda0,
+          pda: exchangePda,
+          position: positionPda,
+          recipient: walletTokenAccount0V,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userV: walletTokenAccount0V
+        }
+      })
 
-  //  console.log('Your transaction signature', tx)
+    console.log('Your transaction signature', tx)
 
-  //  let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
-  //  let walletTokenAccountInfo0V = await token0V.getAccountInfo(walletTokenAccount0V)
-  //  //assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(218)))
-  //  //assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(99782)))
+    let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
+    let walletTokenAccountInfo0V = await token0V.getAccountInfo(walletTokenAccount0V)
+    //assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(218)))
+    //assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(99782)))
 
-  //  //let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
-  //  //let walletTokenAccountInfo0V = await token0V.getAccountInfo(walletTokenAccount0V)
-  //  //assert.ok(exchangeTokenAccountInfo0B.amount.eq(new anchor.BN(131)))
-  //  //assert.ok(walletTokenAccountInfo0B.amount.eq(new anchor.BN(99869)))
-
-  //  let exchangeAccountInfo0 = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
-  //  //assert.ok(exchangeAccountInfo0.lastPrice.eq(new anchor.BN(6)))
-  //})
+    let exchangeAccountInfo0 = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
+    //assert.ok(exchangeAccountInfo0.lastPrice.eq(new anchor.BN(6)))
+  })
 
   const unbondAmountC = 87 * (10 ** decimalsC)
 
-  it('Exchange: Unbonds', async () => {
-    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId);
+  it('Exchange (index 0): Unbonds (index 0)', async () => {
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const tx = await exchange.rpc.unbond(
       new anchor.BN(unbondAmountC),
       new anchor.BN(Date.now() / 1000), {
@@ -584,24 +672,32 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(0)))
   })
 
-  const finalMaxAmount0A = 1700 * (10 ** decimals0V)
   const finalAmount0B = 750 * (10 ** decimals0V)
-  const finalMinBond0C = 340 * (10 ** decimalsC)
   const finalBondMinted0 = 350 * (10 ** decimalsC)
+  const finalMaxAmount0A = 1700 * (10 ** decimals0V)
+  const finalMinBond0C = 340 * (10 ** decimalsC)
 
-  it('Exchange: Bonds final', async () => {
-    const deadline = new anchor.BN(Date.now() / 1000)
+  it('Exchange (index 0): Bonds (index 2)', async () => {
+    const [bondPda, bondBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('bond'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(2)],
+      exchange.programId
+    )
+    const deadline = Date.now() / 1000
     const tx = await exchange.rpc.bond(
-      new anchor.BN(finalMaxAmount0A),
       new anchor.BN(finalAmount0B),
-      new anchor.BN(finalMinBond0C),
-      deadline, {
+      bondBump,
+      new anchor.BN(deadline),
+      new anchor.BN(finalMaxAmount0A),
+      new anchor.BN(finalMinBond0C), {
         accounts: {
           authority: provider.wallet.publicKey,
+          bond: bondPda,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount0.publicKey,
           exchangeV: exchangeTokenAccount0V,
+          meta: walletMetaPda0,
           mintC: tokenC.publicKey,
+          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userV: walletTokenAccount0V
@@ -619,7 +715,7 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountCInfo.amount.eq(new anchor.BN(75)))
   })
 
-  it('Factory: Creates second exchange', async () => {
+  it('Factory: Creates exchange (index 1)', async () => {
     const fee1 = 3
     const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress([token1V.publicKey.toBuffer()], exchange.programId)
     const tx = await factory.rpc.createExchange(
@@ -646,24 +742,53 @@ describe('Cherub', () => {
     //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)))
   })
 
-  const finalMaxAmount1A = 1000 * (10 ** decimals1V)
-  const finalAmount1B = 1000 * (10 ** decimals1V)
-  const finalMinBond1C = 0
-  const finalBondMinted1 = 1000 * (10 ** decimalsC)
+  it('Exchange (index 1): Meta', async () => {
+    [walletMetaPda1, walletMetaBump1] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('meta'), token1V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
+      exchange.programId
+    )
+    const tx = await exchange.rpc.meta(walletMetaBump0, {
+      accounts: {
+        authority: provider.wallet.publicKey,
+        exchange: exchangeAccount1.publicKey,
+        meta: walletMetaPda1,
+        systemProgram: SystemProgram.programId
+      }
+    })
 
-  it('Exchange: Bonds', async () => {
-    const deadline = new anchor.BN(Date.now() / 1000)
+    console.log('Your transaction signature', tx)
+
+    let metaDataAccountInfo = await exchange.account.metaData.fetch(walletMetaPda1)
+    assert.ok(metaDataAccountInfo.positions.eq(new anchor.BN(0)))
+    assert.ok(metaDataAccountInfo.bonds.eq(new anchor.BN(0)))
+  })
+
+  const finalAmount1B = 1000 * (10 ** decimals1V)
+  const finalBondMinted1 = 1000 * (10 ** decimalsC)
+  const finalMaxAmount1A = 1000 * (10 ** decimals1V)
+  const finalMinBond1C = 0
+
+  it('Exchange (index 1): Bonds (index 0)', async () => {
+    const [bondPda, bondBump] = await anchor.web3.PublicKey.findProgramAddress(
+      [toBuffer('bond'), token1V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(0)],
+      exchange.programId
+    )
+    const deadline = Date.now() / 1000
     const tx = await exchange.rpc.bond(
-      new anchor.BN(finalMaxAmount1A),
       new anchor.BN(finalAmount1B),
-      new anchor.BN(finalMinBond1C),
-      deadline, {
+      bondBump,
+      new anchor.BN(deadline),
+      new anchor.BN(finalMaxAmount1A),
+      new anchor.BN(finalMinBond1C), {
         accounts: {
           authority: provider.wallet.publicKey,
+          bond: bondPda,
           clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
           exchange: exchangeAccount1.publicKey,
           exchangeV: exchangeTokenAccount1V,
+          meta: walletMetaPda1,
           mintC: tokenC.publicKey,
+          systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           userC: walletTokenAccountC,
           userV: walletTokenAccount1V

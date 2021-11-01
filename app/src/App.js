@@ -42,14 +42,14 @@ if (IS_LOCALHOST) {
   accounts = require('./accounts-devnet.json')
 }
 
-const CHERUB = accounts.exchanges.find((x) => x.symbol === 'CHRB')
+const CHERUB = { symbol: 'CHRB' }
 const SOL = accounts.exchanges.find((x) => x.symbol === 'SOL')
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
 const network = IS_LOCALHOST ? LOCALNET : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()]
 
-const DEFAULT_SYMBOL = getWindowRoute() === 'stake' ? CHERUB.symbol : SOL.symbol
+const DEFAULT_SYMBOL = SOL.symbol
 
 const Direction = {
   Long: { long: {} },
@@ -72,7 +72,7 @@ const chartOptions = {
   }
 }
 
-const bondPositionsColumns = [{
+const bondsColumns = [{
   title: 'Quantity',
   dataIndex: 'quantity',
   key: 'quantity'
@@ -152,13 +152,16 @@ function getWindowRoute() {
   }
 }
 
+function toBuffer(x) {
+  return Buffer.from(utils.bytes.utf8.encode(x))
+}
+
 function App() {
   const [balance, setBalance] = useState(0)
   const [blockHeight, setBlockHeight] = useState(0)
   const [bondCard, setBondCard] = useState('bond')
   const [bondDeposit, setBondDeposit] = useState()
-  // eslint-disable-next-line
-  const [bondPositions, setBondPositions] = useState([])
+  const [bonds, setBonds] = useState([])
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0')
   const [cCurrentPrice, setCCurrentPrice] = useState(0)
   const [cMarketCap, setCMarketCap] = useState(0)
@@ -190,7 +193,6 @@ function App() {
   const [stakeCard, setStakeCard] = useState('stake')
   const [stakeDeposit, setStakeDeposit] = useState()
   const [stakeStep, setStakeStep] = useState(0)
-  // eslint-disable-next-line
   const [stakePositions, setStakePositions] = useState([])
   const [tokenCount, setTokenCount] = useState(0)
   const [turnaround24H, setTurnaround24H] = useState()
@@ -203,7 +205,8 @@ function App() {
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
   const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback])
-  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseAsset])
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback])
+  const getStakesCallback = useCallback(getStakes, [getProviderCallback])
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment)
@@ -218,65 +221,130 @@ function App() {
     })
   }
 
-  async function getPositions() {
+  async function getStakes() {
     const provider = await getProviderCallback()
 
+    const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider)
+    const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID, null)
+    const mintInfoC = await tokenC.getMintInfo()
+
+    let factoryMetaDataAccountInfo
+
     try {
-      const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
-      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
-      const mintInfoV = await tokenV.getMintInfo()
-
       // eslint-disable-next-line
-      const [positionPda, positionBump] = await PublicKey.findProgramAddress(
-        [Buffer.from(utils.bytes.utf8.encode('position')), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
-        exchange.programId
+      let [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress(
+        [toBuffer('meta'), provider.wallet.publicKey.toBuffer()],
+        factory.programId
       )
-      const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
-
-      if (positionDataAccount) {
-        setInversePositions([{
-          direction: positionDataAccount.direction.long ? 'Long' : 'Short',
-          entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
-          equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
-          key: 0,
-          quantity: (positionDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
-          status: positionDataAccount.status.open ? 'Open' : (positionDataAccount.status.closed ? 'Closed' : 'Liquidated')
-        }])
-      }
-    } catch(e) {
-      console.log(e)
+      factoryMetaDataAccountInfo = await factory.account.metaData.fetch(walletMetaPda)
+    } catch (err) {
+      console.log(err)
     }
 
     try {
-      const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID, null)
-      const walletTokenAccountS = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenS.publicKey,
-        provider.wallet.publicKey
-      )
-      const accountInfoS = await tokenS.getAccountInfo(walletTokenAccountS)
-      const mintInfoS = await tokenS.getMintInfo()
-      const amountS = accountInfoS.amount.toNumber()
-      if (amountS > 0) {
-        setStakePositions([{
-          quantity: (amountS / (10 ** mintInfoS.decimals)).toFixed(2),
-          apy: '12%',
-          key: 0
-        }])
+      let stakes = []
+      for (let i = 0; i < factoryMetaDataAccountInfo.stakes.toNumber(); i++) {
+        // eslint-disable-next-line
+        const [stakePda, stakeBump] = await PublicKey.findProgramAddress([
+          toBuffer('stake'), provider.wallet.publicKey.toBuffer(), toBuffer(i)
+        ], factory.programId)
+        const stakeDataAccount = await factory.account.stakeData.fetch(stakePda)
+        if (stakeDataAccount) {
+          stakes.push({
+            quantity: (stakeDataAccount.quantity.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2),
+            apy: '13%',
+            key: i,
+          })
+        }
       }
-    } catch(e) {
-      console.log(e)
+      setStakePositions(stakes)
+    } catch (err) {
+      setStakePositions([])
+      console.log(err)
     }
   }
 
-  async function getBalance(asset) {
+  async function getPositions(symbol) {
+    const provider = await getProviderCallback()
+
+    const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
+
+    const tokenV = new Token(provider.connection, new PublicKey(accounts.exchanges.find((x) => x.symbol === symbol).tokenV), TOKEN_PROGRAM_ID, null)
+    const mintInfoV = await tokenV.getMintInfo()
+
+    let exchangeMetaDataAccountInfo
+
+    try {
+      // eslint-disable-next-line
+      let [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress(
+        [toBuffer('meta'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],
+        exchange.programId
+      )
+      exchangeMetaDataAccountInfo = await exchange.account.metaData.fetch(walletMetaPda)
+    } catch (err) {
+      console.log(err)
+    }
+
+    try {
+      let positions = []
+      for (let i = 0; i < exchangeMetaDataAccountInfo.positions.toNumber(); i++) {
+        // eslint-disable-next-line
+        const [positionPda, positionBump] = await PublicKey.findProgramAddress([
+          toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(i)
+        ], exchange.programId)
+        const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
+        if (positionDataAccount) {
+          positions.push({
+            direction: positionDataAccount.direction.long ? 'Long' : 'Short',
+            entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            key: i,
+            quantity: (positionDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            status: positionDataAccount.status.open ? 'Open' : (positionDataAccount.status.closed ? 'Closed' : 'Liquidated')
+          })
+        }
+      }
+      setInversePositions(positions)
+    } catch (err) {
+      setInversePositions([])
+      console.log(err)
+    }
+
+    try {
+      let bonds = []
+      for (let i = 0; i < exchangeMetaDataAccountInfo.bonds.toNumber(); i++) {
+        // eslint-disable-next-line
+        const [bondPda, bondBump] = await PublicKey.findProgramAddress([
+          toBuffer('bond'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(i)
+        ], exchange.programId)
+        const bondDataAccount = await exchange.account.bondData.fetch(bondPda)
+        if (bondDataAccount) {
+          bonds.push({
+            quantity: (bondDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            key: i,
+          })
+        }
+      }
+      setBonds(bonds)
+    } catch (err) {
+      setBonds([])
+      console.log(err)
+    }
+  }
+
+  async function getBalance(symbol) {
     try {
       if (wallet.connected) {
-        const currentExchange = accounts.exchanges.find((x) => x.symbol === asset)
         const provider = await getProviderCallback()
-        const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID)
+
+        let tokenV
+        if (symbol === CHERUB.symbol) {
+          tokenV = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
+        } else {
+          const pk = new PublicKey(accounts.exchanges.find((x) => x.symbol === symbol).tokenV)
+          tokenV = new Token(provider.connection, pk, TOKEN_PROGRAM_ID)
+        }
+
         const walletTokenAccountV = await Token.getAssociatedTokenAddress(
           ASSOCIATED_TOKEN_PROGRAM_ID,
           TOKEN_PROGRAM_ID,
@@ -295,7 +363,6 @@ function App() {
   async function getDashboardData() {
     try {
       const provider = await getProviderCallback()
-      const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
       const factory = new Program(factoryIdl, new PublicKey(factoryIdl.metadata.address), provider)
 
       const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
@@ -307,8 +374,7 @@ function App() {
       const supplyC = mintInfoC.supply.toNumber() / (10 ** mintInfoC.decimals)
       setCCirculatingSupplyTotal((supplyC - supplyS).toFixed(0) + ' / ' + supplyC.toFixed(0))
 
-      const exchangeDataAccount = await exchange.account.exchangeData.fetch(new PublicKey(CHERUB.account))
-      const lastPrice = (exchangeDataAccount.lastPrice.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2)
+      const lastPrice = (1000).toFixed(2)
       setCCurrentPrice(currencyFormat(lastPrice / 1))
       setCMarketCap(currencyFormat(lastPrice * supplyC))
 
@@ -321,10 +387,7 @@ function App() {
       const proposals = []
       for (var i = 0; i < daoAccount.proposals.toNumber(); i++) {
         // eslint-disable-next-line
-        const [proposalPda, bump] = await PublicKey.findProgramAddress(
-          [Buffer.from(utils.bytes.utf8.encode(i))],
-          dao.programId
-        )
+        const [proposalPda, bump] = await PublicKey.findProgramAddress([toBuffer(i)], dao.programId)
         const proposalAccount = await dao.account.proposalData.fetch(proposalPda)
         const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000)
         let icon = (<CloseCircleOutlined className='CloseCircleOutlined'/>)
@@ -335,11 +398,13 @@ function App() {
         }
         let deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'})
         proposals.push({
-          description: proposalAccount.index.toNumber() + ' • ' + deadline,
+          description: <><code>{proposalAccount.index.toNumber()}</code> • {deadline}</>,
           icon: icon,
-          title: proposalAccount.description
+          title: proposalAccount.description,
+          key: proposalAccount.index
         })
       }
+      proposals.reverse()
       setDaoProposals(proposals)
     } catch (err) {
       console.log(err)
@@ -404,7 +469,7 @@ function App() {
       )
 
       // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId)
+      const [pda, nonce] = await PublicKey.findProgramAddress([toBuffer('exchange')], exchange.programId)
       const aToBAmountA = inverseQuantity * leverage * (10 ** mintInfoV.decimals)
       const equityA = inverseQuantity * (10 ** mintInfoV.decimals)
       const positionAccount = Keypair.generate()
@@ -437,7 +502,8 @@ function App() {
       setInverseStep(0)
       setLeverage(1)
       setInverseQuantity()
-      getPositions()
+
+      getPositions(currentExchange.symbol)
       getInverseData(currentExchange.symbol)
       getBalance(currentExchange.symbol)
     } catch (err) {
@@ -488,7 +554,7 @@ function App() {
       const amountB = (maxAmountA / (marketPrice * (10 ** mintInfoV.decimals))) * (10 ** mintInfoV.decimals)
       const minLiquidityC = amountB / 1000
       // eslint-disable-next-line
-      const [pda, nonce] = await PublicKey.findProgramAddress([Buffer.from(utils.bytes.utf8.encode('exchange'))], exchange.programId)
+      const [pda, nonce] = await PublicKey.findProgramAddress([toBuffer('exchange')], exchange.programId)
 
       const tx = await exchange.rpc.bond(
         new BN(maxAmountA.toFixed(0)),
@@ -533,6 +599,7 @@ function App() {
 
       const tokenC = new Token(provider.connection, new PublicKey(accounts.factory.tokenC), TOKEN_PROGRAM_ID)
       const tokenS = new Token(provider.connection, new PublicKey(accounts.factory.tokenS), TOKEN_PROGRAM_ID)
+
       const mintInfoC = await tokenC.getMintInfo()
 
       const walletTokenAccountC = await Token.getAssociatedTokenAddress(
@@ -548,15 +615,29 @@ function App() {
         provider.wallet.publicKey
       )
 
-      const amountC = stakeDeposit * (10 ** mintInfoC.decimals)
+      // eslint-disable-next-line
+      const [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress(
+        [toBuffer('meta'), provider.wallet.publicKey.toBuffer()],
+        factory.programId
+      )
+      const factoryMetaDataAccountInfo = await factory.account.metaData.fetch(walletMetaPda)
+
+      const [stakePda, stakeBump] = await PublicKey.findProgramAddress(
+        [toBuffer('stake'), provider.wallet.publicKey.toBuffer(), toBuffer(factoryMetaDataAccountInfo.stakes.toNumber())],
+        factory.programId
+      )
 
       const tx = await factory.rpc.stake(
-        new BN(amountC), {
+        new BN(stakeDeposit * (10 ** mintInfoC.decimals)),
+        stakeBump, {
           accounts: {
             authority: provider.wallet.publicKey,
-            factory: new PublicKey(accounts.factory.account),
+            clock: SYSVAR_CLOCK_PUBKEY,
             factoryC: new PublicKey(accounts.factory.accountC),
+            meta: walletMetaPda,
             mintS: tokenS.publicKey,
+            stake: stakePda,
+            systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             userC: walletTokenAccountC,
             userS: walletTokenAccountS,
@@ -567,8 +648,9 @@ function App() {
 
       setStakeStep(0)
       setStakeDeposit()
-      getBalance()
-      getPositions()
+
+      getBalance(DEFAULT_SYMBOL)
+      getPositions(DEFAULT_SYMBOL)
 
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
       message = 'Stake Successfully Placed'
@@ -579,6 +661,14 @@ function App() {
     }
 
     notification.open({description: description, duration: 0, message: message, placement: 'bottomLeft'})
+  }
+
+  function onModalSelectExchange(exchange) {
+    setIsInverseAssetModalVisible(false)
+    setInverseAsset(exchange.symbol)
+    getInverseData(exchange.symbol)
+    getBalance(exchange.symbol)
+    getPositions(exchange.symbol)
   }
 
   function calculateCountdown() {
@@ -727,7 +817,7 @@ function App() {
           <div className='site-card-border-less-wrapper'>
             <Card className='Card Dark' title={assetTitleModal} bordered={false}
               extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('bond')}>Bond</a>}>
-              <Table dataSource={bondPositions} columns={bondPositionsColumns} pagination={false}/>
+              <Table dataSource={bonds} columns={bondsColumns} pagination={false}/>
             </Card>
           </div>
         </Col>
@@ -870,9 +960,10 @@ function App() {
     if (wallet.connected && !isUserDataSet) {
       setIsUserDataSet(true)
       getBalanceCallback(inverseAsset ? inverseAsset : DEFAULT_SYMBOL)
-      getPositionsCallback()
+      getPositionsCallback(inverseAsset ? inverseAsset : DEFAULT_SYMBOL)
+      getStakesCallback()
     }
-  }, [getBalanceCallback, getPositionsCallback, inverseAsset, isUserDataSet, wallet.connected])
+  }, [getBalanceCallback, getPositionsCallback, getStakesCallback, inverseAsset, isUserDataSet, wallet.connected])
 
   return (
     <Layout className='App Dark'>
@@ -893,8 +984,7 @@ function App() {
               <Menu.Item key='dao'><BankOutlined/>&nbsp; DAO</Menu.Item>
               <Menu.Item key='inverse'><DollarOutlined/>&nbsp; Inverse Perpetuals</Menu.Item>
               <Menu.Item key='bond'><HistoryOutlined/>&nbsp; Bond</Menu.Item>
-              <Menu.Item key='stake'
-                onClick={() => {setInverseAsset(CHERUB.symbol); getBalance(CHERUB.symbol)}}>
+              <Menu.Item key='stake' onClick={() => {getBalance(CHERUB.symbol); getStakes()}}>
                 <PieChartOutlined/>&nbsp; Stake
               </Menu.Item>
             </Menu>
@@ -933,8 +1023,7 @@ function App() {
       <Modal title='Assets' footer={null} visible={isInverseAssetModalVisible} onCancel={() => {setIsInverseAssetModalVisible(false)}}>
         <List itemLayout='horizontal' dataSource={accounts.exchanges} forcerender='true' renderItem={exchange => (
           <List.Item className='Asset ListItem'>
-            <List.Item.Meta title={exchange.symbol} onClick={() => {
-              setInverseAsset(exchange.symbol); getInverseData(exchange.symbol); setIsInverseAssetModalVisible(false); getBalance(exchange.symbol)}}/>
+            <List.Item.Meta title={exchange.symbol} onClick={() => onModalSelectExchange(exchange)}/>
         </List.Item>)}/>
       </Modal>
     </Layout>

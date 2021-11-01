@@ -12,17 +12,16 @@ Inverse Perpetuals (3, 3) DAO
 
 **Running**
 
-Make sure cluster is set to `localnet` in `Anchor.toml`.
+Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`.
 
 ```bash
-anchor test --detach
+yarn test:localnet # Or test:devnet
 ```
 
-Start the frontend.
+Start the frontend app.
 
 ```bash
-cd app
-yarn start
+yarn start:app
 ```
 
 ## Documentation
@@ -30,8 +29,7 @@ yarn start
 This is currently handled with Docusauraus.
 
 ```bash
-cd docs
-yarn start
+yarn start:docs
 ```
 
 ### Support

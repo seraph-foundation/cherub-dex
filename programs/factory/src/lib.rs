@@ -9,7 +9,7 @@ use anchor_spl::token::{self, Mint, MintTo, TokenAccount, Transfer};
 use exchange::{self, Create, ExchangeData};
 
 #[cfg(feature = "devnet")]
-declare_id!("2VAoiq2qpzMZy1VpWvWi6TByt7W9mFmDaLf1ih8zM7ud");
+declare_id!("CDFYYHHiuhBVYPf8UL42TCn4XnpFoPhiFEzKj8GuBVgL");
 #[cfg(not(any(feature = "devnet")))]
 declare_id!("2euwxQkkuAvVsaF3kvKuJMKb72KKDM8aHVM2pUuBC82R");
 
@@ -26,7 +26,9 @@ pub mod factory {
         Ok(())
     }
 
-    /// Creates an exchange for a new token pair
+    /// Creates an exchange for a new token pair.
+    ///
+    /// fee In basis points
     pub fn create_exchange(ctx: Context<CreateExchange>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         factory.token_count = factory.token_count + 1;
@@ -46,9 +48,23 @@ pub mod factory {
         Ok(())
     }
 
-    pub fn stake(ctx: Context<Stake>, amount_c: u64) -> ProgramResult {
+    /// Meta. Sets exchange user account up.
+    ///
+    /// bump Random seed used to bump PDA off curve
+    pub fn meta(ctx: Context<Meta>, bump: u8) -> ProgramResult {
+        let meta = &mut ctx.accounts.meta;
+        meta.stakes = 0;
+        Ok(())
+    }
+
+    pub fn stake(ctx: Context<Stake>, amount_c: u64, bump: u8) -> ProgramResult {
         token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
         token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
+        let stake = &mut ctx.accounts.stake;
+        stake.unix_timestamp = ctx.accounts.clock.unix_timestamp;
+        stake.quantity = amount_c;
+        let meta = &mut ctx.accounts.meta;
+        meta.stakes += 1;
         Ok(())
     }
 }
@@ -91,12 +107,40 @@ pub struct GetTokenWithId<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(bump: u8)]
+pub struct Meta<'info> {
+    pub authority: Signer<'info>,
+    pub factory: Account<'info, FactoryData>,
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8 + 8,
+        seeds = [b"meta", authority.key.as_ref()],
+        bump
+    )]
+    pub meta: Account<'info, MetaData>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct Stake<'info> {
     pub authority: AccountInfo<'info>,
+    pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
     pub factory_c: Account<'info, TokenAccount>,
     #[account(mut)]
+    pub meta: Account<'info, MetaData>,
+    #[account(mut)]
     pub mint_s: Account<'info, Mint>,
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 8 + 8,
+        seeds = [b"stake", authority.key.as_ref(), meta.stakes.to_string().as_bytes()],
+        bump
+    )]
+    pub stake: Account<'info, StakeData>,
+    pub system_program: Program<'info, System>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
     pub user_s: Account<'info, TokenAccount>,
@@ -144,4 +188,15 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
 pub struct FactoryData {
     pub exchange_template: Pubkey,
     pub token_count: u64,
+}
+
+#[account]
+pub struct MetaData {
+    pub stakes: u64,
+}
+
+#[account]
+pub struct StakeData {
+    pub quantity: u64,
+    pub unix_timestamp: i64,
 }

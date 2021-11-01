@@ -4,10 +4,11 @@
   "version": "0.1.0",
   "description": "Inverse Perpetuals (3, 3) DAO",
   "scripts": {
-    "program:mainnet": "anchor build -- --features \"mainnet\"",
-    "program:testnet": "anchor build -- --features \"testnet\"",
-    "program:devnet": "anchor build -- --features \"devnet\"",
-    "program:localnet": "anchor build -- --features \"localnet\""
+    "airdrop": "while true; do solana airdrop 1; sleep 30; done",
+    "build:app": "cd app && yarn build",
+    "start:app": "cd app && yarn start",
+    "test:devnet": "solana config set --url https://api.devnet.solana.com && anchor test -- --features \"devnet\"",
+    "test:localnet": "solana config set --url http://127.0.0.1:8899 && anchor test --detach -- --features \"localnet\""
   },
   "dependencies": {
     "@project-serum/anchor": "^0.16.2",

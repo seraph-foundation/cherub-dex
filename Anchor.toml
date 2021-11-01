@@ -1,5 +1,5 @@
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [programs.localnet]
@@ -9,10 +9,10 @@ factory = "2euwxQkkuAvVsaF3kvKuJMKb72KKDM8aHVM2pUuBC82R"
 pyth = "8K39TqyCiv429v6KKmyQ82u9enwSuPH8TJdi3g5fCSwk"
 
 [programs.devnet]
-dao = "2JYkXVNXs24fwWPXsU3wPjL9PZn93aKxcDNpzocwi5RU"
-exchange = "8PY65Eu4Cv8xwfS6Qz6baFgDCfNiG8E977Yj2kQCDg9C"
-factory = "2VAoiq2qpzMZy1VpWvWi6TByt7W9mFmDaLf1ih8zM7ud"
-pyth = "FVtRxMZPkkTm4zVr1MNi8HPKLYXLSt14oE1LydGketK6"
+dao = "H6SCeRrELFXgFPAJZTsaAvkNr9oZTTBgF1ofMGVcZSmD"
+exchange = "J2WkWo3HM45ifKKrG6Q5siV2V3zfRhKab1NhCgdV57VQ"
+factory = "CDFYYHHiuhBVYPf8UL42TCn4XnpFoPhiFEzKj8GuBVgL"
+pyth = "GLncE8HkQtnVP9ZcwCia4PHdveWAJ2ERoovH1E4ruLyX"
 
 [registry]
 url = "https://anchor.projectserum.com"
