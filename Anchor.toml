@@ -1,12 +1,12 @@
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [programs.localnet]
-dao = "3H69j4Jat4upLchz9yFoDzVdeVMVDFYSuyVC7ZsrqipY"
-exchange = "2Psde5E6oLMKoU5RiLKozQMpwRq9TGP2gKCosWV8UebW"
-factory = "2euwxQkkuAvVsaF3kvKuJMKb72KKDM8aHVM2pUuBC82R"
-pyth = "8K39TqyCiv429v6KKmyQ82u9enwSuPH8TJdi3g5fCSwk"
+dao = "8PwBf4MonxVfJadkpSu8bLRksx4C9XfvuTDx5RzPouPj"
+exchange = "7wcUmVSTQEWhz7j4ut5mMvFzZDgoyextTjY7DGtAYgdN"
+factory = "3g1faa22VqQxatvFBcMTCp4fpKFsxTEnwpW6MAvCPsG5"
+pyth = "3sCEFk7G6WkwREWYLaHnu1xN7cAWU7MbtZB5YEgoxUNx"
 
 [programs.devnet]
 dao = "8PwBf4MonxVfJadkpSu8bLRksx4C9XfvuTDx5RzPouPj"
