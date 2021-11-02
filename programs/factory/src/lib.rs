@@ -8,7 +8,7 @@ use anchor_spl::token::{self, Mint, MintTo, TokenAccount, Transfer};
 
 use exchange;
 
-declare_id!("AuCPeeS3CT1S3o2yrYjQqgJ6p3opvx1ADyHnAYRvzkt7");
+declare_id!("2vTL4Kks8UVNQoQmaWHyJCfJxivaHm8zgFPfsw9watmY");
 
 /// Factory
 #[program]

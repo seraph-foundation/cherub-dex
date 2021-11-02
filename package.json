@@ -7,6 +7,7 @@
     "app:start": "cd app && yarn start",
     "app:build": "cd app && yarn build",
     "docs:start": "cd docs && yarn start",
+    "marketing:start": "cd marketing && yarn start",
     "protocol:airdrop": "while true; do solana airdrop 5; sleep 10; done",
     "protocol:build:devnet": "anchor build -- --features \"devnet\"",
     "protocol:clean": "cargo clean",

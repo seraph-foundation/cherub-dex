@@ -9,7 +9,7 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 
 use pyth::utils::Price;
 
-declare_id!("7DJu8o3E4bjj7gB1UQB4mD48MoUtiS8BrKW8473ddwWT");
+declare_id!("DmtoZ6xaPBGr7wJqLUjE8JpmYiDvhG3mm2rBZTb1vfiK");
 
 /// Exchange
 #[program]
@@ -58,7 +58,6 @@ pub mod exchange {
             amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
                 / ctx.accounts.exchange.supply_b as f64) as u64
                 + 1;
-            // TODO: Is this for the C mint of this exchange or all?
             liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
                 / ctx.accounts.exchange.supply_a as f64) as u64;
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);

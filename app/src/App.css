@@ -149,7 +149,8 @@ body {
     background: linear-gradient(-45deg, #f7cd7d, white);
     background-size: 400% 400%;
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;animation: gradient 15s ease infinite;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 15s ease infinite;
     font-family: 'Spartan', sans-serif;
     font-size: 20px;
     font-weight: bold;

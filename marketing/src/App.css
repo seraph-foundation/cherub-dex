@@ -1,0 +1,93 @@
+@font-face {
+    font-family: 'Spartan';
+    src: url('./fonts/Spartan-VariableFont_wght.ttf');
+}
+
+html {
+    zoom: 108%;
+    background-color: black;
+}
+
+body {
+    font-family: 'Spartan';
+    background: linear-gradient(-45deg, #101010, #080808, #181818);
+    background-size: 400% 400%;
+    animation: gradient 60s ease infinite;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.ant-carousel, .ant-menu-dark.ant-menu-horizontal, .ant-layout-header, .ant-layout, .hero-view {
+    background: transparent;
+}
+
+.header-logo {
+    height: 30px;
+}
+
+.header-menu {
+    float: right;
+    min-width: 30em;
+}
+
+.hero-view {
+    min-height: 70vh;
+    color: white;
+    padding: 5em;
+    position: relative;
+    border-top: 1px solid black !important;
+    background-color: transparent;
+}
+
+.hero-content {
+    bottom: 10em;
+    position: absolute;
+}
+
+.hero-description {
+    color: white !important;
+}
+
+.hero-title {
+    font-size: 4em !important;
+    background: linear-gradient(-45deg, #f7cd7d, white);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient 15s ease infinite;
+    font-family: 'Spartan', sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.footer {
+    text-align: center;
+    background: black;
+    color: white;
+    padding: 3em;
+}
+
+.carousel-view {
+    background-color: #1890ff;
+    padding: 5em;
+    text-align: center;
+}
+
+.carousel-title {
+    color: white !important;
+}
+
+.carousel-description {
+    color: white;
+    font-size: 2em;
+}
