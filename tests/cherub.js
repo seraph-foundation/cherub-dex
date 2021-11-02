@@ -66,8 +66,8 @@ describe('Cherub', () => {
 
   const walletAmountAirdrop = IS_LOCALNET ? 500 * LAMPORTS_PER_SOL : 5 * LAMPORTS_PER_SOL
 
-  const walletAmount0V = 100000 * (10 ** decimals0V)
-  const walletAmount1V = 100000 * (10 ** decimals1V)
+  const walletAmount0V = 1000000 * (10 ** decimals0V)
+  const walletAmount1V = 1000000 * (10 ** decimals1V)
 
   const Direction = {
     Long: { long: {} },
@@ -118,7 +118,7 @@ describe('Cherub', () => {
     await token0V.mintTo(walletTokenAccount0V, mintAuthority.publicKey, [], walletAmount0V)
     await token1V.mintTo(walletTokenAccount1V, mintAuthority.publicKey, [], walletAmount1V)
 
-    console.log('Your wallet was airdropped', (walletAmountAirdrop / LAMPORTS_PER_SOL).toString(), 'SOL')
+    console.log('Your wallet airdrop', (walletAmountAirdrop / LAMPORTS_PER_SOL).toString(), 'SOL')
 
     let walletTokenAccountInfoV = await token0V.getAccountInfo(walletTokenAccount0V)
     assert.ok(walletTokenAccountInfoV.amount.toNumber() == walletAmount0V)
@@ -141,7 +141,7 @@ describe('Cherub', () => {
     assert.ok(tokenInfoS.supply.toNumber() == 0)
   })
 
-  it('State: Saves state', async () => {
+  it('State: Saves accounts and IDL', async () => {
     fs.writeFileSync(accountsFile, JSON.stringify({
       dao: {
         account: daoAccount.publicKey.toString()
@@ -167,7 +167,7 @@ describe('Cherub', () => {
       }
     }))
 
-    console.log('Your', IS_LOCALNET ? 'localnet' : 'devnet', 'accounts have been written to file')
+    console.log('Your accounts file', IS_LOCALNET ? 'localnet' : 'devnet')
 
     fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl))
     fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl))
@@ -239,10 +239,10 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx)
 
     let proposalPdaAccountInfo = await dao.account.proposalData.fetch(proposalPda)
-    //assert.ok(proposalPdaAccountInfo.votes.eq(new anchor.BN(0)))
-    //assert.ok(proposalPdaAccountInfo.description === description)
-    //assert.ok(proposalPdaAccountInfo.deadline.eq(new anchor.BN(deadline)))
-    //assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(1)))
+    assert.ok(proposalPdaAccountInfo.votes.eq(new anchor.BN(0)))
+    assert.ok(proposalPdaAccountInfo.description === description)
+    assert.ok(proposalPdaAccountInfo.deadline.eq(new anchor.BN(deadline)))
+    assert.ok(proposalPdaAccountInfo.index.eq(new anchor.BN(1)))
   })
 
   it('Pyth (index 0): Initializes oracle', async () => {
@@ -259,10 +259,10 @@ describe('Cherub', () => {
         instructions: [
           anchor.web3.SystemProgram.createAccount({
             fromPubkey: pyth.provider.wallet.publicKey,
-            newAccountPubkey: oracleAccount0.publicKey,
-            space: 3312,
             lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
-            programId: pyth.programId
+            newAccountPubkey: oracleAccount0.publicKey,
+            programId: pyth.programId,
+            space: 3312
           })
         ],
         signers: [oracleAccount0]
@@ -288,10 +288,10 @@ describe('Cherub', () => {
         instructions: [
           anchor.web3.SystemProgram.createAccount({
             fromPubkey: pyth.provider.wallet.publicKey,
-            newAccountPubkey: oracleAccount1.publicKey,
-            space: 3312,
             lamports: await pyth.provider.connection.getMinimumBalanceForRentExemption(3312),
-            programId: pyth.programId
+            newAccountPubkey: oracleAccount1.publicKey,
+            programId: pyth.programId,
+            space: 3312,
           })
         ],
         signers: [oracleAccount1]
@@ -369,9 +369,9 @@ describe('Cherub', () => {
     assert.ok(metaDataAccountInfo.bonds.eq(new anchor.BN(0)))
   })
 
-  const initialAmountB = 10000 * (10 ** decimals0V)
-  const initialBondMinted = 10000 * (10 ** decimalsC)
-  const initialMaxAmountA = 10000 * (10 ** decimals0V)
+  const initialAmountB = 100000 * (10 ** decimals0V)
+  const initialBondMinted = 100000 * (10 ** decimalsC)
+  const initialMaxAmountA = 100000 * (10 ** decimals0V)
   const initialMinBondC = 0
 
   it('Exchange (index 0): Bonds (index 0)', async () => {
@@ -472,10 +472,10 @@ describe('Cherub', () => {
     assert.ok(metaDataAccountInfo.stakes.eq(new anchor.BN(1)))
   })
 
-  const additionalMaxAmountA = 15000 * (10 ** decimals0V)
   const additionalAmountB = 15000 * (10 ** decimals0V)
-  const additionalMinBondC = 375 * (10 ** decimalsC)
   const additionalBondMinted = 375 * (10 ** decimalsC)
+  const additionalMaxAmountA = 15000 * (10 ** decimals0V)
+  const additionalMinBondC = 375 * (10 ** decimalsC)
 
   it('Exchange (index 0): Bonds (index 1)', async () => {
     const [bondPda, bondBump] = await anchor.web3.PublicKey.findProgramAddress(
@@ -508,11 +508,11 @@ describe('Cherub', () => {
 
     let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
     let walletTokenAccountInfo0V = await token0V.getAccountInfo(walletTokenAccount0V)
-    assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(initialMaxAmountA + additionalMaxAmountA)))
-    assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(walletAmount0V - initialMaxAmountA - additionalMaxAmountA)))
+    assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(initialAmountB + additionalAmountB)))
+    assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(walletAmount0V - initialAmountB - additionalAmountB)))
 
     let walletTokenAccountInfoC = await tokenC.getAccountInfo(walletTokenAccountC)
-    //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN()))
+    //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(1)))
   })
 
   const traderInputQuoteAccount = anchor.web3.Keypair.generate()

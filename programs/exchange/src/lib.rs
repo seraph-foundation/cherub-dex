@@ -56,13 +56,10 @@ pub mod exchange {
         if ctx.accounts.exchange.supply_a > 0 && ctx.accounts.exchange.supply_b > 0 {
             assert!(min_liquidity_c > 0);
             amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
-                / ctx.accounts.exchange.supply_b as f64) as u64;
+                / ctx.accounts.exchange.supply_b as f64) as u64
+                + 1;
             liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
                 / ctx.accounts.exchange.supply_a as f64) as u64;
-            msg!(&format!(
-                "{} {} {} {}",
-                max_amount_a, amount_a, liquidity_minted, min_liquidity_c
-            ));
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
         }
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
@@ -652,7 +649,7 @@ pub fn get_input_price(
     fee: u64,
 ) -> u64 {
     assert!(input_reserve > 0 && output_reserve > 0);
-    let input_amount_with_fee = input_amount as f64 * (fee as f64 * 1.00001);
+    let input_amount_with_fee = input_amount as f64 * (fee as f64 * 1.0001);
     let numerator = input_amount_with_fee * output_reserve as f64;
     let demonominator = input_reserve as f64 + input_amount_with_fee;
     (numerator / demonominator) as u64
@@ -674,5 +671,5 @@ pub fn get_output_price(
     assert!(input_reserve > 0 && output_reserve > 0);
     let numerator = input_reserve as f64 * output_amount as f64;
     let denominator = (output_reserve - output_amount) as f64 * (fee as f64 * 1.0001);
-    (numerator / denominator + 1.0) as u64
+    (numerator / denominator) as u64 + 1
 }
