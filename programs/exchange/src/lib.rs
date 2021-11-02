@@ -16,8 +16,7 @@ declare_id!("7wcUmVSTQEWhz7j4ut5mMvFzZDgoyextTjY7DGtAYgdN");
 pub mod exchange {
     use super::*;
 
-    /// This function acts as a contract constructor which is not currently
-    /// supported in contracts deployed using `initialize()` which is called
+    /// This function acts as a contract constructor which is called
     /// once by the factory during contract creation.
     ///
     /// fee Fee given in BPS
@@ -30,7 +29,8 @@ pub mod exchange {
         exchange.supply_b = 0;
         exchange.token_c = ctx.accounts.token_c.key();
         exchange.token_v = ctx.accounts.token_v.key();
-        let (pda, _) = Pubkey::find_program_address(&[exchange.token_v.as_ref()], ctx.program_id);
+        let (pda, _bump) =
+            Pubkey::find_program_address(&[exchange.token_v.as_ref()], ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
         Ok(())
     }
@@ -38,7 +38,7 @@ pub mod exchange {
     /// Deposit B and A at current ratio to mint C tokens.
     ///
     /// amount_b Amount of B deposited
-    /// bump PDA curve nonce
+    /// bump PDA curve bump
     /// deadline Time after which this transaction can no longer be executed
     /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
     /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
@@ -58,6 +58,7 @@ pub mod exchange {
             amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
                 / ctx.accounts.exchange.supply_b as f64) as u64
                 + 1;
+            // TODO: Is this for the C mint of this exchange or all?
             liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
                 / ctx.accounts.exchange.supply_a as f64) as u64;
             assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
@@ -86,9 +87,9 @@ pub mod exchange {
             / ctx.accounts.mint_c.supply as f64) as u64;
         let amount_b = (amount_c as f64 * ctx.accounts.exchange.supply_b as f64
             / ctx.accounts.mint_c.supply as f64) as u64;
-        let (_, nonce) =
+        let (_pda, bump) =
             Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[bump]];
         token::transfer(
             ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
             amount_a,
@@ -138,6 +139,7 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
+    /// bump For position PDA
     /// deadline Time after which this transaction can no longer be executed
     /// direction Trade can be long or short
     /// equity Collateral used
@@ -149,8 +151,8 @@ pub mod exchange {
         direction: Direction,
         equity: u64,
     ) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
         let amount_b = get_input_price(
             amount_a,
             ctx.accounts.exchange.supply_a - amount_a,
@@ -158,20 +160,14 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        let (_, nonce) =
-            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
-        token::transfer(
-            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
         position.equity = equity;
         position.quantity = amount_b;
         position.status = Status::Open;
-        position.unix_timestamp = ts;
+        position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
@@ -184,6 +180,7 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
+    /// bump For position PDA
     /// deadline Time after which this transaction can no longer be executed
     /// direction Trade can be long or short
     /// equity Collateral used for position
@@ -195,8 +192,8 @@ pub mod exchange {
         direction: Direction,
         equity: u64,
     ) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
         let amount_a = get_input_price(
             amount_b,
             ctx.accounts.exchange.supply_b - amount_b,
@@ -204,20 +201,14 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        let (_, nonce) =
-            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
-        token::transfer(
-            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let position = &mut ctx.accounts.position;
         position.direction = direction;
         position.entry = amount_b;
         position.equity = equity;
         position.quantity = amount_b;
         position.status = Status::Open;
-        position.unix_timestamp = ts;
+        position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         exchange.supply_a -= amount_a;
@@ -236,8 +227,8 @@ pub mod exchange {
         amount_b: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
         let amount_a = get_output_price(
             amount_b,
             ctx.accounts.exchange.supply_b - amount_b,
@@ -245,13 +236,7 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_a >= 1);
-        let (_, nonce) =
-            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
-        token::transfer(
-            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         exchange.supply_a -= amount_a;
@@ -268,8 +253,8 @@ pub mod exchange {
         amount_a: u64,
         deadline: Option<i64>,
     ) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
         let amount_b = get_output_price(
             amount_a,
             ctx.accounts.exchange.supply_a - amount_a,
@@ -277,13 +262,7 @@ pub mod exchange {
             ctx.accounts.exchange.fee,
         );
         assert!(amount_b >= 1);
-        let (_, nonce) =
-            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[nonce]];
-        token::transfer(
-            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
-            amount_b,
-        )?;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_b)?;
         let exchange = &mut ctx.accounts.exchange;
         exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
@@ -299,8 +278,8 @@ pub mod exchange {
     ///
     /// deadline Time after which this transaction can no longer be executed
     pub fn liquidate(ctx: Context<Update>, deadline: Option<i64>) -> ProgramResult {
-        let ts = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ts) >= ts);
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
         let oracle = Price::load(&ctx.accounts.oracle).unwrap();
         let position = &mut ctx.accounts.position;
         let pnl = match position.direction {
@@ -373,7 +352,7 @@ pub struct Bond<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(max_amount_a: u64, amount_c: u64)]
+#[instruction(amount_c: u64, max_amount_a: u64)]
 pub struct Unbond<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,

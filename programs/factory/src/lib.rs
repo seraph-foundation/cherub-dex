@@ -19,7 +19,7 @@ pub mod factory {
     pub fn initialize(ctx: Context<Initialize>, template: Pubkey) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         factory.exchange_template = template;
-        factory.token_count = 0;
+        factory.tokens = 0;
         Ok(())
     }
 
@@ -28,7 +28,7 @@ pub mod factory {
     /// fee In basis points
     pub fn create_exchange(ctx: Context<CreateExchange>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
-        factory.token_count = factory.token_count + 1;
+        factory.tokens += 1;
         exchange::cpi::create(ctx.accounts.into(), fee)?;
         Ok(())
     }
@@ -54,6 +54,9 @@ pub mod factory {
         Ok(())
     }
 
+    /// Stake.
+    ///
+    /// bump Random seed used to bump PDA off curve
     pub fn stake(ctx: Context<Stake>, amount_c: u64, bump: u8) -> ProgramResult {
         token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
         token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
@@ -64,14 +67,6 @@ pub mod factory {
         meta.stakes += 1;
         Ok(())
     }
-}
-
-#[derive(Accounts)]
-pub struct Initialize<'info> {
-    pub authority: Signer<'info>,
-    #[account(init, payer = authority, space = 8 + 32 + 8)]
-    pub factory: Account<'info, FactoryData>,
-    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -104,7 +99,14 @@ pub struct GetTokenWithId<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
+pub struct Initialize<'info> {
+    pub authority: Signer<'info>,
+    #[account(init, payer = authority, space = 8 + 32 + 8)]
+    pub factory: Account<'info, FactoryData>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct Meta<'info> {
     pub authority: Signer<'info>,
     pub factory: Account<'info, FactoryData>,
@@ -184,7 +186,7 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut CreateExchange<'info>>
 #[account]
 pub struct FactoryData {
     pub exchange_template: Pubkey,
-    pub token_count: u64,
+    pub tokens: u64,
 }
 
 #[account]

@@ -316,7 +316,7 @@ describe('Cherub', () => {
     console.log('Your transaction signature', tx)
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-    assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(0)))
+    assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(0)))
     assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString())
   })
 
@@ -345,7 +345,7 @@ describe('Cherub', () => {
     assert.ok(exchangeTokenAccountInfo0V.owner.equals(exchangePda))
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-    assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)))
+    assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(1)))
   })
 
   it('Exchange (index 0): Meta', async () => {
@@ -739,7 +739,7 @@ describe('Cherub', () => {
     //assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(0)))
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
-    //assert.ok(factoryAccountInfo.tokenCount.eq(new anchor.BN(1)))
+    //assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(1)))
   })
 
   it('Exchange (index 1): Meta', async () => {

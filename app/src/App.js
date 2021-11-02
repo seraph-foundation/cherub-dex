@@ -392,7 +392,7 @@ function App() {
       setCMarketCap(currencyFormat(lastPrice * supplyC))
 
       const factoryAccount = await factory.account.factoryData.fetch(new PublicKey(accounts.factory.account))
-      setTokenCount(factoryAccount.tokenCount.toNumber())
+      setTokenCount(factoryAccount.tokens.toNumber())
 
       const dao = new Program(daoIdl, new PublicKey(daoIdl.metadata.address), provider)
       const daoAccount = await dao.account.daoData.fetch(new PublicKey(accounts.dao.account))
