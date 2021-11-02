@@ -18,7 +18,7 @@ function App() {
   )
 
   const carouselView = (
-    <Carousel className='carousel-view' autoplay>
+    <Carousel className='carousel-view' autoplay fade>
       <div>
         <Title className='carousel-title'>Trade</Title>
         <p className='carousel-description'>100x leverage and zero impermanent loss using virtual Automated Marketing Making</p>
@@ -36,7 +36,7 @@ function App() {
 
   function onMenuClick(e) {
     if (e.key === '0') {
-      window.open('https://docs.cherub.so', '_blank')
+      window.open('https://dev.cherub.so', '_blank')
     } else if (e.key === '1') {
       window.open('https://github.com/cherub-so/cherub-protocol', '_blank')
     } else if (e.key === '2') {
@@ -54,8 +54,8 @@ function App() {
           <Col span='6'></Col>
           <Col span='12'>
             <Menu theme='dark' mode='horizontal' onClick={onMenuClick} className='header-menu' defaultSelectedKeys={[]} selectable={false}>
-              <Menu.Item key='0'><BookOutlined/>&nbsp; Documentation</Menu.Item>
-              <Menu.Item key='1'><GithubOutlined/>&nbsp; Developers</Menu.Item>
+              <Menu.Item key='0'><BookOutlined/>&nbsp; Developers</Menu.Item>
+              <Menu.Item key='1'><GithubOutlined/>&nbsp; GitHub</Menu.Item>
               <Menu.Item key='2'><LoginOutlined/>&nbsp; Launch App</Menu.Item>
             </Menu>
           </Col>

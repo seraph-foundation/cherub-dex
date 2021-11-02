@@ -79,15 +79,16 @@ body {
 
 .carousel-view {
     background-color: #1890ff;
-    padding: 5em;
+    padding: 10em;
     text-align: center;
 }
 
 .carousel-title {
     color: white !important;
+    font-size: 2em;
 }
 
 .carousel-description {
     color: white;
-    font-size: 2em;
+    font-size: 1.5em;
 }
