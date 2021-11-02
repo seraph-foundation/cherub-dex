@@ -704,8 +704,11 @@ function App() {
     setIsInverseAssetModalVisible(false)
     setInverseAsset(exchange.symbol)
     getInverseData(exchange.symbol)
-    getBalance(exchange.symbol)
-    getPositions(exchange.symbol)
+
+    if (wallet.connected) {
+      getBalance(exchange.symbol)
+      getPositions(exchange.symbol)
+    }
   }
 
   function calculateCountdown() {
