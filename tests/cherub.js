@@ -304,7 +304,7 @@ describe('Cherub', () => {
   })
 
   it('Factory: Initializes', async () => {
-    const tx = await factory.rpc.initialize(exchange.programId, {
+    const tx = await factory.rpc.initialize({
       accounts: {
         authority: provider.wallet.publicKey,
         factory: factoryAccount.publicKey,
@@ -317,13 +317,12 @@ describe('Cherub', () => {
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
     assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(0)))
-    assert.ok(factoryAccountInfo.exchangeTemplate.toString() == exchange.programId.toString())
   })
 
   it('Factory: Creates exchange (index 0)', async () => {
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const fee0 = 3
-    const tx = await factory.rpc.createExchange(
+    const tx = await factory.rpc.addExchange(
       new anchor.BN(fee0), {
         accounts: {
           exchange: exchangeAccount0.publicKey,
@@ -718,7 +717,7 @@ describe('Cherub', () => {
   it('Factory: Creates exchange (index 1)', async () => {
     const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress([token1V.publicKey.toBuffer()], exchange.programId)
     const fee1 = 3
-    const tx = await factory.rpc.createExchange(
+    const tx = await factory.rpc.addExchange(
       new anchor.BN(fee1), {
         accounts: {
           exchange: exchangeAccount1.publicKey,

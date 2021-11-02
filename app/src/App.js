@@ -291,6 +291,7 @@ function App() {
           toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(i)
         ], exchange.programId)
         const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
+
         if (positionDataAccount) {
           positions.push({
             direction: positionDataAccount.direction.long ? 'Long' : 'Short',
@@ -316,6 +317,7 @@ function App() {
           toBuffer('bond'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(i)
         ], exchange.programId)
         const bondDataAccount = await exchange.account.bondData.fetch(bondPda)
+
         if (bondDataAccount) {
           bonds.push({
             quantity: (bondDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
@@ -403,13 +405,15 @@ function App() {
         const [proposalPda, bump] = await PublicKey.findProgramAddress([toBuffer(i)], dao.programId)
         const proposalAccount = await dao.account.proposalData.fetch(proposalPda)
         const deadlineDate = new Date(proposalAccount.deadline.toNumber() * 1000)
+        const deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric'})
+
         let icon = (<CloseCircleOutlined className='CloseCircleOutlined'/>)
         if (deadlineDate > new Date()) {
           icon = <CheckCircleOutlined className='ClockCircleOutlined'/>
         } else {
           icon = <ClockCircleOutlined className='ClockCircleOutlined'/>
         }
-        let deadline = deadlineDate.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric'})
+
         proposals.push({
           description: <><code>{proposalAccount.index.toNumber()}</code> • Voting deadline is {deadline}</>,
           icon: icon,

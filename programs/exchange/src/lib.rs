@@ -9,18 +9,18 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 
 use pyth::utils::Price;
 
-declare_id!("7wcUmVSTQEWhz7j4ut5mMvFzZDgoyextTjY7DGtAYgdN");
+declare_id!("7DJu8o3E4bjj7gB1UQB4mD48MoUtiS8BrKW8473ddwWT");
 
 /// Exchange
 #[program]
 pub mod exchange {
     use super::*;
 
-    /// This function acts as a contract constructor which is called
+    /// Initialize. This function acts as a contract constructor which is called
     /// once by the factory during contract creation.
     ///
     /// fee Fee given in BPS
-    pub fn create(ctx: Context<Create>, fee: u64) -> ProgramResult {
+    pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = ctx.accounts.factory.key();
         exchange.fee = fee;
@@ -38,7 +38,7 @@ pub mod exchange {
     /// Deposit B and A at current ratio to mint C tokens.
     ///
     /// amount_b Amount of B deposited
-    /// bump PDA curve bump
+    /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
     /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
     /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
@@ -139,7 +139,7 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
-    /// bump For position PDA
+    /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
     /// direction Trade can be long or short
     /// equity Collateral used
@@ -180,7 +180,7 @@ pub mod exchange {
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact input)
-    /// bump For position PDA
+    /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
     /// direction Trade can be long or short
     /// equity Collateral used for position
@@ -311,7 +311,7 @@ pub mod exchange {
 }
 
 #[derive(Accounts)]
-pub struct Create<'info> {
+pub struct Initialize<'info> {
     #[account(zero)]
     pub exchange: Account<'info, ExchangeData>,
     #[account(mut)]
@@ -442,8 +442,8 @@ pub struct Meta<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// Implements creation accounts
-impl<'info> Create<'info> {
+/// Implements account initialization
+impl<'info> Initialize<'info> {
     fn into_ctx_v(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
             account_or_mint: self.exchange_v.to_account_info(),

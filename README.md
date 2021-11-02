@@ -16,7 +16,7 @@ A Solana wallet and SOL are required to get started.
 
 ```bash
 solana-keygen new
-solana airdrop 5
+yarn protocol:airdrop # Run as long as needed
 ```
 
 Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on your environment.
@@ -31,9 +31,10 @@ Start the app.
 yarn app:start
 ```
 
-To deploy the entire protocol, follow below.
+To deploy the entire protocol on, for example, `devnet`, make sure the correct cluster is set in `Anchor.toml` and run the following.
 
 ```bash
+yarn protocol:clean
 yarn protocol:build:devnet
 yarn protocol:deploy:devnet
 # Update Anchor.toml and the program id declarations with the deployment public keys
@@ -45,7 +46,7 @@ yarn protocol:test:devnet
 This is currently handled with Docusauraus.
 
 ```bash
-yarn start:docs
+yarn docs:start
 ```
 
 ### Support

@@ -7,7 +7,7 @@
     "app:start": "cd app && yarn start",
     "app:build": "cd app && yarn build",
     "docs:start": "cd docs && yarn start",
-    "protocol:airdrop": "while true; do solana airdrop 1; sleep 10; done",
+    "protocol:airdrop": "while true; do solana airdrop 5; sleep 10; done",
     "protocol:build:devnet": "anchor build -- --features \"devnet\"",
     "protocol:clean": "cargo clean",
     "protocol:deploy:devnet": "solana config set --url https://api.devnet.solana.com && anchor deploy",
