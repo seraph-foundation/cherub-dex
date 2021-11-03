@@ -43,7 +43,7 @@ const config = {
       title: 'Cherub',
       logo: {
         alt: 'Cherub Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {
