@@ -20,16 +20,16 @@ function App() {
   const carouselView = (
     <Carousel className='carousel-view' autoplay fade>
       <div>
+        <Title className='carousel-title'>Build</Title>
+        <p className='carousel-description'>Access or bond deep, protocol-owned liquidity</p>
+      </div>
+      <div>
         <Title className='carousel-title'>Trade</Title>
         <p className='carousel-description'>100x leverage and zero impermanent loss using virtual Automated Marketing Making</p>
       </div>
       <div>
         <Title className='carousel-title'>Invest</Title>
         <p className='carousel-description'>Stake CHRB to receive high-yield, rebased cryptodollars</p>
-      </div>
-      <div>
-        <Title className='carousel-title'>Build</Title>
-        <p className='carousel-description'>Access or bond deep, protocol-owned liquidity</p>
       </div>
     </Carousel>
   )

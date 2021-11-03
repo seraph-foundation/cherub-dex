@@ -1,6 +1,10 @@
-# Cherub
+# Cherub Protocol
 
 Inverse Perpetuals (3, 3) DAO
+
+* **Build** Access or bond deep, protocol-owned liquidity
+* **Trade** 100x leverage and zero impermanent loss using virtual Automated Marketing Making
+* **Invest** Stake CHRB to receive high-yield, rebased cryptodollars
 
 ## Development
 
