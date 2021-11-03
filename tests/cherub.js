@@ -347,6 +347,27 @@ describe('Cherub', () => {
     assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(1)))
   })
 
+  it('Factory: Simulate get exchange (index 0)', async () => {
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const dataAccount = anchor.web3.Keypair.generate()
+    const tx = await factory.simulate.getExchange(
+      token0V.publicKey, {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          data: dataAccount.publicKey,
+          factory: factoryAccount.publicKey,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID
+        },
+        signers: [dataAccount]
+      })
+
+    console.log('Your transaction signature')
+
+    let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
+    assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(1)))
+  })
+
   it('Exchange (index 0): Meta', async () => {
     [walletMetaPda0, walletMetaBump0] = await anchor.web3.PublicKey.findProgramAddress(
       [toBuffer('meta'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()],

@@ -32,15 +32,33 @@ pub mod factory {
         Ok(())
     }
 
-    pub fn get_exchange(_ctx: Context<GetExchange>, _token: Pubkey) -> ProgramResult {
+    /// Get exchange by token.
+    pub fn get_exchange(ctx: Context<GetExchange>, token: Pubkey) -> ProgramResult {
+        let factory = &mut ctx.accounts.factory;
+        let data = &mut ctx.accounts.data;
+        let (pda, _bump) = Pubkey::find_program_address(&[token.key().as_ref()], ctx.program_id);
+        data.pk = pda;
         Ok(())
     }
 
-    pub fn get_token(_ctx: Context<GetToken>, _token: Pubkey) -> ProgramResult {
+    /// Get token by exchange.
+    pub fn get_token(ctx: Context<GetExchange>, exchange: Pubkey) -> ProgramResult {
+        let factory = &mut ctx.accounts.factory;
+        let data = &mut ctx.accounts.data;
+        for i in 0..factory.tokens {
+            let (pda, _bump) =
+                Pubkey::find_program_address(&[i.to_string().as_bytes()], ctx.program_id);
+            data.pk = pda;
+        }
         Ok(())
     }
 
-    pub fn get_token_with_id(_ctx: Context<GetTokenWithId>, _token: Pubkey) -> ProgramResult {
+    /// Get exchange by id.
+    pub fn get_token_with_id(ctx: Context<GetExchange>, id: u64) -> ProgramResult {
+        let (pda, _bump) =
+            Pubkey::find_program_address(&[id.to_string().as_bytes()], ctx.program_id);
+        let data = &mut ctx.accounts.data;
+        data.pk = pda;
         Ok(())
     }
 
@@ -84,17 +102,11 @@ pub struct AddExchange<'info> {
 
 #[derive(Accounts)]
 pub struct GetExchange<'info> {
+    pub authority: Signer<'info>,
     pub factory: Account<'info, FactoryData>,
-}
-
-#[derive(Accounts)]
-pub struct GetToken<'info> {
-    pub factory: Account<'info, FactoryData>,
-}
-
-#[derive(Accounts)]
-pub struct GetTokenWithId<'info> {
-    pub factory: Account<'info, FactoryData>,
+    #[account(init, payer = authority, space = 8 + 32)]
+    pub data: Account<'info, ExchangeData>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -171,7 +183,9 @@ impl<'info> Stake<'info> {
 impl<'a, 'b, 'c, 'd, 'info> From<&mut AddExchange<'info>>
     for CpiContext<'a, 'b, 'c, 'info, exchange::Initialize<'info>>
 {
-    fn from(accounts: &mut AddExchange<'info>) -> CpiContext<'a, 'b, 'c, 'info, exchange::Initialize<'info>> {
+    fn from(
+        accounts: &mut AddExchange<'info>,
+    ) -> CpiContext<'a, 'b, 'c, 'info, exchange::Initialize<'info>> {
         let cpi_accounts = exchange::Initialize {
             exchange: accounts.exchange.clone(),
             exchange_v: accounts.exchange_v.clone(),
@@ -187,6 +201,11 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut AddExchange<'info>>
 #[account]
 pub struct FactoryData {
     pub tokens: u64,
+}
+
+#[account]
+pub struct ExchangeData {
+    pub pk: Pubkey,
 }
 
 #[account]
