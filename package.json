@@ -4,18 +4,19 @@
   "version": "0.1.0",
   "description": "Inverse Perpetuals (3, 3) DAO",
   "scripts": {
-    "app:start": "cd app && yarn start",
     "app:build": "cd app && yarn build",
+    "app:start": "cd app && yarn start",
     "docs:start": "cd docs && yarn start",
     "marketing:start": "cd marketing && yarn start",
     "protocol:airdrop": "while true; do solana airdrop 5; sleep 10; done",
+    "protocol:bots:liquidate:localnet": "node bots/liquidate.js",
+    "protocol:bots:trade:localnet": "node bots/trade.js",
     "protocol:build:devnet": "anchor build -- --features \"devnet\"",
     "protocol:clean": "cargo clean",
     "protocol:deploy:devnet": "solana config set --url https://api.devnet.solana.com && anchor deploy",
     "protocol:deploy:localnet": "solana config set --url http://127.0.0.1:8899 && anchor deploy",
     "protocol:test:devnet": "anchor test",
-    "protocol:test:localnet": "anchor test --detach",
-    "protocol:trader:localnet": "node bots/trader.js"
+    "protocol:test:localnet": "anchor test --detach"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.16.2",

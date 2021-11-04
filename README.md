@@ -23,10 +23,22 @@ solana-keygen new
 yarn protocol:airdrop # Run as long as needed
 ```
 
-Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on your environment.
+Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on your environment and `.env` is configured correctly.
 
 ```bash
 yarn protocol:test:localnet
+```
+
+Start a demo trading bot.
+
+```bash
+yarn protocol:bots:trade:localnet
+```
+
+Start a liquidation bot.
+
+```bash
+yarn protocol:bots:liquidate:localnet
 ```
 
 Start the app.
