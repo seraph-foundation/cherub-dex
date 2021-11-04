@@ -699,8 +699,6 @@ function App() {
     setIsInverseAssetModalVisible(false)
     setInverseAsset(exchange.symbol)
 
-    console.log(exchange.symbol)
-
     if (wallet.connected) {
       getBalance(exchange.symbol)
       getPositions(exchange.symbol)

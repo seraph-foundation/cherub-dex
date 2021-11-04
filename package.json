@@ -6,11 +6,11 @@
   "scripts": {
     "app:build": "cd app && yarn build",
     "app:start": "cd app && yarn start",
+    "bots:liquidate:start": "node bots/liquidate.js",
+    "bots:trade:start": "node bots/trade.js",
     "docs:start": "cd docs && yarn start",
     "marketing:start": "cd marketing && yarn start",
     "protocol:airdrop": "while true; do solana airdrop 5; sleep 10; done",
-    "protocol:bots:liquidate:start": "node bots/liquidate.js",
-    "protocol:bots:trade:start": "node bots/trade.js",
     "protocol:build": "anchor build",
     "protocol:clean": "cargo clean",
     "protocol:deploy": "anchor deploy",

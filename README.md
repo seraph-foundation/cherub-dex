@@ -33,13 +33,13 @@ yarn protocol:test
 Start a demo trading bot.
 
 ```bash
-yarn protocol:bots:trade:start
+yarn bots:trade:start
 ```
 
 Start a liquidation bot.
 
 ```bash
-yarn protocol:bots:liquidate:start
+yarn bots:liquidate:start
 ```
 
 Start the app.
