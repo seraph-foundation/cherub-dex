@@ -23,22 +23,23 @@ solana-keygen new
 yarn protocol:airdrop # Run as long as needed
 ```
 
-Make sure cluster is set to either `localnet` or `devnet` in `Anchor.toml`, depending on your environment and `.env` is configured correctly.
+Make sure cluster is set to either `localnet` in `Anchor.toml` and `.env` is configured correctly.
 
 ```bash
-yarn protocol:test:localnet
+solana config set --url http://127.0.0.1:8899
+yarn protocol:test
 ```
 
 Start a demo trading bot.
 
 ```bash
-yarn protocol:bots:trade:localnet
+yarn protocol:bots:trade:start
 ```
 
 Start a liquidation bot.
 
 ```bash
-yarn protocol:bots:liquidate:localnet
+yarn protocol:bots:liquidate:start
 ```
 
 Start the app.
@@ -47,14 +48,15 @@ Start the app.
 yarn app:start
 ```
 
-To deploy the entire protocol on, for example, `devnet`, make sure the correct cluster is set in `Anchor.toml` and run the following.
+To deploy the protocol on `devnet`, make sure the correct cluster is set in `Anchor.toml` and `.env` and run the following.
 
 ```bash
+solana config set --url https://api.devnet.solana.com
 yarn protocol:clean
-yarn protocol:build:devnet
-yarn protocol:deploy:devnet
+yarn protocol:build
+yarn protocol:deploy
 # Update Anchor.toml and the program id declarations with the deployment public keys
-yarn protocol:test:devnet
+yarn protocol:test
 ```
 
 ## Documentation
