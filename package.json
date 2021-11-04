@@ -14,7 +14,8 @@
     "protocol:deploy:devnet": "solana config set --url https://api.devnet.solana.com && anchor deploy",
     "protocol:deploy:localnet": "solana config set --url http://127.0.0.1:8899 && anchor deploy",
     "protocol:test:devnet": "anchor test",
-    "protocol:test:localnet": "anchor test --detach"
+    "protocol:test:localnet": "anchor test --detach",
+    "protocol:trader:localnet": "node bots/trader.js"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.16.2",

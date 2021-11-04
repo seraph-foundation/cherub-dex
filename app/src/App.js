@@ -169,11 +169,9 @@ function App() {
   const [fundingRate, setFundingRate] = useState()
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState()
-  const [high24H, setHigh24H] = useState()
-  const [isBlockHeightIntervalSet, setIsBlockHeightIntervalSet] = useState(false)
-  const [isCountdownIntervalSet, setIsCountdownIntervalSet] = useState(false)
+  const [high24H, setHigh24H] = useState(0)
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false)
-  const [isInverseDataSet, setIsInverseDataSet] = useState(false)
+  const [isTimeoutDataSet, setIsTimeoutDataSet] = useState(false)
   const [isUserDataSet, setIsUserDataSet] = useState(false)
   const [indexPrice, setIndexPrice] = useState()
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL)
@@ -183,7 +181,7 @@ function App() {
   const [inversePositions, setInversePositions] = useState([])
   const [inverseStep, setInverseStep] = useState(0)
   const [leverage, setLeverage] = useState(1)
-  const [low24H, setLow24H] = useState()
+  const [low24H, setLow24H] = useState(0)
   const [marketPrice, setCurrentMarketPrice] = useState(0)
   const [menu, setMenu] = useState('')
   const [stakeCard, setStakeCard] = useState('stake')
@@ -191,7 +189,7 @@ function App() {
   const [stakeStep, setStakeStep] = useState(0)
   const [stakePositions, setStakePositions] = useState([])
   const [tokenCount, setTokenCount] = useState(0)
-  const [turnaround24H, setTurnaround24H] = useState()
+  const [turnaround24H, setTurnaround24H] = useState(0)
 
   const wallet = useWallet()
 
@@ -201,7 +199,7 @@ function App() {
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
   const getCBalanceCallback = useCallback(getCBalance, [getProviderCallback])
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
-  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback])
+  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback, high24H, inverseAsset, low24H, marketPrice, turnaround24H])
   const getPositionsCallback = useCallback(getPositions, [getProviderCallback])
   const getStakesCallback = useCallback(getStakes, [getProviderCallback])
 
@@ -428,24 +426,16 @@ function App() {
     }
   }
 
-  function setDummyInverseData(lastPrice, indexPrice) {
-    setChange24H('+' + (lastPrice > 0 ? (Math.random() / 100 + 2).toFixed(2) : 0))
-    setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0)
-    setHigh24H((lastPrice * (Math.random() / 100 + 1.1)).toFixed(2))
-    setLow24H((lastPrice * (Math.random() / 100 + 0.9)).toFixed(2))
-    setTurnaround24H((lastPrice * (Math.random() * 10000 + 1.3)).toFixed(0))
-  }
+  async function getInverseData() {
+    const currentExchange = accounts.exchanges.find((x) => x.symbol === inverseAsset)
 
-  async function getInverseData(asset) {
     try {
-      const currentExchange = accounts.exchanges.find((x) => x.symbol === asset)
       const provider = await getProviderCallback()
-      const exchangePublicKey = new PublicKey(accounts.exchanges.find((x) => x.symbol === asset).account)
+      const exchangePublicKey = new PublicKey(currentExchange.account)
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
 
       const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey)
-      const mintAPublicKey = accounts.exchanges.find((x) => x.symbol === asset).tokenV
-      const tokenV = new Token(provider.connection, new PublicKey(mintAPublicKey), TOKEN_PROGRAM_ID, null)
+      const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
       const mintAInfo = await tokenV.getMintInfo()
       const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2)
 
@@ -456,7 +446,14 @@ function App() {
       setCurrentMarketPrice(lastPrice)
       setIndexPrice(indexPrice.toFixed(2))
       setExchangeRate((1 / lastPrice).toFixed(4))
-      setDummyInverseData(lastPrice, indexPrice)
+
+      if (lastPrice !== marketPrice) {
+        setChange24H('+' + ((high24H - low24H) / lastPrice).toFixed(2))
+        setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0)
+        setHigh24H(lastPrice > high24H ? (lastPrice / 1).toFixed(2) : (high24H / 1).toFixed(2))
+        setLow24H(low24H  === 0 ? (lastPrice / 1).toFixed(2) : lastPrice < low24H ? (lastPrice / 1).toFixed(2) : (low24H / 1).toFixed(2))
+        setTurnaround24H((turnaround24H / 1 + (Math.random() * 10000 + 1.3)).toFixed(0))
+      }
     } catch (err) {
       console.log(err)
     }
@@ -530,7 +527,6 @@ function App() {
       setInverseQuantity()
 
       getPositions(currentExchange.symbol)
-      getInverseData(currentExchange.symbol)
       getBalance(currentExchange.symbol)
     } catch (err) {
       description = 'Transaction error'
@@ -611,7 +607,6 @@ function App() {
       description = (<div>Your transaction signature is <a href={link} rel='noreferrer' target='_blank'><code>{tx}</code></a></div>)
       message = 'Order Successfully Place'
 
-      getInverseData(currentExchange.symbol)
       getBalance(currentExchange.symbol)
       getPositions(currentExchange.symbol)
 
@@ -703,7 +698,8 @@ function App() {
   function onModalSelectExchange(exchange) {
     setIsInverseAssetModalVisible(false)
     setInverseAsset(exchange.symbol)
-    getInverseData(exchange.symbol)
+
+    console.log(exchange.symbol)
 
     if (wallet.connected) {
       getBalance(exchange.symbol)
@@ -974,26 +970,18 @@ function App() {
   }, [setMenu])
 
   useEffect(() => {
-    if (!isBlockHeightIntervalSet) {
-      setIsBlockHeightIntervalSet(true)
-      setInterval(getBlockHeightCallback, 10000)
-    }
-  }, [isBlockHeightIntervalSet, getBlockHeightCallback])
-
-  useEffect(() => {
-    if (!isCountdownIntervalSet) {
-      setIsCountdownIntervalSet(true)
+    if (!isTimeoutDataSet) {
+      setIsTimeoutDataSet(true)
       setInterval(calculateCountdown, 1000)
+      setInterval(getBlockHeightCallback, 10000)
+      setInterval(getDashboardDataCallback, 10000)
     }
-  }, [isCountdownIntervalSet, setIsCountdownIntervalSet])
+  }, [getDashboardDataCallback, getBlockHeightCallback, isTimeoutDataSet])
 
   useEffect(() => {
-    if (!isInverseDataSet) {
-      setIsInverseDataSet(true)
-      getDashboardDataCallback()
-      getInverseDataCallback(DEFAULT_SYMBOL)
-    }
-  }, [getDashboardDataCallback, getInverseDataCallback, isInverseDataSet])
+    const interval = setInterval(getInverseDataCallback, 500)
+    return () => clearInterval(interval)
+  }, [getInverseDataCallback])
 
   useEffect(() => {
     if (wallet.connected && !isUserDataSet) {
