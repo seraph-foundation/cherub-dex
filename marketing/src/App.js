@@ -9,12 +9,18 @@ const { Title } = Typography
 
 function App() {
   const heroView = (
-    <div className='hero-view'>
-      <div className='hero-content'>
-        <Title className='hero-title'>Cherub Protocol</Title>
-        <Title className='hero-description' level={3}>Inverse Perpetuals (3, 3) DAO</Title>
-      </div>
-    </div>
+    <Row className='hero-view'>
+      <Col xs={0} md={2}></Col>
+      <Col xs={24} md={20}>
+        <div>
+          <div className='hero-content'>
+            <Title className='hero-title'>Cherub Protocol</Title>
+            <Title className='hero-description' level={3}>Inverse Perpetuals (3, 3) DAO</Title>
+          </div>
+        </div>
+      </Col>
+      <Col xs={0} md={2}></Col>
+    </Row>
   )
 
   const carouselView = (
@@ -65,7 +71,7 @@ function App() {
         {heroView}
         {carouselView}
       </Content>
-      <Footer className='footer'>Cherub Foundation ©2021</Footer>
+      <Footer className='footer'>Cherub ©2021</Footer>
     </Layout>
   )
 }

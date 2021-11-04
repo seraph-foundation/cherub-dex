@@ -77,7 +77,7 @@ async function main() {
     if (open) {
       const amount = Math.floor((Math.random() * 1000) + 1) * (10 ** decimalsV)
       const deadline = Date.now() / 1000
-      const displayAmount = (amount / (10 ** decimalsV)).toString() + 'USD'
+      const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
       const equity = 1
       const leverage = Math.floor((Math.random() * 100) + 1)
       const long = Math.floor((Math.random() * 2) + 1) === 1
@@ -109,7 +109,7 @@ async function main() {
         tx = await exchange.rpc.aToBInput(new anchor.BN(amount), positionBump, new anchor.BN(deadline), Direction.Short, new anchor.BN(equity), args)
       }
 
-      console.log(leverage + 'x', 'leverage', long ? 'long' : 'short' , 'trade for', displayAmount, 'transaction signature', tx)
+      console.log('Transaction signature', tx, 'for', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'with', displayAmount, 'equity')
     } else {
       // TODO: Implement closing positions
     }
