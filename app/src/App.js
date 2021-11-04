@@ -161,12 +161,12 @@ function App() {
   const [cCirculatingSupplyTotal, setCCirculatingSupplyTotal] = useState('0 / 0')
   const [cCurrentPrice, setCCurrentPrice] = useState(0)
   const [cMarketCap, setCMarketCap] = useState(0)
-  const [change24H, setChange24H] = useState()
+  const [change24H, setChange24H] = useState(0)
   const [countdown, setCountdown] = useState()
   const [daoCard, setDAOCard] = useState('statistics')
   const [daoProposals, setDaoProposals] = useState([])
   const [exchangeRate, setExchangeRate] = useState(0)
-  const [fundingRate, setFundingRate] = useState()
+  const [fundingRate, setFundingRate] = useState(0)
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState()
   const [high24H, setHigh24H] = useState(0)
@@ -448,11 +448,11 @@ function App() {
       setExchangeRate((1 / lastPrice).toFixed(4))
 
       if (lastPrice !== marketPrice) {
-        setChange24H('+' + ((high24H - low24H) / lastPrice).toFixed(2))
-        setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000).toFixed(4) : 0)
-        setHigh24H(lastPrice > high24H ? (lastPrice / 1).toFixed(2) : (high24H / 1).toFixed(2))
-        setLow24H(low24H  === 0 ? (lastPrice / 1).toFixed(2) : lastPrice < low24H ? (lastPrice / 1).toFixed(2) : (low24H / 1).toFixed(2))
-        setTurnaround24H((turnaround24H / 1 + (Math.random() * 10000 + 1.3)).toFixed(0))
+        setChange24H((high24H - low24H) / lastPrice)
+        setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000) : 0)
+        setHigh24H(lastPrice > high24H ? lastPrice : high24H)
+        setLow24H(low24H  === 0 ? lastPrice : (lastPrice < low24H ? lastPrice : low24H))
+        setTurnaround24H(turnaround24H / 1 + (Math.random() * 10000 + 1.3))
       }
     } catch (err) {
       console.log(err)
@@ -736,7 +736,8 @@ function App() {
       </Col>
       <Col span={3}>
         <p><small>24H Change (%)</small></p>
-        <Title level={5} className='Title Dark Green'>{change24H}</Title>
+        {change24H >= 0 ? <Title level={5} className='Title Dark Green'>+{change24H.toFixed(2)}</Title> :
+          <Title level={5} className='Title Dark Red'>{change24H.toFixed(2)}</Title>}
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
@@ -748,11 +749,11 @@ function App() {
       </Col>
       <Col span={3}>
         <p><small>24H Turnaround ({inverseAsset})</small></p>
-        <Title level={5} className='Title Dark'>{turnaround24H}</Title>
+        <Title level={5} className='Title Dark'>{turnaround24H.toFixed(0)}</Title>
       </Col>
       <Col span={3}>
         <p><small>Funding (%) / Countdown</small></p>
-        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate}</span> / {countdown}</Title>
+        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate.toFixed(3)}</span> / {countdown}</Title>
       </Col>
       <Col span={3}></Col>
     </Row>
