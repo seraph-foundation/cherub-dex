@@ -737,7 +737,7 @@ function App() {
       <Col span={3}>
         <p><small>24H Change (%)</small></p>
         {change24H >= 0 ? <Title level={5} className='Title Dark Green'>+{change24H.toFixed(2)}</Title> :
-          <Title level={5} className='Title Dark Red'>{change24H.toFixed(2)}</Title>}
+        <Title level={5} className='Title Dark Red'>{change24H.toFixed(2)}</Title>}
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
