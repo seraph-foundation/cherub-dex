@@ -1,51 +1,14 @@
-const { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token')
-const anchor = require('@project-serum/anchor')
-const dotenv = require('dotenv')
+const { ASSOCIATED_TOKEN_PROGRAM_ID, BN, TOKEN_PROGRAM_ID, SYSVAR_CLOCK_PUBKEY, PublicKey, SystemProgram, Token } = require('../sdk/src')
+const { Direction, Status, sleep, toBuffer } = require('../sdk/src')
+const cherub = require('../sdk/src')
 
-const exchangeIdl = require('../target/idl/exchange.json')
-const factoryIdl = require('../target/idl/factory.json')
+const config = cherub.init()
 
-const { PublicKey, SystemProgram } = anchor.web3
+const provider = config.provider
+const accounts = config.accounts
 
-dotenv.config()
-
-anchor.setProvider(anchor.Provider.env())
-
-const provider = anchor.getProvider()
-
-const IS_LOCALNET = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899'
-
-const accountsFile = IS_LOCALNET ? './app/src/accounts-localnet.json' : './app/src/accounts-devnet.json'
-
-let accounts = {}
-
-if (IS_LOCALNET) {
-  accounts = require('../app/src/accounts-localnet.json')
-} else {
-  accounts = require('./app/src/accounts-devnet.json')
-}
-
-const exchange = anchor.workspace.Exchange
-const factory = anchor.workspace.Factory
-
-const Direction = {
-  Long: { long: {} },
-  Short: { short: {} }
-}
-
-const Status = {
-  Open: { open: {} },
-  Closed: { closed: {} },
-  Liquidated: { liquidated: {} }
-}
-
-const sleep = (milliseconds) => {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
-
-const toBuffer = (x) => {
-  return Buffer.from(anchor.utils.bytes.utf8.encode(x))
-}
+const exchange = config.programs.exchange
+const factory = config.programs.factory
 
 const tokenV = new Token(provider.connection, new PublicKey(accounts.exchanges[0].tokenV), TOKEN_PROGRAM_ID, provider.wallet.payer)
 const decimalsV = 9
@@ -54,7 +17,7 @@ const walletAmountV = 1000000 * (10 ** decimalsV)
 async function main() {
   console.log('Running....')
 
-  const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([tokenV.publicKey.toBuffer()], exchange.programId)
+  const [exchangePda, exchangeBump] = await PublicKey.findProgramAddress([tokenV.publicKey.toBuffer()], exchange.programId)
 
   const walletTokenAccountV = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -66,7 +29,7 @@ async function main() {
   await tokenV.mintTo(walletTokenAccountV, provider.wallet.publicKey, [], walletAmountV)
 
   while (true) {
-    const open = Math.floor((Math.random() * 2) + 1) === 1
+    let tx
 
     const [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress([
       toBuffer('meta'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()
@@ -74,22 +37,24 @@ async function main() {
     const exchangeMetaDataAccountInfo = await exchange.account.metaData.fetch(walletMetaPda)
     const positions = exchangeMetaDataAccountInfo.positions.toNumber()
 
-    if (open) {
+    // Randomly open or close position
+    if (Math.floor((Math.random() * 2) + 1) === 1) {
       const amount = Math.floor((Math.random() * 1000) + 1) * (10 ** decimalsV)
       const deadline = Date.now() / 1000
       const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
-      const equity = 1
       const leverage = Math.floor((Math.random() * 100) + 1)
       const long = Math.floor((Math.random() * 2) + 1) === 1
 
-      const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
+      const equity = amount / leverage
+
+      const [positionPda, positionBump] = await PublicKey.findProgramAddress([
         toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(positions)
       ], exchange.programId)
 
       const args = {
         accounts: {
           authority: provider.wallet.publicKey,
-          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          clock: SYSVAR_CLOCK_PUBKEY,
           exchange: new PublicKey(accounts.exchanges[0].account),
           exchangeV: new PublicKey(accounts.exchanges[0].accountV),
           meta: walletMetaPda,
@@ -102,16 +67,56 @@ async function main() {
         }
       }
 
-      let tx
       if (long) {
-        tx = await exchange.rpc.bToAInput(new anchor.BN(amount), positionBump, new anchor.BN(deadline), Direction.Long, new anchor.BN(equity), args)
+        tx = await exchange.rpc.bToAInput(new BN(amount), positionBump, new BN(deadline), Direction.Long, new BN(equity), args)
       } else {
-        tx = await exchange.rpc.aToBInput(new anchor.BN(amount), positionBump, new anchor.BN(deadline), Direction.Short, new anchor.BN(equity), args)
+        tx = await exchange.rpc.aToBInput(new BN(amount), positionBump, new BN(deadline), Direction.Short, new BN(equity), args)
       }
 
-      console.log('Transaction signature', tx, 'for', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'with', displayAmount, 'equity')
+      console.log('Opening', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'for', displayAmount + '...')
+      console.log('Transaction signature', tx)
     } else {
-      // TODO: Implement closing positions
+      const [positionPda, positionBump] = await PublicKey.findProgramAddress([
+        toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(Math.floor((Math.random() * positions)))
+      ], exchange.programId)
+      const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
+
+      const status = positionDataAccount.status
+
+      if (status.open) {
+        const amount = positionDataAccount.amount.toNumber()
+        const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
+        const direction = positionDataAccount.direction
+        const equity = positionDataAccount.equity.toNumber()
+        const leverage = amount / equity
+
+        const long = direction.long ? true : false
+
+        console.log('Closing', leverage.toFixed(0) + 'x leverage', long ? 'long' : 'short', 'for', displayAmount + '...')
+
+        const args = {
+          accounts: {
+            authority: provider.wallet.publicKey,
+            clock: SYSVAR_CLOCK_PUBKEY,
+            exchange: new PublicKey(accounts.exchanges[0].account),
+            exchangeV: new PublicKey(accounts.exchanges[0].accountV),
+            meta: walletMetaPda,
+            pda: exchangePda,
+            position: positionPda,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            userV: walletTokenAccountV
+          }
+        }
+
+        if (long) {
+          tx = await exchange.rpc.bToAOutput(new BN(amount), positionBump, new BN(deadline), Direction.Long, new BN(equity), args)
+        } else {
+          tx = await exchange.rpc.aToBOutput(new BN(amount), positionBump, new BN(deadline), Direction.Short, new BN(equity), args)
+        }
+
+        console.log('Transaction signature', tx)
+      }
     }
 
     await sleep(1000)

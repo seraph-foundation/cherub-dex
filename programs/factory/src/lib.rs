@@ -79,7 +79,7 @@ pub mod factory {
         token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
         let stake = &mut ctx.accounts.stake;
         stake.unix_timestamp = ctx.accounts.clock.unix_timestamp;
-        stake.quantity = amount_c;
+        stake.amount = amount_c;
         let meta = &mut ctx.accounts.meta;
         meta.stakes += 1;
         Ok(())
@@ -215,6 +215,6 @@ pub struct MetaData {
 
 #[account]
 pub struct StakeData {
-    pub quantity: u64,
+    pub amount: u64,
     pub unix_timestamp: i64,
 }

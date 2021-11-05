@@ -69,7 +69,7 @@ pub mod exchange {
         exchange.supply_a += amount_a;
         exchange.supply_b += liquidity_minted;
         let bond = &mut ctx.accounts.bond;
-        bond.quantity = amount_b;
+        bond.amount = amount_b;
         bond.unix_timestamp = ctx.accounts.clock.unix_timestamp;
         let meta = &mut ctx.accounts.meta;
         meta.bonds += 1;
@@ -164,7 +164,7 @@ pub mod exchange {
         position.direction = direction;
         position.entry = amount_b;
         position.equity = equity;
-        position.quantity = amount_b;
+        position.amount = amount_b;
         position.status = Status::Open;
         position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
@@ -205,7 +205,7 @@ pub mod exchange {
         position.direction = direction;
         position.entry = amount_b;
         position.equity = equity;
-        position.quantity = amount_b;
+        position.amount = amount_b;
         position.status = Status::Open;
         position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
@@ -272,7 +272,7 @@ pub mod exchange {
     /// Liquidate position. When margin drops to zero this is the bankruptcy price.
     /// The bankruptcy and liquidation price spread goes to the insurance fund.
     /// Initial margin is set at the beginning and can be calculated using the
-    /// order quantity and position equity. Maintenance margin is used to keep
+    /// order amount and position equity. Maintenance margin is used to keep
     /// the position open.
     ///
     /// deadline Time after which this transaction can no longer be executed
@@ -284,12 +284,12 @@ pub mod exchange {
         let pnl = match position.direction {
             Direction::Long => {
                 (1.0 / position.entry as f64 - 1.0 / oracle.agg.price as f64)
-                    * position.quantity as f64
+                    * position.amount as f64
                     * position.equity as f64
             }
             Direction::Short => {
                 (1.0 / oracle.agg.price as f64 - 1.0 / position.entry as f64)
-                    * position.quantity as f64
+                    * position.amount as f64
                     * position.equity as f64
             }
         };
@@ -549,7 +549,7 @@ pub struct MetaData {
 /// User bond account state
 #[account]
 pub struct BondData {
-    pub quantity: u64,
+    pub amount: u64,
     pub unix_timestamp: i64,
 }
 
@@ -560,7 +560,7 @@ pub struct PositionData {
     pub entry: u64,
     pub equity: u64,
     pub exit: u64,
-    pub quantity: u64,
+    pub amount: u64,
     pub status: Status,
     pub unix_timestamp: i64,
 }

@@ -18,7 +18,7 @@ describe('Cherub', () => {
 
   const IS_LOCALNET = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899'
 
-  const accountsFile = IS_LOCALNET ? './app/src/accounts-localnet.json' : './app/src/accounts-devnet.json'
+  const accountsFile = IS_LOCALNET ? './sdk/src/accounts/ocalnet.json' : './sdk/src/accounts/devnet.json'
 
   const dao = anchor.workspace.Dao
   const exchange = anchor.workspace.Exchange
@@ -169,10 +169,10 @@ describe('Cherub', () => {
 
     console.log('Your accounts file', IS_LOCALNET ? 'localnet' : 'devnet')
 
-    fs.writeFileSync('./app/src/dao.json', JSON.stringify(daoIdl))
-    fs.writeFileSync('./app/src/exchange.json', JSON.stringify(exchangeIdl))
-    fs.writeFileSync('./app/src/factory.json', JSON.stringify(factoryIdl))
-    fs.writeFileSync('./app/src/pyth.json', JSON.stringify(pythIdl))
+    fs.writeFileSync('./sdk/src/idl/dao.json', JSON.stringify(daoIdl))
+    fs.writeFileSync('./sdk/src/idl/exchange.json', JSON.stringify(exchangeIdl))
+    fs.writeFileSync('./sdk/src/idl/factory.json', JSON.stringify(factoryIdl))
+    fs.writeFileSync('./sdk/src/idl/pyth.json', JSON.stringify(pythIdl))
 
     // TODO: Save seeds
     // daoAccount

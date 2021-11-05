@@ -68,9 +68,9 @@ const chartOptions = {
 }
 
 const bondsColumns = [{
-  title: 'Quantity',
-  dataIndex: 'quantity',
-  key: 'quantity'
+  title: 'Amount',
+  dataIndex: 'amount',
+  key: 'amount'
 }, {
   title: 'Length',
   dataIndex: 'length',
@@ -82,9 +82,9 @@ const bondsColumns = [{
 }]
 
 const inversePositionsColumns = [{
-  title: 'Quantity',
-  dataIndex: 'quantity',
-  key: 'quantity'
+  title: 'Amount',
+  dataIndex: 'amount',
+  key: 'amount'
 }, {
   title: 'Entry',
   dataIndex: 'entry',
@@ -104,9 +104,9 @@ const inversePositionsColumns = [{
 }]
 
 const stakePositionsColumns = [{
-  title: 'Quantity',
-  dataIndex: 'quantity',
-  key: 'quantity'
+  title: 'Amount',
+  dataIndex: 'amount',
+  key: 'amount'
 }, {
   title: 'APY',
   dataIndex: 'apy',
@@ -177,7 +177,7 @@ function App() {
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL)
   const [inverseCard, setInverseCard] = useState('inverse')
   const [inverseDirection, setInverseDirection] = useState('long')
-  const [inverseQuantity, setInverseQuantity] = useState()
+  const [inverseAmount, setInverseAmount] = useState()
   const [inversePositions, setInversePositions] = useState([])
   const [inverseStep, setInverseStep] = useState(0)
   const [leverage, setLeverage] = useState(1)
@@ -247,7 +247,7 @@ function App() {
         const stakeDataAccount = await factory.account.stakeData.fetch(stakePda)
         if (stakeDataAccount) {
           stakes.push({
-            quantity: (stakeDataAccount.quantity.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2),
+            amount: (stakeDataAccount.amount.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2),
             apy: '13%',
             key: i,
           })
@@ -296,7 +296,7 @@ function App() {
             entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
             equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
             key: i,
-            quantity: (positionDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            amount: (positionDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
             status: positionDataAccount.status.open ? 'Open' : (positionDataAccount.status.closed ? 'Closed' : 'Liquidated')
           })
         }
@@ -318,7 +318,7 @@ function App() {
 
         if (bondDataAccount) {
           bonds.push({
-            quantity: (bondDataAccount.quantity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            amount: (bondDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
             key: i,
           })
         }
@@ -459,7 +459,7 @@ function App() {
     }
 
     setInverseStep(0)
-    setInverseQuantity()
+    setInverseAmount()
   }
 
   async function approveInverse() {
@@ -493,8 +493,8 @@ function App() {
       const [positionPda, positionBump] = await PublicKey.findProgramAddress([
         toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(positions)
       ], exchange.programId)
-      const bToAAmountB = inverseQuantity * leverage * (10 ** mintInfoV.decimals)
-      const equityB = inverseQuantity * (10 ** mintInfoV.decimals)
+      const bToAAmountB = inverseAmount * leverage * (10 ** mintInfoV.decimals)
+      const equityB = inverseAmount * (10 ** mintInfoV.decimals)
 
       const tx = await exchange.rpc.bToAInput(
         new BN(bToAAmountB),
@@ -524,7 +524,7 @@ function App() {
 
       setInverseStep(0)
       setLeverage(1)
-      setInverseQuantity()
+      setInverseAmount()
 
       getPositions(currentExchange.symbol)
       getBalance(currentExchange.symbol)
@@ -759,16 +759,16 @@ function App() {
     </Row>
   )
 
-  const inverseQuantityDescription = (
-    <small>Your order amount of <span className='White'>{inverseQuantity > 0 ? (inverseQuantity / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{inverseQuantity > 0 ? (inverseQuantity / marketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
+  const inverseAmountDescription = (
+    <small>Your order amount of <span className='White'>{inverseAmount > 0 ? (inverseAmount / 1).toFixed(2) : 0} USD</span> equals <span
+        className='White'>{inverseAmount > 0 ? (inverseAmount / marketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
   )
 
   const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>)
 
   const leverageDescription = (
     <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {inverseQuantity > 0 ? (inverseQuantity / marketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
+        {inverseAmount > 0 ? (inverseAmount / marketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
   )
 
   const inverseView = (
@@ -783,10 +783,10 @@ function App() {
             <div className='site-card-border-less-wrapper'>
               <Card title={assetTitleModal} className='Card Dark' bordered={false}
                 extra={<a href='/#/inverse' className='CardLink' onClick={() => setInverseCard('positions')}>Positions</a>}>
-                <p><strong>Quantity</strong></p>
-                <Input className='InverseInput Input Dark' value={inverseQuantity} placeholder='0'
+                <p><strong>Amount</strong></p>
+                <Input className='InverseInput Input Dark' value={inverseAmount} placeholder='0'
                   addonAfter={<Select defaultValue='USD' className='select-after'><Option value='USD'>USD</Option></Select>}
-                  onChange={(e) => {setInverseQuantity(e.target.value); setInverseStep(1)}}/>
+                  onChange={(e) => {setInverseAmount(e.target.value); setInverseStep(1)}}/>
                 <br/>
                 <p>Your current exchange rate is 1 USD = {exchangeRate} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark' optionType='button' buttonStyle='solid'
@@ -808,7 +808,7 @@ function App() {
           <Col span={1}></Col>
           <Col span={3}>
             <Steps direction='vertical' current={inverseStep}>
-              <Step key='set' title='Quantity' description={inverseQuantityDescription}/>
+              <Step key='set' title='Amount' description={inverseAmountDescription}/>
               <Step key='collateral' title='Leverage' description={leverageDescription}/>
               <Step key='order' title='Approve' description={approveDescription}/>
             </Steps>
@@ -875,7 +875,7 @@ function App() {
       <>
         <Col span={4}>
           <Steps direction='vertical' current={stakeStep}>
-            <Step key='set' title='Quantity' description={stakeDescription}/>
+            <Step key='set' title='Amount' description={stakeDescription}/>
             <Step key='deposit' title='Approve' description={approveDescription}/>
           </Steps>
         </Col>
