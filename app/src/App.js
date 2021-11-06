@@ -18,6 +18,7 @@ import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-r
 import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets'
 import { parsePriceData } from '@pythnetwork/client'
 import { useEffect, useCallback, useState } from 'react'
+import CountUp from 'react-countup'
 
 import daoIdl from './idl/dao.json'
 import exchangeIdl from './idl/exchange.json'
@@ -41,6 +42,7 @@ if (IS_LOCALNET) {
 
 const C_SYMBOL = 'CHRB'
 const DEFAULT_SYMBOL = accounts.exchanges[0].symbol
+const counterDuration = 0.25
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
 const network = IS_LOCALNET ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
@@ -162,18 +164,22 @@ function App() {
   const [cCurrentPrice, setCCurrentPrice] = useState(0)
   const [cMarketCap, setCMarketCap] = useState(0)
   const [change24H, setChange24H] = useState(0)
+  const [change24HLast, setChange24HLast] = useState(0)
   const [countdown, setCountdown] = useState()
   const [daoCard, setDAOCard] = useState('statistics')
   const [daoProposals, setDaoProposals] = useState([])
   const [exchangeRate, setExchangeRate] = useState(0)
   const [fundingRate, setFundingRate] = useState(0)
+  const [fundingRateLast, setFundingRateLast] = useState(0)
   // eslint-disable-next-line
   const [gasFee, setGasFee] = useState()
   const [high24H, setHigh24H] = useState(0)
+  const [high24HLast, setHigh24HLast] = useState(0)
   const [isInverseAssetModalVisible, setIsInverseAssetModalVisible] = useState(false)
   const [isTimeoutDataSet, setIsTimeoutDataSet] = useState(false)
   const [isUserDataSet, setIsUserDataSet] = useState(false)
   const [indexPrice, setIndexPrice] = useState()
+  const [indexPriceLast, setIndexPriceLast] = useState()
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL)
   const [inverseCard, setInverseCard] = useState('inverse')
   const [inverseDirection, setInverseDirection] = useState('long')
@@ -182,7 +188,9 @@ function App() {
   const [inverseStep, setInverseStep] = useState(0)
   const [leverage, setLeverage] = useState(1)
   const [low24H, setLow24H] = useState(0)
-  const [marketPrice, setCurrentMarketPrice] = useState(0)
+  const [low24HLast, setLow24HLast] = useState(0)
+  const [marketPrice, setMarketPrice] = useState(0)
+  const [marketPriceLast, setMarketPriceLast] = useState(0)
   const [menu, setMenu] = useState('')
   const [stakeCard, setStakeCard] = useState('stake')
   const [stakeDeposit, setStakeDeposit] = useState()
@@ -190,6 +198,7 @@ function App() {
   const [stakePositions, setStakePositions] = useState([])
   const [tokenCount, setTokenCount] = useState(0)
   const [turnaround24H, setTurnaround24H] = useState(0)
+  const [turnaround24HLast, setTurnaround24HLast] = useState(0)
 
   const wallet = useWallet()
 
@@ -199,7 +208,8 @@ function App() {
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
   const getCBalanceCallback = useCallback(getCBalance, [getProviderCallback])
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
-  const getInverseDataCallback = useCallback(getInverseData, [getProviderCallback, high24H, inverseAsset, low24H, marketPrice, turnaround24H])
+  const getInverseDataCallback = useCallback(getInverseData, [change24H, fundingRate, getProviderCallback, high24H, indexPrice, inverseAsset, low24H,
+    marketPrice, turnaround24H, setTurnaround24HLast])
   const getPositionsCallback = useCallback(getPositions, [getProviderCallback])
   const getStakesCallback = useCallback(getStakes, [getProviderCallback])
 
@@ -441,18 +451,29 @@ function App() {
 
       const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider)
       const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle))
-      const indexPrice = parsePriceData(pythFeedAccountInfo.data).price
-
-      setCurrentMarketPrice(lastPrice)
-      setIndexPrice(indexPrice.toFixed(2))
-      setExchangeRate((1 / lastPrice).toFixed(4))
+      const parsedIndexPrice = parsePriceData(pythFeedAccountInfo.data).price
 
       if (lastPrice !== marketPrice) {
         setChange24H((high24H - low24H) / lastPrice)
+        setExchangeRate(1 / lastPrice)
         setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000) : 0)
+        setIndexPrice(parsedIndexPrice)
         setHigh24H(lastPrice > high24H ? lastPrice : high24H)
         setLow24H(low24H  === 0 ? lastPrice : (lastPrice < low24H ? lastPrice : low24H))
+        setMarketPrice(lastPrice)
         setTurnaround24H(turnaround24H / 1 + (Math.random() * 10000 + 1.3))
+
+        const interval = setInterval(() => {
+          setChange24HLast(change24H)
+          setFundingRateLast(fundingRate)
+          setIndexPriceLast(indexPrice)
+          setHigh24HLast(high24H)
+          setLow24HLast(low24H)
+          setMarketPriceLast(marketPrice)
+          setTurnaround24HLast(turnaround24H)
+
+          clearInterval(interval)
+        }, 100)
       }
     } catch (err) {
       console.log(err)
@@ -732,28 +753,44 @@ function App() {
       <Col span={3}></Col>
       <Col span={3}>
         <p><small>Market / Index</small></p>
-        <Title level={5} className='Title Dark Green'>{marketPrice}<span className='White'> / {indexPrice}</span></Title>
+        <Title level={5} className='Title Dark'>
+          <CountUp className={ marketPrice > marketPriceLast ? 'Green' : 'Red' } duration={counterDuration} decimals={2} start={marketPriceLast}
+            end={marketPrice}/>
+          &nbsp;/&nbsp;
+          <CountUp duration={counterDuration} decimals={2} start={indexPriceLast} end={indexPrice}/>
+        </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change (%)</small></p>
-        {change24H >= 0 ? <Title level={5} className='Title Dark Green'>+{change24H.toFixed(2)}</Title> :
-        <Title level={5} className='Title Dark Red'>{change24H.toFixed(2)}</Title>}
+        <Title level={5} className='Title Dark'>
+          <CountUp className={ change24H > change24HLast ? 'Green' : 'Red' } duration={counterDuration} decimals={2} start={change24HLast}
+            end={change24H}/>
+        </Title>
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
-        <Title level={5} className='Title Dark'>{high24H}</Title>
+        <Title level={5} className='Title Dark'>
+          <CountUp duration={counterDuration} decimals={2} start={high24HLast} end={high24H}/>
+        </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Low</small></p>
-        <Title level={5} className='Title Dark'>{low24H}</Title>
+        <Title level={5} className='Title Dark'>
+          <CountUp duration={counterDuration} decimals={2} start={low24HLast} end={low24H}/>
+        </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Turnaround ({inverseAsset})</small></p>
-        <Title level={5} className='Title Dark'>{turnaround24H.toFixed(0)}</Title>
+        <Title level={5} className='Title Dark'>
+          <CountUp duration={counterDuration} decimals={0} start={turnaround24HLast} end={turnaround24H}/>
+        </Title>
       </Col>
       <Col span={3}>
         <p><small>Funding (%) / Countdown</small></p>
-        <Title level={5} className='Title Dark'><span className='Yellow'>{fundingRate.toFixed(3)}</span> / {countdown}</Title>
+        <Title level={5} className='Title Dark'>
+          <CountUp className='Yellow' duration={counterDuration} decimals={3} start={fundingRateLast} end={fundingRate}/>
+          &nbsp;/ {countdown}
+        </Title>
       </Col>
       <Col span={3}></Col>
     </Row>
@@ -788,7 +825,7 @@ function App() {
                   addonAfter={<Select defaultValue='USD' className='select-after'><Option value='USD'>USD</Option></Select>}
                   onChange={(e) => {setInverseAmount(e.target.value); setInverseStep(1)}}/>
                 <br/>
-                <p>Your current exchange rate is 1 USD = {exchangeRate} {inverseAsset}</p>
+                <p>Your current exchange rate is 1 USD = {exchangeRate.toFixed(4)} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark' optionType='button' buttonStyle='solid'
                   value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>

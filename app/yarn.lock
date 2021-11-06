@@ -4228,6 +4228,11 @@ cosmiconfig@^7.0.0:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
+countup.js@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/countup.js/-/countup.js-2.0.8.tgz#eca0c31c9db3f7769cba494d9315cd52dbaaf1b9"
+  integrity sha512-pW3xwwD+hB+xmtI16xFcuLS0D5hSQqPQWkZOdgpKQyzxCquDNo2VCFPkRw12vmvdpnicXVTcjmYiakG6biwINg==
+
 create-ecdh@^4.0.0:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/create-ecdh/-/create-ecdh-4.0.4.tgz#d6e7f4bffa66736085a0762fd3a632684dabcc4e"
@@ -10339,6 +10344,13 @@ react-chartjs-2@^3.1.0:
   integrity sha512-j4PdePVu66M408Kpk/2UEfFJw3Hw7TxhOKW3RhV7/eU117OL8phFrWrRDWEipvt2V+5myqHSGMvXzKCm/RkfUw==
   dependencies:
     lodash "^4.17.19"
+
+react-countup@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/react-countup/-/react-countup-6.0.0.tgz#463f174781db4bec25de8853335c18ff0a305131"
+  integrity sha512-Q5M8TbtdeSrnK6UaMgZBaV13GZHKsWh5FedzFM9HSWcI48x1SzJ33fCJcX23juLzguwRU3ZtumqlLdCUJdRPfA==
+  dependencies:
+    countup.js "^2.0.8"
 
 react-dev-utils@^11.0.3:
   version "11.0.4"
