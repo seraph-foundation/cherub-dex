@@ -42,7 +42,7 @@ if (IS_LOCALNET) {
 
 const C_SYMBOL = 'CHRB'
 const DEFAULT_SYMBOL = accounts.exchanges[0].symbol
-const counterDuration = 0.25
+const counterDuration = 0.5
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
 const network = IS_LOCALNET ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
