@@ -14,7 +14,8 @@
     "protocol:build": "anchor build",
     "protocol:clean": "cargo clean",
     "protocol:deploy": "anchor deploy",
-    "protocol:test": "anchor test --detach"
+    "protocol:test": "anchor test --detach",
+    "sdk:copy": "cp -R ./sdk/src/accounts ./app/src/ && cp -R ./sdk/src/idl ./app/src/ && cp -R ./sdk app/node_modules"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.16.2",

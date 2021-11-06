@@ -19,10 +19,10 @@ import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/walle
 import { parsePriceData } from '@pythnetwork/client'
 import { useEffect, useCallback, useState } from 'react'
 
-import daoIdl from './dao.json'
-import exchangeIdl from './exchange.json'
-import factoryIdl from './factory.json'
-import pythIdl from './pyth.json'
+import daoIdl from './idl/dao.json'
+import exchangeIdl from './idl/exchange.json'
+import factoryIdl from './idl/factory.json'
+import pythIdl from './idl/pyth.json'
 
 const { Content, Footer, Header } = Layout
 const { Option } = Select
@@ -34,9 +34,9 @@ const IS_LOCALNET = window.location.origin === 'http://localhost:3000'
 let accounts = {}
 
 if (IS_LOCALNET) {
-  accounts = require('./accounts-localnet.json')
+  accounts = require('./accounts/localnet.json')
 } else {
-  accounts = require('./accounts-devnet.json')
+  accounts = require('./accounts/devnet.json')
 }
 
 const C_SYMBOL = 'CHRB'

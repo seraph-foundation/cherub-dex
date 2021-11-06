@@ -1,12 +1,13 @@
 const { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token')
-const { BN } = require('@project-serum/anchor')
 const anchor = require('@project-serum/anchor')
 const dotenv = require('dotenv')
 
 const { SYSVAR_CLOCK_PUBKEY, PublicKey, SystemProgram } = anchor.web3
 
+const daoIdl = require('./idl/dao.json')
 const exchangeIdl = require('./idl/exchange.json')
 const factoryIdl = require('./idl/factory.json')
+const pythIdl = require('./idl/pyth.json')
 
 const Direction = {
   Long: { long: {} },
@@ -40,25 +41,24 @@ function init() {
     accounts = require('./accounts/devnet.json')
   }
 
-  exchange = anchor.workspace.Exchange
-  factory = anchor.workspace.Factory
-
   return {
     accounts,
     provider,
 
     programs: {
-      exchange,
-      factory
+      dao: anchor.workspace.Dao,
+      exchange: anchor.workspace.Exchange,
+      factory: anchor.workspace.Factory,
+      pyth: anchor.workspace.Pyth
     }
   }
 }
 
 module.exports = {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  BN,
-  TOKEN_PROGRAM_ID,
+  BN: anchor.BN,
   SYSVAR_CLOCK_PUBKEY,
+  TOKEN_PROGRAM_ID,
   PublicKey,
   SystemProgram,
   Token: Token,

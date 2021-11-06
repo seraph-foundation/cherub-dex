@@ -29,8 +29,8 @@ pub mod exchange {
         exchange.supply_b = 0;
         exchange.token_c = ctx.accounts.token_c.key();
         exchange.token_v = ctx.accounts.token_v.key();
-        let (pda, _bump) =
-            Pubkey::find_program_address(&[exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = [exchange.token_v.as_ref()];
+        let (pda, _bump) = Pubkey::find_program_address(&seeds, ctx.program_id);
         token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
         Ok(())
     }
@@ -108,13 +108,15 @@ pub mod exchange {
         ctx: Context<GetBToAOutputPrice>,
         amount_b: u64,
     ) -> ProgramResult {
-        let quote = &mut ctx.accounts.quote;
-        quote.price = get_input_price(
+        let price = get_input_price(
             amount_b,
             ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.fee,
         );
+        msg!("Price: {}", price);
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
         Ok(())
     }
 
@@ -125,13 +127,15 @@ pub mod exchange {
         ctx: Context<GetBToAOutputPrice>,
         amount_a: u64,
     ) -> ProgramResult {
-        let quote = &mut ctx.accounts.quote;
-        quote.price = get_output_price(
+        let price = get_output_price(
             amount_a,
             ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.fee,
         );
+        msg!("Price: {}", price);
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
         Ok(())
     }
 
@@ -140,14 +144,12 @@ pub mod exchange {
     /// amount_a Amount A sold (exact input)
     /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
-    /// direction Trade can be long or short
     /// equity Collateral used
     pub fn a_to_b_input(
         ctx: Context<Swap>,
         amount_a: u64,
         bump: u8,
         deadline: Option<i64>,
-        direction: Direction,
         equity: u64,
     ) -> ProgramResult {
         let ut = ctx.accounts.clock.unix_timestamp;
@@ -161,7 +163,7 @@ pub mod exchange {
         assert!(amount_b >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let position = &mut ctx.accounts.position;
-        position.direction = direction;
+        position.direction = Direction::Long;
         position.entry = amount_b;
         position.equity = equity;
         position.amount = amount_b;
@@ -181,14 +183,12 @@ pub mod exchange {
     /// amount_b Amount B sold (exact input)
     /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
-    /// direction Trade can be long or short
     /// equity Collateral used for position
     pub fn b_to_a_input(
         ctx: Context<Swap>,
         amount_b: u64,
         bump: u8,
         deadline: Option<i64>,
-        direction: Direction,
         equity: u64,
     ) -> ProgramResult {
         let ut = ctx.accounts.clock.unix_timestamp;
@@ -202,7 +202,7 @@ pub mod exchange {
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let position = &mut ctx.accounts.position;
-        position.direction = direction;
+        position.direction = Direction::Short;
         position.entry = amount_b;
         position.equity = equity;
         position.amount = amount_b;
@@ -217,14 +217,51 @@ pub mod exchange {
         Ok(())
     }
 
+    /// Convert A to B.
+    ///
+    /// amount_a Amount A sold (exact output)
+    /// deadline Time after which this transaction can no longer be executed
+    pub fn a_to_b_output(
+        ctx: Context<Swap>,
+        amount_a: u64,
+        bump: u8,
+        deadline: Option<i64>,
+        equity: u64,
+    ) -> ProgramResult {
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
+        let amount_b = get_output_price(
+            amount_a,
+            ctx.accounts.exchange.supply_a - amount_a,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.fee,
+        );
+        assert!(amount_b >= 1);
+        let position = &mut ctx.accounts.position;
+        position.direction = Direction::Short;
+        position.entry = amount_b;
+        position.equity = equity;
+        position.amount = amount_b;
+        position.status = Status::Open;
+        position.unix_timestamp = ut;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_b)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.last_price = amount_b;
+        exchange.supply_a += amount_a;
+        exchange.supply_b -= amount_b;
+        Ok(())
+    }
+
     /// Convert B to A.
     ///
     /// amount_b Amount B sold (exact output)
     /// deadline Time after which this transaction can no longer be executed
     pub fn b_to_a_output(
         ctx: Context<Swap>,
+        bump: u8,
         amount_b: u64,
         deadline: Option<i64>,
+        equity: u64,
     ) -> ProgramResult {
         let ut = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ut) >= ut);
@@ -243,29 +280,30 @@ pub mod exchange {
         Ok(())
     }
 
-    /// Convert A to B.
+    /// Update position. The amount and equity given reflect the updated amounts.
+    /// This instruction can be used to add to, subtract from, and close positions.
     ///
-    /// amount_a Amount A sold (exact output)
+    /// amount Position amount update
+    /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
-    pub fn a_to_b_output(
-        ctx: Context<Swap>,
-        amount_a: u64,
+    /// equity Collateral used for position
+    pub fn position_update(
+        ctx: Context<Update>,
+        amount: u64,
+        bump: u8,
         deadline: Option<i64>,
+        equity: u64,
     ) -> ProgramResult {
         let ut = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ut) >= ut);
-        let amount_b = get_output_price(
-            amount_a,
-            ctx.accounts.exchange.supply_a - amount_a,
-            ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
-        );
-        assert!(amount_b >= 1);
-        token::transfer(ctx.accounts.into_ctx_v(), amount_b)?;
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
-        exchange.supply_a += amount_a;
-        exchange.supply_b -= amount_b;
+        let position = &mut ctx.accounts.position;
+        assert!(position.amount as f64 - amount as f64 >= 0.0);
+        assert!(position.equity as f64 - equity as f64 >= 0.0);
+        position.amount = position.amount - amount;
+        position.equity = position.equity - equity;
+        if position.equity == 0 {
+            position.status = Status::Closed;
+        }
         Ok(())
     }
 
@@ -276,7 +314,7 @@ pub mod exchange {
     /// the position open.
     ///
     /// deadline Time after which this transaction can no longer be executed
-    pub fn liquidate(ctx: Context<Update>, deadline: Option<i64>) -> ProgramResult {
+    pub fn position_liquidate(ctx: Context<Liquidate>, deadline: Option<i64>) -> ProgramResult {
         let ut = ctx.accounts.clock.unix_timestamp;
         assert!(deadline.unwrap_or(ut) >= ut);
         let oracle = Price::load(&ctx.accounts.oracle).unwrap();
@@ -295,6 +333,7 @@ pub mod exchange {
         };
         assert!(pnl <= 0.0);
         position.status = Status::Liquidated;
+        // TODO: Transfer remaining balance
         Ok(())
     }
 
@@ -409,6 +448,20 @@ pub struct Swap<'info> {
 
 #[derive(Accounts)]
 pub struct Update<'info> {
+    pub authority: Signer<'info>,
+    pub clock: Sysvar<'info, Clock>,
+    #[account(mut)]
+    pub exchange: Account<'info, ExchangeData>,
+    #[account(mut)]
+    pub exchange_v: AccountInfo<'info>,
+    #[account(mut)]
+    pub position: Account<'info, PositionData>,
+    #[account(mut)]
+    pub user_v: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
+pub struct Liquidate<'info> {
     pub authority: Signer<'info>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
@@ -570,7 +623,7 @@ pub enum ErrorCode {
     #[msg("Adding or removing liquidity must be done in the present or at a future time")]
     FutureDeadline,
     #[msg("Incorrect tokens")]
-    CorrectTokens,
+    IncorrectTokens,
 }
 
 /// Deadline must be in the future
@@ -600,7 +653,7 @@ fn unbond_future_deadline<'info>(ctx: &Context<Unbond<'info>>, deadline: i64) ->
 /// Access control function for ensuring correct token accounts are used.
 fn bond_correct_tokens<'info>(ctx: &Context<Bond<'info>>) -> Result<()> {
     if !(ctx.accounts.mint_c.key() == ctx.accounts.exchange.token_c.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
+        return Err(ErrorCode::IncorrectTokens.into());
     }
     Ok(())
 }
@@ -608,7 +661,7 @@ fn bond_correct_tokens<'info>(ctx: &Context<Bond<'info>>) -> Result<()> {
 /// Access control function for ensuring correct token accounts are used.
 fn unbond_correct_tokens<'info>(ctx: &Context<Unbond<'info>>) -> Result<()> {
     if !(ctx.accounts.mint_c.key() == ctx.accounts.exchange.token_c.key()) {
-        return Err(ErrorCode::CorrectTokens.into());
+        return Err(ErrorCode::IncorrectTokens.into());
     }
     Ok(())
 }

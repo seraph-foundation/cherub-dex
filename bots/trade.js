@@ -1,8 +1,9 @@
-const { ASSOCIATED_TOKEN_PROGRAM_ID, BN, TOKEN_PROGRAM_ID, SYSVAR_CLOCK_PUBKEY, PublicKey, SystemProgram, Token } = require('../sdk/src')
-const { Direction, Status, sleep, toBuffer } = require('../sdk/src')
-const cherub = require('../sdk/src')
+const {
+  ASSOCIATED_TOKEN_PROGRAM_ID, BN, TOKEN_PROGRAM_ID, SYSVAR_CLOCK_PUBKEY, PublicKey, SystemProgram, Token,
+  Direction, Status, init, sleep, toBuffer
+} = require('../sdk/src')
 
-const config = cherub.init()
+const config = init()
 
 const provider = config.provider
 const accounts = config.accounts
@@ -67,13 +68,14 @@ async function main() {
         }
       }
 
+      console.log('Opening', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'for', displayAmount + '...')
+
       if (long) {
-        tx = await exchange.rpc.bToAInput(new BN(amount), positionBump, new BN(deadline), Direction.Long, new BN(equity), args)
+        tx = await exchange.rpc.bToAInput(new BN(amount), positionBump, new BN(deadline), new BN(equity), args)
       } else {
-        tx = await exchange.rpc.aToBInput(new BN(amount), positionBump, new BN(deadline), Direction.Short, new BN(equity), args)
+        tx = await exchange.rpc.aToBInput(new BN(amount), positionBump, new BN(deadline), new BN(equity), args)
       }
 
-      console.log('Opening', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'for', displayAmount + '...')
       console.log('Transaction signature', tx)
     } else {
       const [positionPda, positionBump] = await PublicKey.findProgramAddress([
@@ -81,18 +83,13 @@ async function main() {
       ], exchange.programId)
       const positionDataAccount = await exchange.account.positionData.fetch(positionPda)
 
-      const status = positionDataAccount.status
-
-      if (status.open) {
+      if (positionDataAccount.status.open) {
         const amount = positionDataAccount.amount.toNumber()
+        const deadline = Date.now() / 1000
         const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
         const direction = positionDataAccount.direction
         const equity = positionDataAccount.equity.toNumber()
         const leverage = amount / equity
-
-        const long = direction.long ? true : false
-
-        console.log('Closing', leverage.toFixed(0) + 'x leverage', long ? 'long' : 'short', 'for', displayAmount + '...')
 
         const args = {
           accounts: {
@@ -109,17 +106,15 @@ async function main() {
           }
         }
 
-        if (long) {
-          tx = await exchange.rpc.bToAOutput(new BN(amount), positionBump, new BN(deadline), Direction.Long, new BN(equity), args)
-        } else {
-          tx = await exchange.rpc.aToBOutput(new BN(amount), positionBump, new BN(deadline), Direction.Short, new BN(equity), args)
-        }
+        console.log('Closing', leverage.toFixed(0) + 'x leverage', direction.long ? 'long' : 'short', 'for', displayAmount + '...')
+
+        const tx = await exchange.rpc.positionUpdate(new BN(amount), positionBump, new BN(deadline), new BN(equity), args)
 
         console.log('Transaction signature', tx)
       }
     }
 
-    await sleep(1000)
+    await sleep(5000)
   }
 }
 

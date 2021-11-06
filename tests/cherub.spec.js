@@ -18,7 +18,7 @@ describe('Cherub', () => {
 
   const IS_LOCALNET = provider.connection._rpcEndpoint === 'http://127.0.0.1:8899'
 
-  const accountsFile = IS_LOCALNET ? './sdk/src/accounts/ocalnet.json' : './sdk/src/accounts/devnet.json'
+  const accountsFile = IS_LOCALNET ? './sdk/src/accounts/localnet.json' : './sdk/src/accounts/devnet.json'
 
   const dao = anchor.workspace.Dao
   const exchange = anchor.workspace.Exchange
@@ -591,7 +591,6 @@ describe('Cherub', () => {
       new anchor.BN(aToBAmountA),
       positionBump,
       new anchor.BN(deadline),
-      Direction.Short,
       new anchor.BN(aToBAmountA),
       {
         accounts: {
@@ -622,7 +621,7 @@ describe('Cherub', () => {
 
   const bToAAmountB = 6 * (10 ** decimals0V)
 
-  it('Exchange (index 0): B to A input', async () => {
+  it('Exchange (index 0): B to A input (index 1)', async () => {
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
       toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(1)
@@ -632,7 +631,6 @@ describe('Cherub', () => {
       new anchor.BN(bToAAmountB),
       positionBump,
       new anchor.BN(deadline),
-      Direction.Long,
       new anchor.BN(bToAAmountB),
       {
         accounts: {
@@ -659,6 +657,46 @@ describe('Cherub', () => {
 
     let exchangeAccountInfo0 = await exchange.account.exchangeData.fetch(exchangeAccount0.publicKey)
     //assert.ok(exchangeAccountInfo0.lastPrice.eq(new anchor.BN(6)))
+  })
+
+  it('Exchange (index 0): Update position (index 1)', async () => {
+    const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
+    const [positionPda, positionBump] = await anchor.web3.PublicKey.findProgramAddress([
+      toBuffer('position'), token0V.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(1)
+    ], exchange.programId)
+    const deadline = Date.now() / 1000
+    const tx = await exchange.rpc.positionUpdate(
+      new anchor.BN(bToAAmountB),
+      positionBump,
+      new anchor.BN(deadline),
+      new anchor.BN(bToAAmountB),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          clock: anchor.web3.SYSVAR_CLOCK_PUBKEY,
+          exchange: exchangeAccount0.publicKey,
+          exchangeV: exchangeTokenAccount0V,
+          meta: walletMetaPda0,
+          pda: exchangePda,
+          position: positionPda,
+          recipient: walletTokenAccount0V,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userV: walletTokenAccount0V
+        }
+      })
+
+    console.log('Your transaction signature', tx)
+
+    let exchangeTokenAccountInfo0V = await token0V.getAccountInfo(exchangeTokenAccount0V)
+    let walletTokenAccountInfo0V = await token0V.getAccountInfo(walletTokenAccount0V)
+    //assert.ok(exchangeTokenAccountInfo0V.amount.eq(new anchor.BN(0)))
+    //assert.ok(walletTokenAccountInfo0V.amount.eq(new anchor.BN(0)))
+
+    let positionAccountInfo = await exchange.account.positionData.fetch(positionPda)
+    assert.ok(positionAccountInfo.amount.eq(new anchor.BN(0)))
+    assert.ok(positionAccountInfo.equity.eq(new anchor.BN(0)))
+    assert.ok(positionAccountInfo.status.closed)
   })
 
   const unbondAmountC = 87 * (10 ** decimalsC)

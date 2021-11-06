@@ -23,7 +23,7 @@ solana-keygen new
 yarn protocol:airdrop # Run as long as needed
 ```
 
-Make sure cluster is set to either `localnet` in `Anchor.toml` and `.env` is configured correctly.
+Make sure cluster is correctly set to `localnet` in `Anchor.toml` and `.env` is configured properly.
 
 ```bash
 solana config set --url http://127.0.0.1:8899
@@ -45,6 +45,7 @@ yarn bots:liquidate:start
 Start the app.
 
 ```bash
+yarn sdk:copy # Make sure latest SDK is installed
 yarn app:start
 ```
 
@@ -57,6 +58,12 @@ yarn protocol:build
 yarn protocol:deploy
 # Update Anchor.toml and the program id declarations with the deployment public keys
 yarn protocol:test
+```
+
+### Development
+
+```bash
+ln -s sdk app/node_modules/sdk
 ```
 
 ## Documentation
