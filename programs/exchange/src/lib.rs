@@ -9,7 +9,7 @@ use spl_token::instruction::AuthorityType::AccountOwner;
 
 use pyth::utils::Price;
 
-declare_id!("DmtoZ6xaPBGr7wJqLUjE8JpmYiDvhG3mm2rBZTb1vfiK");
+declare_id!("Fy3KFXjKaA6irHp3g5YZ1pKL9a9JUwPvC32Yp4ny2epZ");
 
 /// Exchange
 #[program]

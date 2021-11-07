@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
-declare_id!("7W3SFZnxeL5RoUTUfNwnhDBZGbc9S7WttzNgodoTBDU7");
+declare_id!("4m1Bz3aRWatk2JiYYornJguAMmkxforEbJticn4TELZe");
 
 /// DAO
 #[program]

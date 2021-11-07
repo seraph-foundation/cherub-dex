@@ -1,18 +1,18 @@
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/pindaroso/.config/solana/id.json"
 
 [programs.localnet]
-dao = "7W3SFZnxeL5RoUTUfNwnhDBZGbc9S7WttzNgodoTBDU7"
-exchange = "DmtoZ6xaPBGr7wJqLUjE8JpmYiDvhG3mm2rBZTb1vfiK"
-factory = "2vTL4Kks8UVNQoQmaWHyJCfJxivaHm8zgFPfsw9watmY"
-pyth = "6GAVqM4n8cWubjbbfx1rA3te2jPsJpkCQ4XZPpai7dpV"
+dao = "4m1Bz3aRWatk2JiYYornJguAMmkxforEbJticn4TELZe"
+exchange = "Fy3KFXjKaA6irHp3g5YZ1pKL9a9JUwPvC32Yp4ny2epZ"
+factory = "3ed78x1nSmCw4wxm92NYWKrFhNZv185KYXLX7FxtkCRc"
+pyth = "74qVgBF8d1GuwZMiijWBhc7HusCdY3mmVYqJ4apvdKni"
 
 [programs.devnet]
-dao = "7W3SFZnxeL5RoUTUfNwnhDBZGbc9S7WttzNgodoTBDU7"
-exchange = "DmtoZ6xaPBGr7wJqLUjE8JpmYiDvhG3mm2rBZTb1vfiK"
-factory = "2vTL4Kks8UVNQoQmaWHyJCfJxivaHm8zgFPfsw9watmY"
-pyth = "6GAVqM4n8cWubjbbfx1rA3te2jPsJpkCQ4XZPpai7dpV"
+dao = "4m1Bz3aRWatk2JiYYornJguAMmkxforEbJticn4TELZe"
+exchange = "Fy3KFXjKaA6irHp3g5YZ1pKL9a9JUwPvC32Yp4ny2epZ"
+factory = "3ed78x1nSmCw4wxm92NYWKrFhNZv185KYXLX7FxtkCRc"
+pyth = "74qVgBF8d1GuwZMiijWBhc7HusCdY3mmVYqJ4apvdKni"
 
 [registry]
 url = "https://anchor.projectserum.com"
