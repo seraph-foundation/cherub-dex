@@ -63,7 +63,7 @@ yarn protocol:test
 ### Development
 
 ```bash
-ln -s sdk app/node_modules/sdk
+yarn sdk:copy
 ```
 
 ## Documentation
