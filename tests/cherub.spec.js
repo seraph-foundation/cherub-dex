@@ -350,7 +350,7 @@ describe('Cherub', () => {
   it('Factory: Simulate get exchange (index 0)', async () => {
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
     const dataAccount = anchor.web3.Keypair.generate()
-    const tx = await factory.simulate.getExchange(
+    const res = await factory.simulate.getExchange(
       token0V.publicKey, {
         accounts: {
           authority: provider.wallet.publicKey,
@@ -362,7 +362,9 @@ describe('Cherub', () => {
         signers: [dataAccount]
       })
 
-    console.log('Your transaction signature')
+    console.log('Simulates transaction')
+
+    assert.ok(res.events[0].name === 'GetExchangeEvent');
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
     assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(1)))
@@ -535,10 +537,10 @@ describe('Cherub', () => {
     //assert.ok(walletTokenAccountInfoC.amount.eq(new anchor.BN(1)))
   })
 
-  const traderInputQuoteAccount = anchor.web3.Keypair.generate()
   const aToBAmount = 10 * (10 ** decimals0V)
 
-  it('Exchange (index 0): Gets input price', async () => {
+  it('Exchange (index 0): Gets B to A input price quote', async () => {
+    const traderInputQuoteAccount = anchor.web3.Keypair.generate()
     const tx = await exchange.rpc.getBToAInputPrice(
       new anchor.BN(aToBAmount),
       {
@@ -557,10 +559,30 @@ describe('Cherub', () => {
     //assert.ok(traderInputAccountQuoteInfo.price.eq(new anchor.BN(0)))
   })
 
-  const traderOutputQuoteAccount = anchor.web3.Keypair.generate()
+  it('Exchange (index 0): Simulates getting B to A input price quote', async () => {
+    const traderInputQuoteAccount = anchor.web3.Keypair.generate()
+    const res = await exchange.simulate.getBToAInputPrice(
+      new anchor.BN(aToBAmount),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          exchange: exchangeAccount0.publicKey,
+          quote: traderInputQuoteAccount.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [traderInputQuoteAccount]
+      })
+
+    console.log('Simulates transaction')
+
+    assert.ok(res.events[0].name === 'QuoteEvent');
+    //assert.ok(res.events[0].data.price.eq(new anchor.BN(0)));
+  })
+
   const bToAAmount = 5 * (10 ** decimals0V)
 
-  it('Exchange (index 0): Gets output price', async () => {
+  it('Exchange (index 0): Gets B to A output price', async () => {
+    const traderOutputQuoteAccount = anchor.web3.Keypair.generate()
     const tx = await exchange.rpc.getBToAOutputPrice(
       new anchor.BN(bToAAmount),
       {
@@ -577,6 +599,26 @@ describe('Cherub', () => {
 
     let traderOutputQuoteAccountInfo = await exchange.account.quoteData.fetch(traderOutputQuoteAccount.publicKey)
     //assert.ok(traderOutputQuoteAccountInfo.price.eq(new anchor.BN(0)))
+  })
+
+  it('Exchange (index 0): Simulates getting A to B input price quote', async () => {
+    const traderInputQuoteAccount = anchor.web3.Keypair.generate()
+    const res = await exchange.simulate.getAToBInputPrice(
+      new anchor.BN(bToAAmount),
+      {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          exchange: exchangeAccount0.publicKey,
+          quote: traderInputQuoteAccount.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+        signers: [traderInputQuoteAccount]
+      })
+
+    console.log('Simulates transaction')
+
+    assert.ok(res.events[0].name === 'QuoteEvent');
+    //assert.ok(res.events[0].data.price.eq(new anchor.BN(0)));
   })
 
   const aToBAmountA = 3 * (10 ** decimals1V)

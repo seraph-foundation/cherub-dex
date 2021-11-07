@@ -40,7 +40,7 @@ async function main() {
 
     // Randomly open or close position
     if (Math.floor((Math.random() * 2) + 1) === 1) {
-      const amount = Math.floor((Math.random() * 1000) + 1) * (10 ** decimalsV)
+      const amount = Math.floor((Math.random() * 100000) + 1) * (10 ** decimalsV)
       const deadline = Date.now() / 1000
       const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
       const leverage = Math.floor((Math.random() * 100) + 1)

@@ -16,129 +16,6 @@ declare_id!("DmtoZ6xaPBGr7wJqLUjE8JpmYiDvhG3mm2rBZTb1vfiK");
 pub mod exchange {
     use super::*;
 
-    /// Initialize. This function acts as a contract constructor which is called
-    /// once by the factory during contract creation.
-    ///
-    /// fee Fee given in BPS
-    pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.factory = ctx.accounts.factory.key();
-        exchange.fee = fee;
-        exchange.last_price = 0;
-        exchange.supply_a = 0;
-        exchange.supply_b = 0;
-        exchange.token_c = ctx.accounts.token_c.key();
-        exchange.token_v = ctx.accounts.token_v.key();
-        let seeds = [exchange.token_v.as_ref()];
-        let (pda, _bump) = Pubkey::find_program_address(&seeds, ctx.program_id);
-        token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
-        Ok(())
-    }
-
-    /// Deposit B and A at current ratio to mint C tokens.
-    ///
-    /// amount_b Amount of B deposited
-    /// bump Random seed used to bump PDA off curve
-    /// deadline Time after which this transaction can no longer be executed
-    /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
-    /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
-    #[access_control(bond_future_deadline(&ctx, deadline) bond_correct_tokens(&ctx))]
-    pub fn bond(
-        ctx: Context<Bond>,
-        amount_b: u64,
-        bump: u8,
-        deadline: i64,
-        max_amount_a: u64,
-        min_liquidity_c: u64,
-    ) -> ProgramResult {
-        let mut liquidity_minted = amount_b;
-        let mut amount_a = max_amount_a;
-        if ctx.accounts.exchange.supply_a > 0 && ctx.accounts.exchange.supply_b > 0 {
-            assert!(min_liquidity_c > 0);
-            amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
-                / ctx.accounts.exchange.supply_b as f64) as u64
-                + 1;
-            liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
-                / ctx.accounts.exchange.supply_a as f64) as u64;
-            assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
-        }
-        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
-        token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
-        exchange.supply_a += amount_a;
-        exchange.supply_b += liquidity_minted;
-        let bond = &mut ctx.accounts.bond;
-        bond.amount = amount_b;
-        bond.unix_timestamp = ctx.accounts.clock.unix_timestamp;
-        let meta = &mut ctx.accounts.meta;
-        meta.bonds += 1;
-        Ok(())
-    }
-
-    /// Burn C tokens to withdraw B and A at current ratio.
-    ///
-    /// amount_c Amount of C burned
-    /// deadline Time after which this transaction can no longer be executed
-    #[access_control(unbond_future_deadline(&ctx, deadline) unbond_correct_tokens(&ctx))]
-    pub fn unbond(ctx: Context<Unbond>, amount_c: u64, deadline: i64) -> ProgramResult {
-        let amount_a = (amount_c as f64 * ctx.accounts.exchange.supply_a as f64
-            / ctx.accounts.mint_c.supply as f64) as u64;
-        let amount_b = (amount_c as f64 * ctx.accounts.exchange.supply_b as f64
-            / ctx.accounts.mint_c.supply as f64) as u64;
-        let (_pda, bump) =
-            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
-        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[bump]];
-        token::transfer(
-            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
-            amount_a,
-        )?;
-        token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
-        exchange.supply_a -= amount_a;
-        exchange.supply_b -= amount_b;
-        Ok(())
-    }
-
-    /// Price function for B to A trades with an exact input.
-    ///
-    /// amount_b Amount of B sold
-    pub fn get_b_to_a_input_price(
-        ctx: Context<GetBToAOutputPrice>,
-        amount_b: u64,
-    ) -> ProgramResult {
-        let price = get_input_price(
-            amount_b,
-            ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.fee,
-        );
-        msg!("Price: {}", price);
-        let quote = &mut ctx.accounts.quote;
-        quote.price = price;
-        Ok(())
-    }
-
-    /// Price function for B to A trades with an exact output.
-    ///
-    /// amount_a Amount of output A bough
-    pub fn get_b_to_a_output_price(
-        ctx: Context<GetBToAOutputPrice>,
-        amount_a: u64,
-    ) -> ProgramResult {
-        let price = get_output_price(
-            amount_a,
-            ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
-        );
-        msg!("Price: {}", price);
-        let quote = &mut ctx.accounts.quote;
-        quote.price = price;
-        Ok(())
-    }
-
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact input)
@@ -170,11 +47,72 @@ pub mod exchange {
         position.status = Status::Open;
         position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
         exchange.supply_a += amount_a;
         exchange.supply_b -= amount_b;
+        exchange.volume += (amount_a as f64 / 1_000_000_000.0) as u64;
         let meta = &mut ctx.accounts.meta;
         meta.positions += 1;
+        exchange.price_a = get_output_price(
+            1_000_000_000,
+            exchange.supply_a,
+            exchange.supply_b,
+            exchange.fee,
+        );
+        exchange.price_b = get_output_price(
+            1_000_000_000,
+            exchange.supply_b,
+            exchange.supply_a,
+            exchange.fee,
+        );
+        Ok(())
+    }
+
+    /// Convert A to B.
+    ///
+    /// amount_a Amount A sold (exact output)
+    /// deadline Time after which this transaction can no longer be executed
+    pub fn a_to_b_output(
+        ctx: Context<Swap>,
+        amount_a: u64,
+        bump: u8,
+        deadline: Option<i64>,
+        equity: u64,
+    ) -> ProgramResult {
+        let ut = ctx.accounts.clock.unix_timestamp;
+        assert!(deadline.unwrap_or(ut) >= ut);
+        let amount_b = get_output_price(
+            amount_a,
+            ctx.accounts.exchange.supply_a - amount_a,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.fee,
+        );
+        assert!(amount_b >= 1);
+        let position = &mut ctx.accounts.position;
+        position.direction = Direction::Short;
+        position.entry = amount_b;
+        position.equity = equity;
+        position.amount = amount_b;
+        position.status = Status::Open;
+        position.unix_timestamp = ut;
+        token::transfer(ctx.accounts.into_ctx_v(), amount_b)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.supply_a += amount_a;
+        exchange.supply_b -= amount_b;
+        exchange.volume += (amount_a as f64 / 1_000_000_000.0) as u64;
+        let meta = &mut ctx.accounts.meta;
+        meta.positions += 1;
+        exchange.price_a = get_output_price(
+            1_000_000_000,
+            exchange.supply_a,
+            exchange.supply_b,
+            exchange.fee,
+        );
+        exchange.price_b = get_output_price(
+            1_000_000_000,
+            exchange.supply_b,
+            exchange.supply_a,
+            exchange.fee,
+        );
         Ok(())
     }
 
@@ -209,46 +147,23 @@ pub mod exchange {
         position.status = Status::Open;
         position.unix_timestamp = ut;
         let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
         exchange.supply_a -= amount_a;
         exchange.supply_b += amount_b;
+        exchange.volume += (amount_b as f64 / 1_000_000_000.0) as u64;
         let meta = &mut ctx.accounts.meta;
         meta.positions += 1;
-        Ok(())
-    }
-
-    /// Convert A to B.
-    ///
-    /// amount_a Amount A sold (exact output)
-    /// deadline Time after which this transaction can no longer be executed
-    pub fn a_to_b_output(
-        ctx: Context<Swap>,
-        amount_a: u64,
-        bump: u8,
-        deadline: Option<i64>,
-        equity: u64,
-    ) -> ProgramResult {
-        let ut = ctx.accounts.clock.unix_timestamp;
-        assert!(deadline.unwrap_or(ut) >= ut);
-        let amount_b = get_output_price(
-            amount_a,
-            ctx.accounts.exchange.supply_a - amount_a,
-            ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
+        exchange.price_a = get_output_price(
+            1_000_000_000,
+            exchange.supply_a,
+            exchange.supply_b,
+            exchange.fee,
         );
-        assert!(amount_b >= 1);
-        let position = &mut ctx.accounts.position;
-        position.direction = Direction::Short;
-        position.entry = amount_b;
-        position.equity = equity;
-        position.amount = amount_b;
-        position.status = Status::Open;
-        position.unix_timestamp = ut;
-        token::transfer(ctx.accounts.into_ctx_v(), amount_b)?;
-        let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
-        exchange.supply_a += amount_a;
-        exchange.supply_b -= amount_b;
+        exchange.price_b = get_output_price(
+            1_000_000_000,
+            exchange.supply_b,
+            exchange.supply_a,
+            exchange.fee,
+        );
         Ok(())
     }
 
@@ -274,9 +189,155 @@ pub mod exchange {
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
         let exchange = &mut ctx.accounts.exchange;
-        exchange.last_price = amount_b;
         exchange.supply_a -= amount_a;
         exchange.supply_b += amount_b;
+        let meta = &mut ctx.accounts.meta;
+        meta.positions += 1;
+        exchange.price_a = get_output_price(
+            1_000_000_000,
+            exchange.supply_a,
+            exchange.supply_b,
+            exchange.fee,
+        );
+        exchange.price_b = get_output_price(
+            1_000_000_000,
+            exchange.supply_b,
+            exchange.supply_a,
+            exchange.fee,
+        );
+        Ok(())
+    }
+
+    /// Deposit B and A at current ratio to mint C tokens.
+    ///
+    /// amount_b Amount of B deposited
+    /// bump Random seed used to bump PDA off curve
+    /// deadline Time after which this transaction can no longer be executed
+    /// max_amount_a Maximum number of A deposited. Deposits max amount if total C supply is 0
+    /// min_liquidity_c Minimum number of C sender will mint if total C supply is greater than 0
+    #[access_control(bond_future_deadline(&ctx, deadline) bond_correct_tokens(&ctx))]
+    pub fn bond(
+        ctx: Context<Bond>,
+        amount_b: u64,
+        bump: u8,
+        deadline: i64,
+        max_amount_a: u64,
+        min_liquidity_c: u64,
+    ) -> ProgramResult {
+        let mut liquidity_minted = amount_b;
+        let mut amount_a = max_amount_a;
+        if ctx.accounts.exchange.supply_a > 0 && ctx.accounts.exchange.supply_b > 0 {
+            assert!(min_liquidity_c > 0);
+            amount_a = (amount_b as f64 * ctx.accounts.exchange.supply_a as f64
+                / ctx.accounts.exchange.supply_b as f64) as u64
+                + 1;
+            liquidity_minted = (amount_b as f64 * ctx.accounts.mint_c.supply as f64
+                / ctx.accounts.exchange.supply_a as f64) as u64;
+            assert!(max_amount_a >= amount_a && liquidity_minted >= min_liquidity_c);
+        }
+        token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
+        token::mint_to(ctx.accounts.into_ctx_c(), liquidity_minted)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.supply_a += amount_a;
+        exchange.supply_b += liquidity_minted;
+        let bond = &mut ctx.accounts.bond;
+        bond.amount = amount_b;
+        bond.unix_timestamp = ctx.accounts.clock.unix_timestamp;
+        let meta = &mut ctx.accounts.meta;
+        meta.bonds += 1;
+        Ok(())
+    }
+
+    /// Price function for A to B trades with an exact input.
+    ///
+    /// amount_a Amount of B sold
+    pub fn get_a_to_b_input_price(ctx: Context<Quote>, amount_a: u64) -> ProgramResult {
+        let price = get_input_price(
+            amount_a,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.supply_a,
+            ctx.accounts.exchange.fee,
+        );
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
+        emit!(QuoteEvent { price });
+        Ok(())
+    }
+
+    /// Price function for A to B trades with an exact output.
+    ///
+    /// amount_a Amount of output A bought
+    pub fn get_a_to_b_output_price(ctx: Context<Quote>, amount_b: u64) -> ProgramResult {
+        let price = get_output_price(
+            amount_b,
+            ctx.accounts.exchange.supply_a,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.fee,
+        );
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
+        emit!(QuoteEvent { price });
+        Ok(())
+    }
+
+    /// Price function for B to A trades with an exact input.
+    ///
+    /// amount_b Amount of B sold
+    pub fn get_b_to_a_input_price(ctx: Context<Quote>, amount_b: u64) -> ProgramResult {
+        let price = get_input_price(
+            amount_b,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.supply_a,
+            ctx.accounts.exchange.fee,
+        );
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
+        emit!(QuoteEvent { price });
+        Ok(())
+    }
+
+    /// Price function for B to A trades with an exact output.
+    ///
+    /// amount_a Amount of output A bought
+    pub fn get_b_to_a_output_price(ctx: Context<Quote>, amount_a: u64) -> ProgramResult {
+        let price = get_output_price(
+            amount_a,
+            ctx.accounts.exchange.supply_a,
+            ctx.accounts.exchange.supply_b,
+            ctx.accounts.exchange.fee,
+        );
+        let quote = &mut ctx.accounts.quote;
+        quote.price = price;
+        emit!(QuoteEvent { price });
+        Ok(())
+    }
+
+    /// Initialize. This function acts as a contract constructor which is called
+    /// once by the factory during contract creation.
+    ///
+    /// fee Fee given in BPS
+    pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.factory = ctx.accounts.factory.key();
+        exchange.fee = fee;
+        exchange.supply_a = 0;
+        exchange.supply_b = 0;
+        exchange.token_c = ctx.accounts.token_c.key();
+        exchange.token_v = ctx.accounts.token_v.key();
+        exchange.volume = 0;
+        let seeds = [exchange.token_v.as_ref()];
+        let (pda, _bump) = Pubkey::find_program_address(&seeds, ctx.program_id);
+        token::set_authority(ctx.accounts.into_ctx_v(), AccountOwner, Some(pda))?;
+        Ok(())
+    }
+
+    /// Meta. Sets exchange user account up.
+    ///
+    /// bump Random seed used to bump PDA off curve
+    pub fn meta(ctx: Context<Meta>, bump: u8) -> ProgramResult {
+        let meta = &mut ctx.accounts.meta;
+        meta.bonds = 0;
+        meta.positions = 0;
         Ok(())
     }
 
@@ -304,6 +365,7 @@ pub mod exchange {
         if position.equity == 0 {
             position.status = Status::Closed;
         }
+        // TODO: Update volume
         Ok(())
     }
 
@@ -337,13 +399,27 @@ pub mod exchange {
         Ok(())
     }
 
-    /// Meta. Sets exchange user account up.
+    /// Burn C tokens to withdraw B and A at current ratio.
     ///
-    /// bump Random seed used to bump PDA off curve
-    pub fn meta(ctx: Context<Meta>, bump: u8) -> ProgramResult {
-        let meta = &mut ctx.accounts.meta;
-        meta.bonds = 0;
-        meta.positions = 0;
+    /// amount_c Amount of C burned
+    /// deadline Time after which this transaction can no longer be executed
+    #[access_control(unbond_future_deadline(&ctx, deadline) unbond_correct_tokens(&ctx))]
+    pub fn unbond(ctx: Context<Unbond>, amount_c: u64, deadline: i64) -> ProgramResult {
+        let amount_a = (amount_c as f64 * ctx.accounts.exchange.supply_a as f64
+            / ctx.accounts.mint_c.supply as f64) as u64;
+        let amount_b = (amount_c as f64 * ctx.accounts.exchange.supply_b as f64
+            / ctx.accounts.mint_c.supply as f64) as u64;
+        let (_pda, bump) =
+            Pubkey::find_program_address(&[ctx.accounts.exchange.token_v.as_ref()], ctx.program_id);
+        let seeds = &[&ctx.accounts.exchange.token_v.as_ref()[..], &[bump]];
+        token::transfer(
+            ctx.accounts.into_ctx_v().with_signer(&[&seeds[..]]),
+            amount_a,
+        )?;
+        token::burn(ctx.accounts.into_ctx_c(), amount_c)?;
+        let exchange = &mut ctx.accounts.exchange;
+        exchange.supply_a -= amount_a;
+        exchange.supply_b -= amount_b;
         Ok(())
     }
 }
@@ -410,7 +486,7 @@ pub struct Unbond<'info> {
 
 #[derive(Accounts)]
 #[instruction(amount_b: u64)]
-pub struct GetBToAOutputPrice<'info> {
+pub struct Quote<'info> {
     pub authority: Signer<'info>,
     pub exchange: Account<'info, ExchangeData>,
     #[account(init, payer = authority, space = 8 + 8, constraint = amount_b > 0)]
@@ -564,11 +640,13 @@ impl<'info> Swap<'info> {
 pub struct ExchangeData {
     pub factory: Pubkey,
     pub fee: u64,
-    pub last_price: u64,
+    pub price_a: u64,
+    pub price_b: u64,
     pub supply_a: u64,
     pub supply_b: u64,
     pub token_c: Pubkey,
     pub token_v: Pubkey,
+    pub volume: u64,
 }
 
 /// User account state for input and output price quotes.
@@ -616,6 +694,12 @@ pub struct PositionData {
     pub amount: u64,
     pub status: Status,
     pub unix_timestamp: i64,
+}
+
+/// Quote event
+#[event]
+pub struct QuoteEvent {
+    pub price: u64,
 }
 
 #[error]

@@ -15,13 +15,6 @@ declare_id!("2vTL4Kks8UVNQoQmaWHyJCfJxivaHm8zgFPfsw9watmY");
 pub mod factory {
     use super::*;
 
-    /// Initializes the factory account
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
-        let factory = &mut ctx.accounts.factory;
-        factory.tokens = 0;
-        Ok(())
-    }
-
     /// Initializes and adds an exchange for a new token pair.
     ///
     /// fee In basis points
@@ -37,7 +30,8 @@ pub mod factory {
         let factory = &mut ctx.accounts.factory;
         let data = &mut ctx.accounts.data;
         let (pda, _bump) = Pubkey::find_program_address(&[token.key().as_ref()], ctx.program_id);
-        data.pk = pda;
+        data.pda = pda;
+        emit!(GetExchangeEvent { pda });
         Ok(())
     }
 
@@ -48,7 +42,8 @@ pub mod factory {
         for i in 0..factory.tokens {
             let (pda, _bump) =
                 Pubkey::find_program_address(&[i.to_string().as_bytes()], ctx.program_id);
-            data.pk = pda;
+            data.pda = pda;
+            emit!(GetExchangeEvent { pda });
         }
         Ok(())
     }
@@ -58,7 +53,15 @@ pub mod factory {
         let (pda, _bump) =
             Pubkey::find_program_address(&[id.to_string().as_bytes()], ctx.program_id);
         let data = &mut ctx.accounts.data;
-        data.pk = pda;
+        data.pda = pda;
+        emit!(GetExchangeEvent { pda });
+        Ok(())
+    }
+
+    /// Initializes the factory account
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+        let factory = &mut ctx.accounts.factory;
+        factory.tokens = 0;
         Ok(())
     }
 
@@ -198,23 +201,33 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut AddExchange<'info>>
     }
 }
 
+/// Factory data
 #[account]
 pub struct FactoryData {
     pub tokens: u64,
 }
 
+/// Exchange data
 #[account]
 pub struct ExchangeData {
-    pub pk: Pubkey,
+    pub pda: Pubkey,
 }
 
+/// User meta data
 #[account]
 pub struct MetaData {
     pub stakes: u64,
 }
 
+/// User staking data
 #[account]
 pub struct StakeData {
     pub amount: u64,
     pub unix_timestamp: i64,
+}
+
+/// Quote event
+#[event]
+pub struct GetExchangeEvent {
+    pub pda: Pubkey,
 }

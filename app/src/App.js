@@ -41,8 +41,9 @@ if (IS_LOCALNET) {
 }
 
 const C_SYMBOL = 'CHRB'
+const COUNTER_DURATION = 0.5
 const DEFAULT_SYMBOL = accounts.exchanges[0].symbol
-const counterDuration = 0.5
+const GET_INVERSE_DATA_INTERVAL = 500
 const githubUrl = 'https://github.com/cherub-so/cherub-protocol'
 const network = IS_LOCALNET ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
@@ -182,6 +183,8 @@ function App() {
   const [indexPriceLast, setIndexPriceLast] = useState()
   const [inverseAsset, setInverseAsset] = useState(DEFAULT_SYMBOL)
   const [inverseCard, setInverseCard] = useState('inverse')
+  // eslint-disable-next-line
+  const [inverseDecimals, setInverseDecimals] = useState(4)
   const [inverseDirection, setInverseDirection] = useState('long')
   const [inverseAmount, setInverseAmount] = useState()
   const [inversePositions, setInversePositions] = useState([])
@@ -204,14 +207,14 @@ function App() {
 
   const getProviderCallback = useCallback(getProvider, [getProvider])
 
-  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, wallet.connected])
+  const getBalanceCallback = useCallback(getBalance, [getProviderCallback, inverseDecimals, wallet.connected])
   const getBlockHeightCallback = useCallback(getBlockHeight, [getProviderCallback])
-  const getCBalanceCallback = useCallback(getCBalance, [getProviderCallback])
+  const getCBalanceCallback = useCallback(getCBalance, [getProviderCallback, inverseDecimals])
   const getDashboardDataCallback = useCallback(getDashboardData, [getProviderCallback])
-  const getInverseDataCallback = useCallback(getInverseData, [change24H, fundingRate, getProviderCallback, high24H, indexPrice, inverseAsset, low24H,
-    marketPrice, turnaround24H, setTurnaround24HLast])
-  const getPositionsCallback = useCallback(getPositions, [getProviderCallback])
-  const getStakesCallback = useCallback(getStakes, [getProviderCallback])
+  const getInverseDataCallback = useCallback(getInverseData, [change24H, fundingRate, getProviderCallback, high24H, indexPrice, inverseAsset,
+    inverseDirection, low24H, marketPrice, turnaround24H, setTurnaround24HLast])
+  const getPositionsCallback = useCallback(getPositions, [getProviderCallback, inverseDecimals])
+  const getStakesCallback = useCallback(getStakes, [getProviderCallback, inverseDecimals])
 
   async function getProvider() {
     const connection = new Connection(network, opts.preflightCommitment)
@@ -257,7 +260,7 @@ function App() {
         const stakeDataAccount = await factory.account.stakeData.fetch(stakePda)
         if (stakeDataAccount) {
           stakes.push({
-            amount: (stakeDataAccount.amount.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2),
+            amount: (stakeDataAccount.amount.toNumber() / (10 ** mintInfoC.decimals)).toFixed(inverseDecimals),
             apy: '13%',
             key: i,
           })
@@ -303,10 +306,10 @@ function App() {
         if (positionDataAccount) {
           positions.push({
             direction: positionDataAccount.direction.long ? 'Long' : 'Short',
-            entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
-            equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            entry: (positionDataAccount.entry.toNumber() / (10 ** mintInfoV.decimals)).toFixed(inverseDecimals),
+            equity: (positionDataAccount.equity.toNumber() / (10 ** mintInfoV.decimals)).toFixed(inverseDecimals),
             key: i,
-            amount: (positionDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            amount: (positionDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(inverseDecimals),
             status: positionDataAccount.status.open ? 'Open' : (positionDataAccount.status.closed ? 'Closed' : 'Liquidated')
           })
         }
@@ -328,7 +331,7 @@ function App() {
 
         if (bondDataAccount) {
           bonds.push({
-            amount: (bondDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2),
+            amount: (bondDataAccount.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(inverseDecimals),
             key: i,
           })
         }
@@ -353,7 +356,7 @@ function App() {
       )
       const accountInfoC = await tokenC.getAccountInfo(walletTokenAccountC)
       const mintInfoC = await tokenC.getMintInfo()
-      setCBalance((accountInfoC.amount.toNumber() / (10 ** mintInfoC.decimals)).toFixed(2))
+      setCBalance((accountInfoC.amount.toNumber() / (10 ** mintInfoC.decimals)).toFixed(inverseDecimals))
     } catch (err) {
       setCBalance()
       console.log(err)
@@ -376,7 +379,7 @@ function App() {
         )
         const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
         const mintInfoV = await tokenV.getMintInfo()
-        setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(2))
+        setBalance((accountInfoV.amount.toNumber() / (10 ** mintInfoV.decimals)).toFixed(inverseDecimals))
       }
     } catch (err) {
       console.log(err)
@@ -441,40 +444,39 @@ function App() {
 
     try {
       const provider = await getProviderCallback()
-      const exchangePublicKey = new PublicKey(currentExchange.account)
       const exchange = new Program(exchangeIdl, new PublicKey(exchangeIdl.metadata.address), provider)
 
-      const exchangeAccount = await exchange.account.exchangeData.fetch(exchangePublicKey)
+      const exchangeAccount = await exchange.account.exchangeData.fetch(new PublicKey(currentExchange.account))
       const tokenV = new Token(provider.connection, new PublicKey(currentExchange.tokenV), TOKEN_PROGRAM_ID, null)
-      const mintAInfo = await tokenV.getMintInfo()
-      const lastPrice = (exchangeAccount.lastPrice.toNumber() / (10 ** mintAInfo.decimals)).toFixed(2)
+      const mintInfoV = await tokenV.getMintInfo()
+
+      let lastPrice
+      if (inverseDirection === 'long') {
+        lastPrice = exchangeAccount.priceA.toNumber() / (10 ** mintInfoV.decimals)
+      } else {
+        lastPrice = exchangeAccount.priceB.toNumber() / (10 ** mintInfoV.decimals)
+      }
 
       const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider)
       const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle))
       const parsedIndexPrice = parsePriceData(pythFeedAccountInfo.data).price
 
-      if (lastPrice !== marketPrice) {
-        setChange24H((high24H - low24H) / lastPrice)
-        setExchangeRate(1 / lastPrice)
-        setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000) : 0)
-        setIndexPrice(parsedIndexPrice)
-        setHigh24H(lastPrice > high24H ? lastPrice : high24H)
-        setLow24H(low24H  === 0 ? lastPrice : (lastPrice < low24H ? lastPrice : low24H))
-        setMarketPrice(lastPrice)
-        setTurnaround24H(turnaround24H / 1 + (Math.random() * 10000 + 1.3))
+      setChange24HLast(change24H)
+      setFundingRateLast(fundingRate)
+      setIndexPriceLast(indexPrice)
+      setHigh24HLast(high24H)
+      setLow24HLast(low24H)
+      setMarketPriceLast(marketPrice)
+      setTurnaround24HLast(turnaround24H)
 
-        const interval = setInterval(() => {
-          setChange24HLast(change24H)
-          setFundingRateLast(fundingRate)
-          setIndexPriceLast(indexPrice)
-          setHigh24HLast(high24H)
-          setLow24HLast(low24H)
-          setMarketPriceLast(marketPrice)
-          setTurnaround24HLast(turnaround24H)
-
-          clearInterval(interval)
-        }, 100)
-      }
+      setChange24H((high24H - low24H) / lastPrice)
+      setExchangeRate(1 / lastPrice)
+      setFundingRate(lastPrice > 0 ? ((lastPrice - indexPrice) / 1000) : 0)
+      setIndexPrice(parsedIndexPrice)
+      setHigh24H(lastPrice > high24H ? lastPrice : high24H)
+      setLow24H(low24H  === 0 ? lastPrice : (lastPrice < low24H ? lastPrice : low24H))
+      setMarketPrice(lastPrice)
+      setTurnaround24H(exchangeAccount.volume.toNumber())
     } catch (err) {
       console.log(err)
     }
@@ -754,41 +756,41 @@ function App() {
       <Col span={3}>
         <p><small>Market / Index</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp className={ marketPrice > marketPriceLast ? 'Green' : 'Red' } duration={counterDuration} decimals={2} start={marketPriceLast}
+          <CountUp className={ marketPrice >= marketPriceLast ? 'Green' : 'Red' } duration={COUNTER_DURATION} decimals={4} start={marketPriceLast}
             end={marketPrice}/>
           &nbsp;/&nbsp;
-          <CountUp duration={counterDuration} decimals={2} start={indexPriceLast} end={indexPrice}/>
+          <CountUp duration={COUNTER_DURATION} decimals={4} start={indexPriceLast} end={indexPrice}/>
         </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Change (%)</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp className={ change24H > change24HLast ? 'Green' : 'Red' } duration={counterDuration} decimals={2} start={change24HLast}
+          <CountUp className={ change24H >= change24HLast ? 'Green' : 'Red' } duration={COUNTER_DURATION} decimals={2} start={change24HLast}
             end={change24H}/>
         </Title>
       </Col>
       <Col span={3}>
         <p><small>24H High</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp duration={counterDuration} decimals={2} start={high24HLast} end={high24H}/>
+          <CountUp duration={COUNTER_DURATION} decimals={2} start={high24HLast} end={high24H}/>
         </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Low</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp duration={counterDuration} decimals={2} start={low24HLast} end={low24H}/>
+          <CountUp duration={COUNTER_DURATION} decimals={2} start={low24HLast} end={low24H}/>
         </Title>
       </Col>
       <Col span={3}>
         <p><small>24H Turnaround ({inverseAsset})</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp duration={counterDuration} decimals={0} start={turnaround24HLast} end={turnaround24H}/>
+          <CountUp duration={COUNTER_DURATION} decimals={0} start={turnaround24HLast} end={turnaround24H}/>
         </Title>
       </Col>
       <Col span={3}>
         <p><small>Funding (%) / Countdown</small></p>
         <Title level={5} className='Title Dark'>
-          <CountUp className='Yellow' duration={counterDuration} decimals={3} start={fundingRateLast} end={fundingRate}/>
+          <CountUp className='Yellow' duration={COUNTER_DURATION} decimals={3} start={fundingRateLast} end={fundingRate}/>
           &nbsp;/ {countdown}
         </Title>
       </Col>
@@ -797,15 +799,15 @@ function App() {
   )
 
   const inverseAmountDescription = (
-    <small>Your order amount of <span className='White'>{inverseAmount > 0 ? (inverseAmount / 1).toFixed(2) : 0} USD</span> equals <span
-        className='White'>{inverseAmount > 0 ? (inverseAmount / marketPrice).toFixed(2) : 0} {inverseAsset}</span></small>
+    <small>Your order amount of <span className='White'>{inverseAmount > 0 ? (inverseAmount / 1).toFixed(inverseDecimals) : 0} USD</span> equals <span
+        className='White'>{inverseAmount > 0 ? (inverseAmount / marketPrice).toFixed(inverseDecimals) : 0} {inverseAsset}</span></small>
   )
 
-  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(2) : 0} SOL</span></small>)
+  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(inverseDecimals) : 0} SOL</span></small>)
 
   const leverageDescription = (
     <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
-        {inverseAmount > 0 ? (inverseAmount / marketPrice * leverage).toFixed(2) : 0} {inverseAsset}</span></small>
+        {inverseAmount > 0 ? (inverseAmount / marketPrice * leverage).toFixed(inverseDecimals) : 0} {inverseAsset}</span></small>
   )
 
   const inverseView = (
@@ -825,7 +827,7 @@ function App() {
                   addonAfter={<Select defaultValue='USD' className='select-after'><Option value='USD'>USD</Option></Select>}
                   onChange={(e) => {setInverseAmount(e.target.value); setInverseStep(1)}}/>
                 <br/>
-                <p>Your current exchange rate is 1 USD = {exchangeRate.toFixed(4)} {inverseAsset}</p>
+                <p>Your current exchange rate is 1 USD = {exchangeRate.toFixed(inverseDecimals)} {inverseAsset}</p>
                 <Radio.Group onChange={(e) => setInverseDirection(e.target.value)} className='RadioGroup Dark' optionType='button' buttonStyle='solid'
                   value={inverseDirection}>
                   <Radio.Button className='BuyButton' value='long'>Buy / Long</Radio.Button>
@@ -876,7 +878,7 @@ function App() {
               extra={<a href='/#/bond' className='CardLink' onClick={(e) => setBondCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={bondDeposit} placeholder='0' onChange={(e) => setBondDeposit(e.target.value)}/>
               <br/>
-              <p>Your current rate is ${(marketPrice * 0.9).toFixed(2)} with a 5 day lockup period</p>
+              <p>Your current rate is ${(marketPrice * 0.9).toFixed(inverseDecimals)} with a 5 day lockup period</p>
               <Button size='large' disabled={!wallet.connected} className='ApproveButton Button Dark' type='ghost' onClick={approveBond}>Approve</Button>
             </Card>
           </div>
@@ -900,7 +902,7 @@ function App() {
   )
 
   const stakeDescription = (
-    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(2) : 0} {C_SYMBOL.toUpperCase()}</span>&nbsp;
+    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(inverseDecimals) : 0} {C_SYMBOL.toUpperCase()}</span>&nbsp;
       is set to earn <span className='White'>12% APY</span>
     </small>
   )
@@ -1015,7 +1017,7 @@ function App() {
   }, [getDashboardDataCallback, getBlockHeightCallback, isTimeoutDataSet])
 
   useEffect(() => {
-    const interval = setInterval(getInverseDataCallback, 500)
+    const interval = setInterval(getInverseDataCallback, GET_INVERSE_DATA_INTERVAL)
     return () => clearInterval(interval)
   }, [getInverseDataCallback])
 
@@ -1060,7 +1062,7 @@ function App() {
               </Button>
             </> :
             <Button className='ConnectWalletButton' type='link'>
-              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(2) : 0 } {inverseAsset}</code>
+              <code className='SolCount'>{balance > 0 ? (balance / 1).toFixed(inverseDecimals) : 0 } {inverseAsset}</code>
               <code>{wallet.publicKey.toString().substr(0, 4)}...{wallet.publicKey.toString().substr(-4)}</code>
             </Button>
             }
