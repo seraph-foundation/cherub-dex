@@ -59,6 +59,50 @@ body {
     border-radius: 10px;
 }
 
+.AssetTitle {
+    display: inline-block;
+    position: relative;
+    background-color: #1f1f1f;
+    border: 1px solid #262626;
+    border-radius: 20px;
+    width: 125px;
+    padding: 5px;
+    height: 46px;
+}
+
+.AssetTitleModal {
+    color: white;
+    padding-left: 0;
+    font-weight: 500;
+    font-size: 16px;
+    display: inline-block;
+    position: absolute;
+}
+
+.TokenLogo {
+    object-fit: cover;
+    height: 35px;
+    width: 35px;
+    display: inline-block;
+    margin-right: 10px;
+    background-position: center;
+    background-size: cover;
+    border-radius: 50%;
+}
+
+.SOLLogo {
+    background-image: url(https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png);
+}
+
+.BTCLogo {
+    background-image: url(https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E/logo.png);
+}
+
+.CHRBLogo {
+    background-image: ./logo.png;
+    background-color: black;
+}
+
 .Title.Dark {
     color: white;
 }
@@ -142,7 +186,7 @@ body {
 
 
 .LogoImage {
-    height: 30px;
+    height: 20px;
 }
 
 .LogoText {
@@ -198,13 +242,6 @@ body {
     display: inline-flex;
     justify-content: center;
     align-items: center;
-}
-
-.AssetTitleModal {
-    color: white;
-    padding-left: 0;
-    font-weight: 500;
-    font-size: 16px;
 }
 
 .CheckCircleOutlined {

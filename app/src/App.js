@@ -14,6 +14,7 @@ import {
 import { Connection, PublicKey, SYSVAR_CLOCK_PUBKEY, SystemProgram, clusterApiUrl } from '@solana/web3.js'
 import { ConnectionProvider, WalletProvider, useWallet  } from '@solana/wallet-adapter-react'
 import { Line } from 'react-chartjs-2'
+import { TokenListProvider } from '@solana/spl-token-registry'
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { getPhantomWallet, getSlopeWallet, getSolletWallet } from '@solana/wallet-adapter-wallets'
 import { parsePriceData } from '@pythnetwork/client'
@@ -200,6 +201,8 @@ function App() {
   const [stakeStep, setStakeStep] = useState(0)
   const [stakePositions, setStakePositions] = useState([])
   const [tokenCount, setTokenCount] = useState(0)
+  // eslint-disable-next-line
+  const [tokenMap, setTokenMap] = useState({ mint: '', tokenInfo: {} })
   const [turnaround24H, setTurnaround24H] = useState(0)
   const [turnaround24HLast, setTurnaround24HLast] = useState(0)
 
@@ -747,7 +750,10 @@ function App() {
   )
 
   const assetTitleModal = (
-    <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
+    <div className='AssetTitle'>
+      <div className={'TokenLogo ' + inverseAsset + 'Logo'}></div>
+      <Button className='AssetTitleModal' type='link' onClick={() => setIsInverseAssetModalVisible(true)}>{inverseAsset} <DownOutlined/></Button>
+    </div>
   )
 
   const inverseStatsBar = (
@@ -803,7 +809,8 @@ function App() {
         className='White'>{inverseAmount > 0 ? (inverseAmount / marketPrice).toFixed(inverseDecimals) : 0} {inverseAsset}</span></small>
   )
 
-  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(inverseDecimals) : 0} SOL</span></small>)
+  const approveDescription = (<small>This transaction requires <span className='White'>{gasFee > 0 ? (gasFee / 1).toFixed(inverseDecimals) : 0} SOL
+  </span></small>)
 
   const leverageDescription = (
     <small>At <span className='White'>{leverage}x</span> leverage your position is worth <span className='White'>
@@ -902,9 +909,17 @@ function App() {
   )
 
   const stakeDescription = (
-    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(inverseDecimals) : 0} {C_SYMBOL.toUpperCase()}</span>&nbsp;
-      is set to earn <span className='White'>12% APY</span>
+    <small>Your deposit of <span className='White'>{stakeDeposit > 0 ? (stakeDeposit / 1).toFixed(inverseDecimals) : 0} {C_SYMBOL.toUpperCase()}</span>
+      &nbsp;is set to earn <span className='White'>12% APY</span>
     </small>
+  )
+
+
+  const stakeAssetTitle = (
+    <div className='AssetTitle'>
+      <div className={'TokenLogo ' + C_SYMBOL + 'Logo'}></div>
+      <Button className='AssetTitleModal' type='link'>{C_SYMBOL}</Button>
+    </div>
   )
 
   const stakeView = (
@@ -921,7 +936,7 @@ function App() {
         <Col span={1}></Col>
         <Col span={7} className='Cards'>
           <div className='site-card-border-less-wrapper'>
-            <Card className='Card Dark' title=<Button className='AssetTitleModal' type='link'>{C_SYMBOL}</Button> bordered={false}
+            <Card className='Card Dark' title={stakeAssetTitle} bordered={false}
               extra={<a href='/#/stake' className='CardLink' onClick={() => setStakeCard('positions')}>Positions</a>}>
               <Input className='StakeInput Input Dark' value={stakeDeposit} placeholder='0'
                 onChange={(e) => {setStakeStep(1); setStakeDeposit(e.target.value)}}/>
@@ -1020,6 +1035,16 @@ function App() {
     const interval = setInterval(getInverseDataCallback, GET_INVERSE_DATA_INTERVAL)
     return () => clearInterval(interval)
   }, [getInverseDataCallback])
+
+  useEffect(() => {
+    new TokenListProvider().resolve().then(tokens => {
+      const tokenList = tokens.filterByChainId('devnet').getList()
+      setTokenMap(tokenList.reduce((map, item) => {
+        map.set(item.address, item)
+        return map
+      }, new Map()))
+    });
+  }, [setTokenMap])
 
   useEffect(() => {
     if (wallet.connected && !isUserDataSet) {
