@@ -12,7 +12,7 @@ Inverse Perpetuals (3, 3) DAO
 
 - Anchor 0.16.2
 - Solana 1.8.0
-- Node 14.18.0
+- Node 16.13.0
 
 **Running**
 
