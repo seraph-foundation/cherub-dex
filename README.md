@@ -26,7 +26,7 @@ yarn protocol:airdrop # Run as long as needed
 Make sure cluster is correctly set to `localnet` in `Anchor.toml` and `.env` is configured properly.
 
 ```bash
-solana config set --url http://127.0.0.1:8899
+solana config set --url http://127.0.0.1:8899 
 yarn protocol:test
 ```
 

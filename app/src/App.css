@@ -340,7 +340,7 @@ html, body {
 body {
     background: linear-gradient(-45deg, #101010, #080808, #181818);
     background-size: 400% 400%;
-    animation: gradient 60s ease infinite;
+    animation: gradient 6000s ease infinite;
 }
 
 @keyframes gradient {

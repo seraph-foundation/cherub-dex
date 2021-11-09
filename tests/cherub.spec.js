@@ -304,7 +304,8 @@ describe('Cherub', () => {
   })
 
   it('Factory: Initializes', async () => {
-    const tx = await factory.rpc.initialize({
+    const fee = 3
+    const tx = await factory.rpc.initialize(new anchor.BN(fee), {
       accounts: {
         authority: provider.wallet.publicKey,
         factory: factoryAccount.publicKey,
@@ -317,6 +318,7 @@ describe('Cherub', () => {
 
     let factoryAccountInfo = await factory.account.factoryData.fetch(factoryAccount.publicKey)
     assert.ok(factoryAccountInfo.tokens.eq(new anchor.BN(0)))
+    assert.ok(factoryAccountInfo.fee.eq(new anchor.BN(fee)))
   })
 
   it('Factory: Creates exchange (index 0)', async () => {

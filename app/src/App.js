@@ -1026,7 +1026,9 @@ function App() {
     if (!isTimeoutDataSet) {
       setIsTimeoutDataSet(true)
       setInterval(calculateCountdown, 1000)
+      getBlockHeightCallback()
       setInterval(getBlockHeightCallback, 10000)
+      getDashboardDataCallback()
       setInterval(getDashboardDataCallback, 10000)
     }
   }, [getDashboardDataCallback, getBlockHeightCallback, isTimeoutDataSet])

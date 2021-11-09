@@ -35,7 +35,7 @@ pub mod exchange {
             amount_a,
             ctx.accounts.exchange.supply_a - amount_a,
             ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         assert!(amount_b >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
@@ -56,13 +56,13 @@ pub mod exchange {
             1_000_000_000,
             exchange.supply_a,
             exchange.supply_b,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         exchange.price_b = get_output_price(
             1_000_000_000,
             exchange.supply_b,
             exchange.supply_a,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         Ok(())
     }
@@ -70,7 +70,9 @@ pub mod exchange {
     /// Convert A to B.
     ///
     /// amount_a Amount A sold (exact output)
+    /// bump Random seed used to bump PDA off curve
     /// deadline Time after which this transaction can no longer be executed
+    /// equity Collateral used for position
     pub fn a_to_b_output(
         ctx: Context<Swap>,
         amount_a: u64,
@@ -84,7 +86,7 @@ pub mod exchange {
             amount_a,
             ctx.accounts.exchange.supply_a - amount_a,
             ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         assert!(amount_b >= 1);
         let position = &mut ctx.accounts.position;
@@ -105,13 +107,13 @@ pub mod exchange {
             1_000_000_000,
             exchange.supply_a,
             exchange.supply_b,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         exchange.price_b = get_output_price(
             1_000_000_000,
             exchange.supply_b,
             exchange.supply_a,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         Ok(())
     }
@@ -135,7 +137,7 @@ pub mod exchange {
             amount_b,
             ctx.accounts.exchange.supply_b - amount_b,
             ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
@@ -156,13 +158,13 @@ pub mod exchange {
             1_000_000_000,
             exchange.supply_a,
             exchange.supply_b,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         exchange.price_b = get_output_price(
             1_000_000_000,
             exchange.supply_b,
             exchange.supply_a,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         Ok(())
     }
@@ -184,7 +186,7 @@ pub mod exchange {
             amount_b,
             ctx.accounts.exchange.supply_b - amount_b,
             ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         assert!(amount_a >= 1);
         token::transfer(ctx.accounts.into_ctx_v(), amount_a)?;
@@ -197,13 +199,13 @@ pub mod exchange {
             1_000_000_000,
             exchange.supply_a,
             exchange.supply_b,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         exchange.price_b = get_output_price(
             1_000_000_000,
             exchange.supply_b,
             exchange.supply_a,
-            exchange.fee,
+            exchange.fee_bond_provider,
         );
         Ok(())
     }
@@ -256,7 +258,7 @@ pub mod exchange {
             amount_a,
             ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         let quote = &mut ctx.accounts.quote;
         quote.price = price;
@@ -272,7 +274,7 @@ pub mod exchange {
             amount_b,
             ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         let quote = &mut ctx.accounts.quote;
         quote.price = price;
@@ -288,7 +290,7 @@ pub mod exchange {
             amount_b,
             ctx.accounts.exchange.supply_b,
             ctx.accounts.exchange.supply_a,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         let quote = &mut ctx.accounts.quote;
         quote.price = price;
@@ -304,7 +306,7 @@ pub mod exchange {
             amount_a,
             ctx.accounts.exchange.supply_a,
             ctx.accounts.exchange.supply_b,
-            ctx.accounts.exchange.fee,
+            ctx.accounts.exchange.fee_bond_provider,
         );
         let quote = &mut ctx.accounts.quote;
         quote.price = price;
@@ -316,10 +318,15 @@ pub mod exchange {
     /// once by the factory during contract creation.
     ///
     /// fee Fee given in BPS
-    pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        fee_protocol: u64,
+        fee_bond_provider: u64,
+    ) -> ProgramResult {
         let exchange = &mut ctx.accounts.exchange;
         exchange.factory = ctx.accounts.factory.key();
-        exchange.fee = fee;
+        exchange.fee_protocol = fee_protocol;
+        exchange.fee_bond_provider = fee_bond_provider;
         exchange.supply_a = 0;
         exchange.supply_b = 0;
         exchange.token_c = ctx.accounts.token_c.key();
@@ -446,7 +453,7 @@ pub struct Bond<'info> {
         space = 8 + 8 + 8,
         seeds = [b"bond", exchange.token_v.as_ref(), authority.key.as_ref(), meta.bonds.to_string().as_bytes()],
         bump
-    )]
+        )]
     pub bond: Account<'info, BondData>,
     pub clock: Sysvar<'info, Clock>,
     #[account(mut)]
@@ -512,7 +519,7 @@ pub struct Swap<'info> {
         space = 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8,
         seeds = [b"position", exchange.token_v.as_ref(), authority.key.as_ref(), meta.positions.to_string().as_bytes()],
         bump
-    )]
+        )]
     pub position: Account<'info, PositionData>,
     #[account(mut)]
     pub recipient: AccountInfo<'info>,
@@ -565,7 +572,7 @@ pub struct Meta<'info> {
         space = 8 + 8 + 8,
         seeds = [b"meta", exchange.token_v.as_ref(), authority.key.as_ref()],
         bump
-    )]
+        )]
     pub meta: Account<'info, MetaData>,
     pub system_program: Program<'info, System>,
 }
@@ -639,7 +646,8 @@ impl<'info> Swap<'info> {
 #[account]
 pub struct ExchangeData {
     pub factory: Pubkey,
-    pub fee: u64,
+    pub fee_bond_provider: u64,
+    pub fee_protocol: u64,
     pub price_a: u64,
     pub price_b: u64,
     pub supply_a: u64,

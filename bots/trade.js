@@ -114,7 +114,7 @@ async function main() {
       }
     }
 
-    await sleep(5000)
+    await sleep(1000)
   }
 }
 

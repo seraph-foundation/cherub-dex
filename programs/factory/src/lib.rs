@@ -20,8 +20,9 @@ pub mod factory {
     /// fee In basis points
     pub fn add_exchange(ctx: Context<AddExchange>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
+        let fee_protocol = factory.fee;
         factory.tokens += 1;
-        exchange::cpi::initialize(ctx.accounts.into(), fee)?;
+        exchange::cpi::initialize(ctx.accounts.into(), fee_protocol, fee)?;
         Ok(())
     }
 
@@ -59,9 +60,12 @@ pub mod factory {
     }
 
     /// Initializes the factory account
-    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult {
+    ///
+    /// fee Given in BPS and applied to the exchange maker fee
+    pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         factory.tokens = 0;
+        factory.fee = fee;
         Ok(())
     }
 
@@ -76,6 +80,7 @@ pub mod factory {
 
     /// Stake.
     ///
+    /// amount_c Amount being stakes
     /// bump Random seed used to bump PDA off curve
     pub fn stake(ctx: Context<Stake>, amount_c: u64, bump: u8) -> ProgramResult {
         token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
@@ -99,23 +104,23 @@ pub struct AddExchange<'info> {
     #[account(mut)]
     pub factory: Account<'info, FactoryData>,
     pub token_c: AccountInfo<'info>,
-    pub token_v: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
+    pub token_v: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct GetExchange<'info> {
     pub authority: Signer<'info>,
-    pub factory: Account<'info, FactoryData>,
     #[account(init, payer = authority, space = 8 + 32)]
     pub data: Account<'info, ExchangeData>,
+    pub factory: Account<'info, FactoryData>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     pub authority: Signer<'info>,
-    #[account(init, payer = authority, space = 8 + 8)]
+    #[account(init, payer = authority, space = 8 + 8 + 8)]
     pub factory: Account<'info, FactoryData>,
     pub system_program: Program<'info, System>,
 }
@@ -158,9 +163,9 @@ pub struct Stake<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: AccountInfo<'info>,
     #[account(mut)]
-    pub user_s: Account<'info, TokenAccount>,
-    #[account(mut)]
     pub user_c: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_s: Account<'info, TokenAccount>,
 }
 
 impl<'info> Stake<'info> {
@@ -194,23 +199,24 @@ impl<'a, 'b, 'c, 'd, 'info> From<&mut AddExchange<'info>>
             exchange_v: accounts.exchange_v.clone(),
             factory: accounts.factory.to_account_info(),
             token_c: accounts.token_c.clone(),
-            token_v: accounts.token_v.clone(),
             token_program: accounts.token_program.clone(),
+            token_v: accounts.token_v.clone(),
         };
         CpiContext::new(accounts.exchange_program.to_account_info(), cpi_accounts)
     }
-}
-
-/// Factory data
-#[account]
-pub struct FactoryData {
-    pub tokens: u64,
 }
 
 /// Exchange data
 #[account]
 pub struct ExchangeData {
     pub pda: Pubkey,
+}
+
+/// Factory data
+#[account]
+pub struct FactoryData {
+    pub tokens: u64,
+    pub fee: u64,
 }
 
 /// User meta data
