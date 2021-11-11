@@ -2,7 +2,7 @@
   "name": "cherub-protocol",
   "author": "Pindaroso <me@pindaroso.com>",
   "version": "0.1.0",
-  "description": "Inverse Perpetuals (3, 3) DAO",
+  "description": "Inverse Perpetuals DEX and DAO (3, 3)",
   "scripts": {
     "app:build": "cd app && yarn build",
     "app:start": "cd app && yarn start",

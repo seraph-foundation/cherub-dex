@@ -12,7 +12,6 @@ body {
     font-family: 'Spartan';
     background: linear-gradient(-45deg, #101010, #080808, #181818);
     background-size: 400% 400%;
-    animation: gradient 60s ease infinite;
 }
 
 @keyframes gradient {
@@ -52,7 +51,7 @@ body {
     padding: 0 1em 0 1em;
     position: relative;
     border-top: 1px solid black !important;
-    background-color: transparent;
+    background: no-repeat center url(./wings-1.svg);
 }
 
 .hero-content {
@@ -61,20 +60,12 @@ body {
 }
 
 .hero-description {
-    background: linear-gradient(-45deg, #f7cd7d, white);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradient 15s ease infinite;
+    color: white !important;
 }
 
 .hero-title {
+    color: white !important;
     font-size: 4em !important;
-    background: linear-gradient(-45deg, #f7cd7d, white);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradient 15s ease infinite;
     font-size: 20px;
     font-weight: bold;
 }

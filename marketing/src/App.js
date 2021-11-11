@@ -15,7 +15,7 @@ function App() {
         <div>
           <div className='hero-content'>
             <Title className='hero-title'>Cherub Protocol</Title>
-            <Title className='hero-description' level={3}>Inverse Perpetuals (3, 3) DAO</Title>
+            <Title className='hero-description' level={3}>Inverse Perpetuals DEX and DAO (3, 3)</Title>
           </div>
         </div>
       </Col>
