@@ -1,6 +1,6 @@
 # Cherub Protocol
 
-Inverse Perpetuals (3, 3) DAO
+Inverse Perpetuals DEX and DAO (3, 3)
 
 * **Build** Access or bond deep, protocol-owned liquidity
 * **Trade** 100x leverage and zero impermanent loss using virtual Automated Marketing Making
@@ -26,7 +26,7 @@ yarn protocol:airdrop # Run as long as needed
 Make sure cluster is correctly set to `localnet` in `Anchor.toml` and `.env` is configured properly.
 
 ```bash
-solana config set --url http://127.0.0.1:8899 
+solana config set --url http://127.0.0.1:8899
 yarn protocol:test
 ```
 

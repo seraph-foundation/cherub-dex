@@ -27,10 +27,12 @@ async function main() {
     provider.wallet.publicKey
   )
 
-  await tokenV.mintTo(walletTokenAccountV, provider.wallet.publicKey, [], walletAmountV)
-
   while (true) {
-    let tx
+    const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
+    const mintInfoV = await tokenV.getMintInfo()
+    const balance = accountInfoV.amount.toNumber()
+
+    console.log('Balance', (balance  / (10 ** mintInfoV.decimals)).toFixed(2), 'V')
 
     const [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress([
       toBuffer('meta'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()
@@ -47,6 +49,10 @@ async function main() {
       const long = Math.floor((Math.random() * 2) + 1) === 1
 
       const equity = amount / leverage
+
+      if (amount > balance) {
+        await tokenV.mintTo(walletTokenAccountV, provider.wallet.publicKey, [], walletAmountV)
+      }
 
       const [positionPda, positionBump] = await PublicKey.findProgramAddress([
         toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(positions)
@@ -69,6 +75,8 @@ async function main() {
       }
 
       console.log('Opening', leverage + 'x', 'leverage', long ? 'long' : 'short' , 'for', displayAmount + '...')
+
+      let tx
 
       if (long) {
         tx = await exchange.rpc.bToAInput(new BN(amount), positionBump, new BN(deadline), new BN(equity), args)

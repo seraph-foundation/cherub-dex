@@ -1,7 +1,7 @@
-//! An example of an AMM factory program, inspired by Uniswap V1 seen here:
-//! https://github.com/Uniswap/uniswap-v1/. This example has some
-//! implementation changes to address the differences between the EVM and
-//! Solana's BPF-modified LLVM, but more or less should be the same overall.
+//! A Virtual Automated Market Maker (vAMM) factory program, inspired by
+//! Uniswap V1 and V2. This example has some implementation changes to address
+//! the differences between the EVM and Solana's BPF-modified LLVM. Additionally, it
+//! adds a level of virtualization using collateral token vaults.
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, TokenAccount, Transfer};
@@ -17,12 +17,17 @@ pub mod factory {
 
     /// Initializes and adds an exchange for a new token pair.
     ///
+    /// decimals Token decimal value
     /// fee In basis points
-    pub fn add_exchange(ctx: Context<AddExchange>, fee: u64) -> ProgramResult {
+    pub fn add_exchange(
+        ctx: Context<AddExchange>,
+        bond_discount: u64,
+        decimals: u64,
+    ) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
-        let fee_protocol = factory.fee;
+        let protocol_fee = factory.fee;
         factory.tokens += 1;
-        exchange::cpi::initialize(ctx.accounts.into(), fee_protocol, fee)?;
+        exchange::cpi::initialize(ctx.accounts.into(), bond_discount, decimals, protocol_fee)?;
         Ok(())
     }
 
@@ -30,7 +35,7 @@ pub mod factory {
     pub fn get_exchange(ctx: Context<GetExchange>, token: Pubkey) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
         let data = &mut ctx.accounts.data;
-        let (pda, _bump) = Pubkey::find_program_address(&[token.key().as_ref()], ctx.program_id);
+        let (pda, _) = Pubkey::find_program_address(&[token.key().as_ref()], ctx.program_id);
         data.pda = pda;
         emit!(GetExchangeEvent { pda });
         Ok(())
@@ -41,7 +46,7 @@ pub mod factory {
         let factory = &mut ctx.accounts.factory;
         let data = &mut ctx.accounts.data;
         for i in 0..factory.tokens {
-            let (pda, _bump) =
+            let (pda, _) =
                 Pubkey::find_program_address(&[i.to_string().as_bytes()], ctx.program_id);
             data.pda = pda;
             emit!(GetExchangeEvent { pda });
@@ -51,8 +56,7 @@ pub mod factory {
 
     /// Get exchange by id.
     pub fn get_token_with_id(ctx: Context<GetExchange>, id: u64) -> ProgramResult {
-        let (pda, _bump) =
-            Pubkey::find_program_address(&[id.to_string().as_bytes()], ctx.program_id);
+        let (pda, _) = Pubkey::find_program_address(&[id.to_string().as_bytes()], ctx.program_id);
         let data = &mut ctx.accounts.data;
         data.pda = pda;
         emit!(GetExchangeEvent { pda });
@@ -64,8 +68,8 @@ pub mod factory {
     /// fee Given in BPS and applied to the exchange maker fee
     pub fn initialize(ctx: Context<Initialize>, fee: u64) -> ProgramResult {
         let factory = &mut ctx.accounts.factory;
-        factory.tokens = 0;
         factory.fee = fee;
+        factory.tokens = 0;
         Ok(())
     }
 
@@ -83,13 +87,13 @@ pub mod factory {
     /// amount_c Amount being stakes
     /// bump Random seed used to bump PDA off curve
     pub fn stake(ctx: Context<Stake>, amount_c: u64, bump: u8) -> ProgramResult {
-        token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
-        token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
         let stake = &mut ctx.accounts.stake;
         stake.unix_timestamp = ctx.accounts.clock.unix_timestamp;
         stake.amount = amount_c;
         let meta = &mut ctx.accounts.meta;
         meta.stakes += 1;
+        token::transfer(ctx.accounts.into_ctx_c(), amount_c)?;
+        token::mint_to(ctx.accounts.into_ctx_s(), amount_c)?;
         Ok(())
     }
 }
@@ -215,8 +219,8 @@ pub struct ExchangeData {
 /// Factory data
 #[account]
 pub struct FactoryData {
-    pub tokens: u64,
     pub fee: u64,
+    pub tokens: u64,
 }
 
 /// User meta data

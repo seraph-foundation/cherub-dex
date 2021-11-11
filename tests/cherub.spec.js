@@ -323,9 +323,10 @@ describe('Cherub', () => {
 
   it('Factory: Creates exchange (index 0)', async () => {
     const [exchangePda, exchangeBump] = await anchor.web3.PublicKey.findProgramAddress([token0V.publicKey.toBuffer()], exchange.programId)
-    const fee0 = 3
+    const bondDiscount = 5
     const tx = await factory.rpc.addExchange(
-      new anchor.BN(fee0), {
+      new anchor.BN(bondDiscount),
+      new anchor.BN(decimals0V), {
         accounts: {
           exchange: exchangeAccount0.publicKey,
           exchangeV: exchangeTokenAccount0V,
@@ -819,17 +820,18 @@ describe('Cherub', () => {
 
   it('Factory: Creates exchange (index 1)', async () => {
     const [pda, bump] = await anchor.web3.PublicKey.findProgramAddress([token1V.publicKey.toBuffer()], exchange.programId)
-    const fee1 = 3
+    const bondDiscount = 5
     const tx = await factory.rpc.addExchange(
-      new anchor.BN(fee1), {
+      new anchor.BN(bondDiscount),
+      new anchor.BN(decimals1V), {
         accounts: {
           exchange: exchangeAccount1.publicKey,
           exchangeV: exchangeTokenAccount1V,
           exchangeProgram: exchange.programId,
           factory: factoryAccount.publicKey,
           tokenC: tokenC.publicKey,
-          tokenV: token1V.publicKey,
-          tokenProgram: TOKEN_PROGRAM_ID
+          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenV: token1V.publicKey
         },
         instructions: [await exchange.account.exchangeData.createInstruction(exchangeAccount1)],
         signers: [factoryAccount.owner, exchangeAccount1]

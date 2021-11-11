@@ -460,6 +460,14 @@ function App() {
         lastPrice = exchangeAccount.priceB.toNumber() / (10 ** mintInfoV.decimals)
       }
 
+      if (lastPrice > 0 && lastPrice < 100) {
+        setInverseDecimals(3)
+      } else if (lastPrice > 100) {
+        setInverseDecimals(2)
+      } else {
+        setInverseDecimals(4)
+      }
+
       const pyth = new Program(pythIdl, new PublicKey(pythIdl.metadata.address), provider)
       const pythFeedAccountInfo = await pyth.provider.connection.getAccountInfo(new PublicKey(currentExchange.oracle))
       const parsedIndexPrice = parsePriceData(pythFeedAccountInfo.data).price
