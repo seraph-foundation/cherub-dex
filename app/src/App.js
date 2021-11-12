@@ -491,9 +491,6 @@ function App() {
     } catch (err) {
       console.log(err)
     }
-
-    setInverseStep(0)
-    setInverseAmount()
   }
 
   async function approveInverse() {
