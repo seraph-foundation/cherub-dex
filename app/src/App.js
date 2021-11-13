@@ -50,6 +50,7 @@ const network = IS_LOCALNET ? 'http://127.0.0.1:8899' : clusterApiUrl('devnet')
 const opts = { preflightCommitment: 'processed' }
 const wallets = [getPhantomWallet(), getSolletWallet(), getSlopeWallet()]
 
+// eslint-disable-next-line
 const Direction = {
   Long: { long: {} },
   Short: { short: {} }
@@ -460,10 +461,12 @@ function App() {
         lastPrice = exchangeAccount.priceB.toNumber() / (10 ** mintInfoV.decimals)
       }
 
-      if (lastPrice > 0 && lastPrice < 100) {
-        setInverseDecimals(3)
-      } else if (lastPrice > 100) {
+      if (lastPrice > 10) {
+        setInverseDecimals(1)
+      } else if (lastPrice > 1) {
         setInverseDecimals(2)
+      } else if (lastPrice > 0.1) {
+        setInverseDecimals(3)
       } else {
         setInverseDecimals(4)
       }
@@ -524,30 +527,33 @@ function App() {
       const [positionPda, positionBump] = await PublicKey.findProgramAddress([
         toBuffer('position'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer(), toBuffer(positions)
       ], exchange.programId)
-      const bToAAmountB = inverseAmount * leverage * (10 ** mintInfoV.decimals)
-      const equityB = inverseAmount * (10 ** mintInfoV.decimals)
+      const amount = inverseAmount * leverage * (10 ** mintInfoV.decimals)
+      const equity = inverseAmount * (10 ** mintInfoV.decimals)
+      const deadline = Date.now() + 5000 / 1000
 
-      const tx = await exchange.rpc.bToAInput(
-        new BN(bToAAmountB),
-        positionBump,
-        new BN(Date.now() + 5000 / 1000),
-        inverseDirection === 'long' ? Direction.Long : Direction.Short,
-        new BN(equityB),
-        {
-          accounts: {
-            authority: provider.wallet.publicKey,
-            clock: SYSVAR_CLOCK_PUBKEY,
-            exchange: new PublicKey(currentExchange.account),
-            exchangeV: currentExchange.accountV,
-            meta: metaPda,
-            pda: exchangePda,
-            position: positionPda,
-            recipient: walletTokenAccountV,
-            systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            userV: walletTokenAccountV
-          }
-        })
+      const args = {
+        accounts: {
+          authority: provider.wallet.publicKey,
+          clock: SYSVAR_CLOCK_PUBKEY,
+          exchange: new PublicKey(currentExchange.account),
+          exchangeV: currentExchange.accountV,
+          meta: metaPda,
+          pda: exchangePda,
+          position: positionPda,
+          recipient: walletTokenAccountV,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          userV: walletTokenAccountV
+        }
+      }
+
+      let tx
+      if (inverseDirection === 'long') {
+        tx = await exchange.rpc.aToBOutput(new BN(amount), positionBump, new BN(deadline), new BN(equity), args)
+      } else {
+        tx = await exchange.rpc.bToAOutput(new BN(amount), positionBump, new BN(deadline), new BN(equity), { accounts })
+      }
+
       const link = 'https://explorer.solana.com/tx/' + tx
 
       message = 'Order Successfully Placed'

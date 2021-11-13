@@ -191,7 +191,10 @@ pub mod exchange {
             assert!(max_amount >= amount_bonded && liquidity_minted >= min_liquidity_c);
         }
         exchange.supply_a += amount_bonded;
-        exchange.supply_b += liquidity_minted;
+        exchange.supply_b += amount_bonded;
+        let unit = u64::pow(10, exchange.decimals as u32);
+        exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
+        exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
         let bond = &mut ctx.accounts.bond;
         bond.amount = amount;
         bond.unix_timestamp = ctx.accounts.clock.unix_timestamp;
