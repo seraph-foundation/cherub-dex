@@ -49,6 +49,7 @@ pub mod exchange {
         exchange.volume += (amount_a as f64 / unit as f64) as u64;
         exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
         exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
+        emit!(SwapEvent { position: position.key() });
         token::transfer(ctx.accounts.into_ctx_v(), equity)?;
         Ok(())
     }
@@ -86,6 +87,7 @@ pub mod exchange {
         exchange.volume += (amount_a as f64 / unit as f64) as u64;
         exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
         exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
+        emit!(SwapEvent { position: position.key() });
         token::transfer(ctx.accounts.into_ctx_v(), equity)?;
         Ok(())
     }
@@ -123,6 +125,7 @@ pub mod exchange {
         exchange.volume += (amount_b as f64 / unit as f64) as u64;
         exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
         exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
+        emit!(SwapEvent { position: position.key() });
         token::transfer(ctx.accounts.into_ctx_v(), equity)?;
         Ok(())
     }
@@ -158,6 +161,7 @@ pub mod exchange {
         exchange.volume += (amount_b as f64 / unit as f64) as u64;
         exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
         exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
+        emit!(SwapEvent { position: position.key() });
         token::transfer(ctx.accounts.into_ctx_v(), equity)?;
         Ok(())
     }
@@ -652,6 +656,12 @@ pub struct PositionData {
 #[event]
 pub struct QuoteEvent {
     pub price: u64,
+}
+
+/// Swap event
+#[event]
+pub struct SwapEvent {
+    pub position: Pubkey,
 }
 
 #[error]

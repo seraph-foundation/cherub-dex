@@ -12,7 +12,11 @@ async function main() {
 
   const dexProgramId = new PublicKey('Fy3KFXjKaA6irHp3g5YZ1pKL9a9JUwPvC32Yp4ny2epZ')
   const dexSubscriptionId = connection.onProgramAccountChange(dexProgramId, ({ accountId, accountInfo }) => {
-    console.log(accountId, accountInfo)
+    console.log('Program change', accountId.toString())
+  })
+
+  const logsSubscriptionId = connection.onLogs(dexProgramId, (res) => {
+    console.log(res)
   })
 
   while (true) {
