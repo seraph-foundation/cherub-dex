@@ -9,14 +9,12 @@ const provider = config.provider
 const accounts = config.accounts
 
 const exchange = config.programs.exchange
-const factory = config.programs.factory
-
-const tokenV = new Token(provider.connection, new PublicKey(accounts.exchanges[0].tokenV), TOKEN_PROGRAM_ID, provider.wallet.payer)
-const decimalsV = 9
-const walletAmountV = 1000000 * (10 ** decimalsV)
 
 async function main() {
   console.log('Running....')
+
+  const tokenV = new Token(provider.connection, new PublicKey(accounts.exchanges[0].tokenV), TOKEN_PROGRAM_ID, provider.wallet.payer)
+  const mintInfoV = await tokenV.getMintInfo()
 
   const [exchangePda, exchangeBump] = await PublicKey.findProgramAddress([tokenV.publicKey.toBuffer()], exchange.programId)
 
@@ -29,10 +27,9 @@ async function main() {
 
   while (true) {
     const accountInfoV = await tokenV.getAccountInfo(walletTokenAccountV)
-    const mintInfoV = await tokenV.getMintInfo()
     const balance = accountInfoV.amount.toNumber()
 
-    console.log('Balance', (balance  / (10 ** mintInfoV.decimals)).toFixed(2), 'V')
+    console.log('Balance', (balance / (10 ** mintInfoV.decimals)).toFixed(2), 'V')
 
     const [walletMetaPda, walletMetaBump] = await PublicKey.findProgramAddress([
       toBuffer('meta'), tokenV.publicKey.toBuffer(), provider.wallet.publicKey.toBuffer()
@@ -42,15 +39,17 @@ async function main() {
 
     // Randomly open or close position
     if (Math.floor((Math.random() * 2) + 1) === 1) {
-      const amount = Math.floor((Math.random() * 100000) + 1) * (10 ** decimalsV)
+      const amount = Math.floor((Math.random() * 100000) + 1) * (10 ** mintInfoV.decimals)
       const deadline = Date.now() / 1000
-      const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
+      const displayAmount = (amount / (10 ** mintInfoV.decimals)).toString() + ' USD'
       const leverage = Math.floor((Math.random() * 100) + 1)
       const long = Math.floor((Math.random() * 2) + 1) === 1
 
       const equity = amount / leverage
 
       if (amount > balance) {
+        console.log('Airdropping...')
+        const walletAmountV = amount * 10
         await tokenV.mintTo(walletTokenAccountV, provider.wallet.publicKey, [], walletAmountV)
       }
 
@@ -94,7 +93,7 @@ async function main() {
       if (positionDataAccount.status.open) {
         const amount = positionDataAccount.amount.toNumber()
         const deadline = Date.now() / 1000
-        const displayAmount = (amount / (10 ** decimalsV)).toString() + ' USD'
+        const displayAmount = (amount / (10 ** mintInfoV.decimals)).toString() + ' USD'
         const direction = positionDataAccount.direction
         const equity = positionDataAccount.equity.toNumber()
         const leverage = amount / equity
