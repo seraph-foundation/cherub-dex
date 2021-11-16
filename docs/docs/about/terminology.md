@@ -6,11 +6,11 @@ sidebar_position: 2
 
 ## 1, 1
 
-This meme refers to the prisoner's dilemma. In the case of Cherub, it involves bonding.
+This meme refers to the prisoner's dilemma. In the case of Cherub, it involves solely bonding.
 
 ## 3, 3
 
-This meme refers to the prisoner's dilemma. In the case of Cherub, it involves bonding and staking simultaneously.
+This meme refers to the prisoner's dilemma. In the case of Cherub, it involves simultaneously bonding and staking.
 
 ## AMM
 
