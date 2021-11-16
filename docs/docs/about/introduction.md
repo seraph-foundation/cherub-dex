@@ -16,14 +16,6 @@ The protocol relies on [staking](terminology.md#staking) and [bonding](terminolo
 
 Centralized exchanges do not pass value on to users. Cherub attempts to solve this problem by being the best protocol for traders, investors and builders.
 
-## Who is working on this?
-
-The project was ideated by Pindaroso and is being built by a distributed pseudo-anonymous team.
-
-## Who runs Cherub?
-
-No one. Cherub is DAO-governed. All decisions are formed by community members on the forum and made by token holders through snapshot voting.
-
 ## Disclaimer
 
 All claims, content, designs, algorithms, estimates, roadmaps, specifications, and performance measurements described in this project are done with the author's best effort. It is up to the reader to check and validate their accuracy and truthfulness. Furthermore, nothing in this project constitutes a solicitation for investment.
