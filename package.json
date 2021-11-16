@@ -8,6 +8,7 @@
     "app:start": "cd app && yarn start",
     "bot:liquidate:start": "node bots/liquidate.js",
     "bot:trade:start": "node bots/trade.js",
+    "docker:build": "docker build . -t cherub",
     "docs:start": "cd docs && yarn start",
     "marketing:start": "cd marketing && yarn start",
     "protocol:airdrop": "while true; do solana airdrop 5; sleep 10; done",

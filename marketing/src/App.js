@@ -42,11 +42,11 @@ function App() {
 
   function onMenuClick(e) {
     if (e.key === '0') {
-      window.open('https://dev.cherub.so', '_blank')
+      window.open('https://dev.cherub.markets', '_blank')
     } else if (e.key === '1') {
-      window.open('https://github.com/cherub-so/cherub-protocol', '_blank')
+      window.open('https://github.com/cherub-protocol/cherub-protocol', '_blank')
     } else if (e.key === '2') {
-      window.open('https://app.cherub.so', '_blank')
+      window.open('https://app.cherub.markets', '_blank')
     }
   }
 

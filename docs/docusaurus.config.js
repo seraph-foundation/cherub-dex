@@ -7,8 +7,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Cherub',
-  tagline: 'Inverse Perpetuals (3, 3) DAO',
-  url: 'https://www.cherub.so',
+  tagline: 'Inverse Perpetuals DAO (3, 3)',
+  url: 'https://www.cherub.markets',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -24,7 +24,7 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/cherub-so/cherub-protocol/',
+          editUrl: 'https://github.com/cherub-protocol/cherub-protocol/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -43,22 +43,23 @@ const config = {
       title: 'Cherub',
       logo: {
         alt: 'Cherub Logo',
-        src: 'img/logo.png',
+        src: 'img/logo-dark.png',
       },
+
       items: [
         {
           type: 'doc',
-          docId: 'home',
+          docId: 'about/introduction',
           position: 'left',
           label: 'Docs',
         },
         {
-          href: 'https://app.cherub.so',
+          href: 'https://app.cherub.markets',
           label: 'App',
           position: 'right',
         },
         {
-          href: 'https://www.twitter.com/pindarosothecat',
+          href: 'https://www.twitter.com/cherubprotocol',
           label: 'Twitter',
           position: 'right',
         },
@@ -68,7 +69,7 @@ const config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/cherub-so/cherub-protocol',
+          href: 'https://github.com/cherub-protocol/cherub-protocol',
           label: 'GitHub',
           position: 'right',
         },
@@ -111,6 +112,15 @@ const config = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Cherub`,
     },
+
+    algolia: {
+      appId: 'S65W0J24VG',
+      apiKey: '6f21b6197bfec52599a66eb0ad1fe755',
+      indexName: 'docs',
+      contextualSearch: true,
+      externalUrlRegex: 'dev\\.cherub\\.markets',
+    },
+
     prism: {
       theme: lightCodeTheme,
       darkTheme: darkCodeTheme,
