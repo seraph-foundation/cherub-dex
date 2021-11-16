@@ -4,9 +4,13 @@ sidebar_position: 2
 
 # Terminology
 
-## (3, 3)
+## 1, 1
 
-This meme refers to the prisoner's dilemma.
+This meme refers to the prisoner's dilemma. In the case of Cherub, it involves bonding.
+
+## 3, 3
+
+This meme refers to the prisoner's dilemma. In the case of Cherub, it involves bonding and staking simultaneously.
 
 ## AMM
 
@@ -31,6 +35,18 @@ Decentralized exchange.
 ## DeFi
 
 Decentralized finance as opposed to traditional or legacy finance. DeFi is also commonly referred to as "open finance".
+
+## Index Price
+
+The spot price of a given asset.
+
+## Market Price
+
+The current protocol market price for a given asset.
+
+## OI
+
+Open interest. This is the total number of unsettled contracts, or the outstanding value of the futures contracts.
 
 ## staking
 

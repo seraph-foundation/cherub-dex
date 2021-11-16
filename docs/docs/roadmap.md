@@ -4,11 +4,31 @@ sidebar_position: 4
 
 # Roadmap
 
-## Devnet
+## 2021
 
-1. MVP in Q4 2021
+### October
 
-## Mainnet
+- [x] Submit proof of concept project to Solana Ignition hackathon
 
-1. Security audit and launch in Q1 2022
-2. Burn keys and IDO in Q2 2022
+### November
+
+- [ ] Finished documentation
+- [ ] MVP running on `localnet`
+- [ ] Grant applications
+
+### December
+
+- [ ] Community development
+- [ ] MVP running on `devnet`
+
+## 2022
+
+### January
+
+- [ ] Security audit
+- [ ] MVP running on `mainnet`
+
+### February
+
+- [ ]  Burn keys
+- [ ]  DAO funding
