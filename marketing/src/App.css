@@ -4,7 +4,6 @@
 }
 
 html {
-    zoom: 108%;
     background-color: black;
 }
 
@@ -34,52 +33,71 @@ body {
     position: fixed;
     z-index: 1;
     width: 100%;
+    background-color: black !important;
 }
+
 
 .header-logo {
     height: 30px;
+    display: block;
 }
 
 .header-menu {
-    float: right;
-    min-width: 30em;
+    height: 100%;
+    margin: 0;
+    height: 100%;
+    padding: 0;
+    width: 100%;
+}
+
+.logo {
+  float: left;
+  height: 31px;
+  margin: 0;
+  height: 100%;
+  padding: 16px 0 16px 0;
 }
 
 .hero-view {
-    min-height: 100vh;
     color: white;
-    padding: 0 1em 0 1em;
+    background-color: white !important;
+    height: 100vh;
     position: relative;
-    border-top: 1px solid black !important;
-    background: no-repeat center url(./wings-1.svg);
+    background-image: url(./wings.svg);
+    background-size: 200% 200%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    padding: 1em;
 }
 
 .hero-content {
-    bottom: 15em;
+    bottom: 5em;
     position: absolute;
 }
 
 .hero-description {
-    color: white !important;
+    color: black;
 }
 
 .hero-title {
-    color: white !important;
+    color: black;
     font-size: 4em !important;
     font-size: 20px;
     font-weight: bold;
+    z-index: 0;
 }
 
 .footer {
     text-align: center;
     color: white;
     padding: 3em;
-    background-color: #1890ff;
+    background-color: black;
 }
 
 .carousel-view {
     padding: 10em 1em 10em 1em;
     text-align: center;
+    background-color: #1890ff;
 }
 
 .carousel-title {
