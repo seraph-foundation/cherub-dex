@@ -9,8 +9,9 @@ html {
 
 body {
     font-family: 'Spartan';
-    background: linear-gradient(-45deg, #101010, #080808, #181818);
-    background-size: 400% 400%;
+    /*background-size: 40px 40px;
+    background-image: radial-gradient(circle, #000000 1px, rgba(0, 0, 0, 0) 1px);*/
+    /*background: linear-gradient(to right, rgba(5, 15, 85, 1) 0%, rgba(35, 45, 135, 1) 10%, rgba(88, 21, 132, 1) 32%, rgba(145, 14, 115, 1) 50%, rgba(185, 125, 1, 1) 100%);*/
 }
 
 @keyframes gradient {
@@ -60,7 +61,7 @@ body {
 
 .hero-view {
     color: white;
-    background-color: white !important;
+    background-color: transparent;
     height: 100vh;
     position: relative;
     background-image: url(./wings.svg);
