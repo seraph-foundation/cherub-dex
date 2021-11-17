@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## What makes Cherub unique?
 
-Cherub is the first inverse perpetuals market on Solana and features a uniquely integrated virtual [AMM](terminology.md#amm) design featuring a dynamic liquidation engine based on bonding governed by a DAO ([3, 3](about/terminology.md#3-3)).
+Cherub is the first inverse perpetuals market on Solana and features a uniquely integrated virtual [AMM](/about/terminology.md#amm) design featuring a dynamic liquidation engine based on bonding governed by a DAO ([3, 3](/about/terminology.md#3-3)).
 
 ## Who runs Cherub?
 
