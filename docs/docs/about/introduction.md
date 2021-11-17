@@ -14,7 +14,9 @@ The protocol relies on [staking](/about/terminology.md#staking) and [bonding](/a
 
 ## Why Cherub?
 
-Centralized exchanges do not pass value on to users. Cherub attempts to solve this problem by not only being the most capital efficient inverse perpetuals DEX, but also aims to be the best protocol for traders, investors and builders in terms of low margins.
+Centralized inverse perpetuals exchanges do not pass value on to user. Cherub attempts to solve this problem by not only being the most capital efficient inverse perpetuals DEX, but also by aiming to be the best protocol for traders, investors and builders in terms of offering the lowest trade margins available.
+
+Liquidation practices via auto-deleveraged liquidations (ADLS), socialized losses or insurance funds are capital inefficient. Profits are kept by exchanges, require market makers and liquidity to be locked up, and governing is centralized, questionable and unchecked. Cherub solves this. A dynamic liquidation engine improves capital efficiency and profits are distributed to protocol token stakers. This guarantees at least 90% of liquidity (based on open interest) is kept in the insurance fund. A virtual AMM, along with a dynamic liquidation engine ensure ample liquidity, turns the traditional AMM constant product equation (x * y = k) on it’s head by using a 50/50 pool (invariant of 1) creating a pool for longs and shorts. The bankruptcy and liquidation price spread is dynamically generated based on open interest (OI). The protocol is fully decentralized and open meaning all governing is fully transparent.
 
 ## Disclaimer
 
