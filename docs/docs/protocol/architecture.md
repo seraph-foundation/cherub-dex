@@ -6,6 +6,8 @@ sidebar_position: 2
 
 ## vAMM
 
+Cherub is based on a unique implementation of the constant product market making function.
+
 ## DAO
 
 Governing principles for the factory and exchange are handled by the [DAO](/about/terminology.md#dao).
