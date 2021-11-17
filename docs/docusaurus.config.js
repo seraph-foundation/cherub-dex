@@ -96,7 +96,7 @@ const config = {
             },
             {
               label: 'Twitter',
-              href: 'https://twitter.com/pindarosothecat',
+              href: 'https://twitter.com/cherubprotocol',
             },
           ],
         },
@@ -105,7 +105,7 @@ const config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/cherub-so/cherub-protocol',
+              href: 'https://github.com/cherub-protocol/cherub-protocol',
             },
           ],
         },

@@ -12,7 +12,7 @@ sidebar_position: 4
 
 ### November
 
-- [ ] Finished documentation
+- [ ] Documentation
 - [ ] MVP running on `localnet`
 - [ ] Grant applications
 
