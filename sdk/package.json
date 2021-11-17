@@ -2,7 +2,7 @@
   "name": "@cherub-protocol/sdk",
   "author": "Pindaroso <me@pindaroso.com>",
   "version": "0.1.0",
-  "description": "Inverse Perpetuals DEX and DAO (3, 3)",
+  "description": "Inverse Perpetuals DAO (3, 3)",
   "dependencies": {
     "@project-serum/anchor": "^0.16.2",
     "@project-serum/serum": "^0.13.60",
