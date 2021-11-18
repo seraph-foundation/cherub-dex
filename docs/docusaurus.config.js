@@ -54,6 +54,11 @@ const config = {
           label: 'Docs',
         },
         {
+          href: 'https://www.cherub.markets',
+          label: 'Marketing',
+          position: 'right',
+        },
+        {
           href: 'https://app.cherub.markets',
           label: 'App',
           position: 'right',

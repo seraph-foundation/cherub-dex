@@ -3,7 +3,6 @@
     src: url('./fonts/Spartan-VariableFont_wght.ttf');
 }
 
-/* App */
 html {
     zoom: 108%;
     background-color: black;
@@ -11,7 +10,27 @@ html {
 
 body {
     font-family: 'Spartan', sans-serif !important;
+    background: linear-gradient(-45deg, #101010, #080808, #181818);
+    background-size: 400% 400%;
 }
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 
 .App {
     text-align: center;
@@ -331,32 +350,6 @@ body {
     color: white !important;
 }
 
-/* Background */
-html, body {
-    width: 100%;
-    height:100%;
-}
-
-body {
-    /*background: linear-gradient(-45deg, #181818, #101010, #080808);*/
-    background: linear-gradient(-45deg, #101010, #080808, #181818);
-    background-size: 400% 400%;
-    /*animation: gradient 6000s ease infinite;*/
-}
-
-@keyframes gradient {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-/* Ant */
 .ant-table {
     background-color: transparent;
     color: rgba(255, 255, 255, 0.65) !important;
