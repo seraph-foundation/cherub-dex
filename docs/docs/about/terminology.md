@@ -24,9 +24,9 @@ This meme refers to the prisoner's dilemma. In the case of Cherub, it involves s
 | **Bond** | 3, 1 | 1, 1 | -1, 1 |
 | **Sell** | 1, -1 | 1, -1 | -3, -3 |
 
-## AMM
+## Automated Market Maker (AMM)
 
-Automated market maker. AMM's traditionally use a constant product function `x * y = k` to determine the invariant used for quoting.
+AMM's traditionally use a constant product function `x * y = k` to determine the invariant used for quoting.
 
 ## Bank Run
 
