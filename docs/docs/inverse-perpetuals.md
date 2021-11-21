@@ -30,7 +30,7 @@ $$
 \$2{\ trillion}\times\$100{\ trillion}=\$200{\ trillion}
 $$
 
-The derivatives growth potential big.
+The derivatives growth potential is big.
 
 $$
 \$200{\ trillion}\div\$0.0001{\ trillion}=2,000,000{x}
