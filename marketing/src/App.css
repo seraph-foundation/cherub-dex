@@ -9,7 +9,8 @@ html {
 
 body {
     font-family: 'Spartan';
-    background: linear-gradient(-45deg, white, #Fdfff5);
+    background: linear-gradient(-45deg, #1890ff, white);
+    background-size: 400% 400%;
 }
 
 @keyframes gradient {

@@ -28,8 +28,8 @@ function App() {
         <p className='carousel-description'>Access or bond deep, protocol-owned liquidity</p>
       </div>
       <div>
-        <Title className='carousel-title'>Invest</Title>
-        <p className='carousel-description'>Stake protocol tokens to receive high-yield, rebased cryptodollars</p>
+        <Title className='carousel-title'>Stake</Title>
+        <p className='carousel-description'>Use protocol tokens to receive high-yield, rebased rewards</p>
       </div>
     </Carousel>
   )

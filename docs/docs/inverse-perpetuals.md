@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## Liquidity Ex Nihilo
 
-Perpetual future swap contracts are an incredible innovation. They enable counterparties to exchange pure risk for any asset. Even hard to price things, like indices. Valuing assets is a difficult problem which makes this particularly noteworthy. They offer institutional and retail investors, as well as traders, tax efficient, synthetic asset exposure, which in turn increases market liquidity. More liquidity leads to increased available leverage. Efficient price discovery, liquidity and leverage are all needed for a healthy market to form.
+Perpetual future swap contracts are an incredible innovation. They enable counterparties to exchange pure risk for any asset. Even hard to price things, like indices. Valuing assets is a difficult problem which makes this particularly noteworthy. They offer institutional and retail customers, as well as traders, tax efficient, synthetic asset exposure, which in turn increases market liquidity. More liquidity leads to increased available leverage. Efficient price discovery, liquidity and leverage are all needed for a healthy market to form.
 
 Unlike standard futures contracts, perpetuals never expire, existing in perpetuity. An interest rate, or funding, is exchanged between long and short positions in order to keep the market price of the derivative as close to the asset spot price as possible. Depending on how continuously funding is applied, perpetuals can be thought of as settled in real-time.
 

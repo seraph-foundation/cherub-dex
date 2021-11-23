@@ -18,7 +18,7 @@ The project was ideated by Pindaroso and is being built by a distributed pseudo-
 
 ## Who are our users?
 
-Cherub users include traders (individuals and institutions), builders (protocols), and investors (protocols, investors and DAOs).
+Cherub users include traders (individuals and institutions), builders (protocols), and stakers (individuals, institutions, protocols and DAOs).
 
 ## How does the protocol produce rewards?
 
