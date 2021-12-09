@@ -10,7 +10,14 @@ async function main() {
   const ftxUS = new FTXUS({ key: process.env.FTX_API_KEY, secret: process.env.FTX_API_SECRET })
 
   while (true) {
-    const markets = await ftxUS.Markets.list()
+    var markets
+
+    try {
+      markets = await ftxUS.Markets.list()
+    } catch (e) {
+      console.log(e)
+      continue
+    }
 
     for (let i = 0; i < config.accounts.exchanges.length; i++) {
       const oraclePk = new PublicKey(config.accounts.exchanges[i].oracle)
