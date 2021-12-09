@@ -48,6 +48,16 @@ An exchange running on a decentralized network.
 
 Decentralized finance as opposed to traditional or legacy finance. DeFi is also commonly referred to as "open finance".
 
+## Funding Rate
+
+A $Funding\ Rate\ (F)$ is used to keep the spot price and perpetual swap contract price in line. The formula to calculate $F$ with $Premium\ Index\ (P)$ and an $Interest\ Rate\ (I)$ is as follows.
+
+$$
+F=P+ clamp(I-P,\ 0.05\%, -0.05\%)
+$$
+
+The $clamp$ function returns the value clamped to the inclusive range of min and max. When funding is positive, longs pay shorts. When funding is negative, shorts pay the longs.
+
 ## Index Price
 
 The spot price of a given asset.

@@ -31,11 +31,7 @@ async function main() {
 
       console.log('Setting token', tokenPk.toString(), 'oracle', oraclePk.toString(), 'price to', price.toString() + '...')
 
-      const tx = await config.programs.pyth.rpc.setPrice(new BN(price), {
-        accounts: {
-          price: oraclePk
-        }
-      })
+      const tx = await config.programs.pyth.rpc.setPrice(new BN(price), { accounts: { price: oraclePk } })
 
       console.log('Your transaction signature', tx)
     }
