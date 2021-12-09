@@ -20,3 +20,5 @@ target/
 .DS_Store
 
 app/build
+
+.secrets

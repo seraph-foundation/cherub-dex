@@ -8,6 +8,7 @@
     "app:start": "cd app && yarn start",
     "bot:liquidate:start": "node bots/liquidate.js",
     "bot:trade:start": "node bots/trade.js",
+    "bot:oracle:start": "env $(cat .env | xargs) node bots/oracle.js",
     "docker:build": "docker build . -t cherub",
     "docs:start": "cd docs && yarn start",
     "marketing:start": "cd marketing && yarn start",
@@ -32,6 +33,7 @@
     "ansi-regex": "^5.0.1",
     "chart.js": "^3.5.1",
     "fs": "^0.0.1-security",
+    "ftx-us": "^1.0.5",
     "react-chartjs-2": "^3.0.5"
   },
   "devDependencies": {
