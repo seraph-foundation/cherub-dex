@@ -16,21 +16,22 @@ sidebar_position: 4
 
 ### December
 
-- [ ] MVP running on `localnet`
+- [ ] `SERAPH` DAO launch
 - [ ] Grant applications
 
 ## 2022
 
 ### January
 
-- [ ] Treasury diversification round
-- [ ] MVP running on `devnet`
+- [ ] MVP running on `localnet`
+- [ ] Treasury diversification
 
 ### February
 
 - [ ] Security audit
-- [ ] MVP running on `mainnet`
+- [ ] MVP running on `devnet`
 
 ### March
 
+- [ ] MVP running on `mainnet`
 - [ ] Community development

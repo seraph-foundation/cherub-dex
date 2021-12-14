@@ -14,7 +14,7 @@ The protocol relies on [staking](/docs/about/terminology#stake) and [bonding](/d
 
 ## Why Cherub?
 
-Cherub offers the best user experience for retail users. It does this through low trade fees, no minimum trade size, and quotes trading pairs in USD ([inverse perpetuals](/docs/inverse-perpetuals)).
+Cherub offers the best user experience for retail users. It does this through low trade fees, no minimum trade size, and quotes trading pairs in USD as [inverse perpetuals](/docs/inverse-perpetuals).
 
 ## Disclaimer
 

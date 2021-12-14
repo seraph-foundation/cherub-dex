@@ -6,7 +6,7 @@ sidebar_position: 3
 
 At the end of 2020, computer programmer [Pindaroso](https://github.com/pindaroso) discovered inverse perpetual swap contracts. This lead to a brief trading affair.
 
-> I remember first deciding to send some funny money to an exchange after hearing about perps from an old friend. Following a brief read of the charts, I placed my first buy limit order, post-only — long. It was quickly filled. The position PnL turned green, and after five minutes... the number was still going up. “That was fun”, I thought to myself as I exited the position. “Why bother programming when I can make cash like this?” I placed another long order, but with leverage. The position PnL turned red… and continued bleeding. [Explicative]! Jaw clenched, I panicked and exited. I had no clue what I was doing. But I needed to figure it out. I was hooked.
+> I remember first deciding to send some funny money to an exchange after hearing about perps from an old friend. Following a brief read of the charts, I placed my first buy limit order, post-only — long. It was quickly filled. The position PnL turned green, and after five minutes... the number was still going up. “That was fun”, I thought to myself as I exited the position. “Why bother programming when I can make cash like this?” I placed another long order, but with leverage. The position PnL turned red… and continued bleeding. "Dammit!" Jaw clenched, I panicked and exited. I had no clue what I was doing. But I needed to figure it out. I was hooked.
 >
 > Pindaroso
 
