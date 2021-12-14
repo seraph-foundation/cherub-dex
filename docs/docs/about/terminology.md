@@ -32,7 +32,7 @@ AMM's traditionally use a constant product function `x * y = k` to determine the
 
 Also known as a "run on the bank", this occurs when a large enough number of users withdraw funds from the exchange because they believe the protocol will cease to operate in the near future. This is detrimental to fractional-reserve systems.
 
-## Bonding
+## Bond
 
 Bonding is the process of lending an asset to the DEX for a certain amount of time in exchange for discounted protocol tokens.
 
@@ -56,11 +56,15 @@ $$
 F=P+ clamp(I-P,\ 0.05\%, -0.05\%)
 $$
 
-The $clamp$ function returns the value clamped to the inclusive range of min and max. When funding is positive, longs pay shorts. When funding is negative, shorts pay the longs.
+The $clamp$ function returns the value clamped to the inclusive range of min and max. When funding is positive, longs pay shorts. When funding is negative, shorts pay longs.
 
 ## Index Price
 
 The spot price of a given asset.
+
+## Liquidate
+
+Liquidation is when, in the context of Cherub, the exchange forces a trader to close their position in the case of an unmet margin call. Liquidation practices include auto-deleveraged liquidations (ADLS), socialized losses or insurance funds. The difference between the bankruptcy and liquidation price is kept by the exchange as profit.
 
 ## Market Price
 
@@ -79,6 +83,14 @@ A game theory problem used to analyze why two rational actors might night cooper
 | **A stays silent** | -1, -1 | 0, -3 |
 | **A betrays** | 0, -3 | -2, -2 |
 
-## Staking
+## Pump-and-Dump
 
-This is akin to keeping your tokens in the protocol thereby preventing a bank run. By staking protocol tokens, users help secure the network and earn rewards while doing so.
+A manipulative and illegal scheme that attempts to increase the price of an asset through false information.
+
+## Stake
+
+Staking is akin to keeping your tokens in the protocol thereby preventing a bank run. By staking protocol tokens, users help secure the network and earn rewards while doing so.
+
+## Trade
+
+The act of buying or selling products or services.

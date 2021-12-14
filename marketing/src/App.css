@@ -9,7 +9,7 @@ html {
 
 body {
     font-family: 'Spartan';
-    background: linear-gradient(-45deg, #1890ff, white);
+    background: linear-gradient(-45deg, white, white);
     background-size: 400% 400%;
 }
 

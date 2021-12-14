@@ -12,23 +12,25 @@ sidebar_position: 4
 
 ### November
 
-- [ ] Documentation
-- [ ] MVP running on `localnet`
-- [ ] Grant applications
+- [x] Documentation
 
 ### December
 
-- [ ] Community development
-- [ ] MVP running on `devnet`
+- [ ] MVP running on `localnet`
+- [ ] Grant applications
 
 ## 2022
 
 ### January
 
-- [ ] Security audit
-- [ ] MVP running on `mainnet`
+- [ ] Treasury diversification round
+- [ ] MVP running on `devnet`
 
 ### February
 
-- [ ]  Burn keys
-- [ ]  DAO funding
+- [ ] Security audit
+- [ ] MVP running on `mainnet`
+
+### March
+
+- [ ] Community development

@@ -159,6 +159,11 @@ pub mod exchange {
         exchange.supply_a -= amount_a;
         exchange.supply_b += amount_b;
         exchange.volume += (amount_b as f64 / unit as f64) as u64;
+
+        // TODO: Finish
+        //let oracle = Price::load(&ctx.accounts.oracle).unwrap();
+        //let price =  oracle.agg.price;
+
         exchange.price_a = get_output_price(unit, exchange.supply_a, exchange.supply_b);
         exchange.price_b = get_output_price(unit, exchange.supply_b, exchange.supply_a);
         emit!(SwapEvent { position: position.key() });
