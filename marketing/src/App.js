@@ -24,7 +24,7 @@ function App() {
         <p className='carousel-description'>100x leverage and zero impermanent loss using virtual automated marketing making</p>
       </div>
       <div>
-        <Title className='carousel-title'>Build</Title>
+        <Title className='carousel-title'>Bond</Title>
         <p className='carousel-description'>Access or bond deep, protocol-owned liquidity</p>
       </div>
       <div>
