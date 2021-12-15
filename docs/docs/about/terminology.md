@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## 1, 1
 
-This meme refers to the prisoner's dilemma. In the case of Cherub, it involves solely bonding.
+This meme refers to the [prisoner's dilemma](/docs/about/terminology#prisoners-dilemma). In the case of Cherub, it involves solely bonding.
 
 | | Stake | Bond | Sell |
 |-|-------|------|------|
@@ -26,7 +26,49 @@ This meme refers to the prisoner's dilemma. In the case of Cherub, it involves s
 
 ## Automated Market Maker (AMM)
 
-AMM's traditionally use a constant product function `x * y = k` to determine the invariant used for quoting.
+Automated market makers use liquidity pools instead of relying on a traditional market of buyers and sellers for price discovery. By using a constant product function $x\times\ y=k$, an invariant is determined and used for quoting. In other words, because there is no order book with an AMM, prices are quoted. [Martin Koppelmann](https://www.reddit.com/r/ethereum/comments/55m04x/lets_run_onchain_decentralized_exchanges_the_way/) is credited for making the concept popular.
+
+For example, a new market, or liquidity pool, is created with $100\ {ETH}$ and $10,000\ {DAI}$. The constant product $k$ equals $1,000,000$.
+
+$$
+\begin{aligned}
+x\times y &=k\\
+100\times 10,000&=1,000,000
+\end{aligned}
+$$
+
+Next we can see $1 ETH$ equals $100 DAI$.
+
+$$
+\begin{aligned}
+Quote&=y \div k\\
+100&=10,000 \div 100
+\end{aligned}
+$$
+
+
+Then $1 DAI$ equals $0.01 ETH$.
+
+$$
+\begin{aligned}
+Quote&=x\div y\\
+0.01&=1\div 10,000
+\end{aligned}
+$$
+
+Finally, a trade is made where $1 ETH$ is removed from the pool and swapped for $DAI$.
+
+$$
+\begin{aligned}
+(100 - 1) \times  (10,000 + x) &= 1,000,000\\
+99 \times (10,000 + x) &= 1,000,000\\
+10,000 + x &= 1,000,000 \div 99\\
+x &= (1,000,000 \div 99) - 10,000\\
+x &= 101.0101010101
+\end{aligned}
+$$
+
+The deeper the liquidity, the lower the change.
 
 ## Bank Run
 
@@ -60,7 +102,7 @@ The $clamp$ function returns the value clamped to the inclusive range of min and
 
 ## Index Price
 
-The spot price of a given asset.
+The spot price of a given asset used for determining a perpetuals [funding rate](/docs/about/terminology#funding-rate).
 
 ## Liquidate
 
@@ -94,3 +136,13 @@ Staking is akin to keeping your tokens in the protocol thereby preventing a bank
 ## Trade
 
 The act of buying or selling products or services.
+
+## Treasury Problem
+
+Rapid market growth and decay, along with regulation, has put a strain on the modern treasury. This is becoming more and more clear as the world realizes an increasingly globalized connection through technology. The global financial crisis and subsequent creation of BTC in 2008 are cairns that mark humanity’s path through history.
+
+Uncertainty consequently leads to poor cash management. This includes desperate banking, irresponsible debt and funding, and questionable investing. It also makes it nearly impossible to manage risk for currencies and interest rates as monetary policies and government regimes change, seemingly, daily. This applies to fiat and crypto alike. What they both have in common is, at the core, a requirement for a treasury that provides high-interest yield and on-demand liquidity.
+
+## Virtual Automated Market Maker (vAMM)
+
+This is an abstracted [AMM](/docs/about/terminology#automated-market-maker-amm). It is considered virtual as no actual asset swap ever occurs. Assets are synthetic only. Settlement is done using cash.
