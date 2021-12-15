@@ -4,36 +4,27 @@ sidebar_position: 4
 
 # Roadmap
 
-## 2021
-
-### October
+## 2021 Q3
 
 - [x] Submit proof of concept project to Solana Ignition hackathon
 
-### November
+## 2021 Q4
 
-- [x] Documentation
+- [ ] Documentation
+- [ ] SERAPH DAO token launch
 
-### December
-
-- [ ] `SERAPH` DAO token launch
-
-## 2022
+## 2022 Q1
 
 - [ ] Treasury diversification
-
-### January
-
-- [ ] MVP running on `localnet`
-
-### February
-
-- [ ] MVP running on `devnet`
-
-### March
-
 - [ ] Security audit
 
-### April
+## 2022 Q2
 
-- [ ] MVP running on `mainnet`
+- [ ] Launch
+- [ ] DAO treasury partnerships
+- [ ] SERAPH token listing
+
+## 2022 Q3
+
+- [ ] Expansion of asset pools
+- [ ] DAO transition

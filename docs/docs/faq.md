@@ -20,7 +20,7 @@ The project was ideated by Pindaroso and is being built by a distributed pseudo-
 
 Cherub users include traders, for example, individuals and institutions, bonders, like builders and protocols, and stakers, potentially individuals, institutions, builders and protocols.
 
-## How does the `CHERUB` token produce rewards?
+## How does the CHERUB token produce rewards?
 
 The protocol token produces rewards in three distinct ways.
 

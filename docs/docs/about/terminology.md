@@ -6,7 +6,7 @@ sidebar_position: 2
 
 ## 1, 1
 
-This meme refers to the [prisoner's dilemma](/docs/about/terminology#prisoners-dilemma). In the case of Cherub, it involves solely bonding.
+This meme refers to the [prisoner's dilemma](/docs/about/terminology#prisoners-dilemma). In the case of the Cherub Protocol, it involves solely bonding.
 
 | | Stake | Bond | Sell |
 |-|-------|------|------|
@@ -28,7 +28,7 @@ This meme refers to the prisoner's dilemma. In the case of Cherub, it involves s
 
 Automated market makers use liquidity pools instead of relying on a traditional market of buyers and sellers for price discovery. By using a constant product function $x\times\ y=k$, an invariant is determined and used for quoting. In other words, because there is no order book with an AMM, prices are quoted. [Martin Koppelmann](https://www.reddit.com/r/ethereum/comments/55m04x/lets_run_onchain_decentralized_exchanges_the_way/) is credited for making the concept popular.
 
-For example, a new market, or liquidity pool, is created with $100\ {ETH}$ and $10,000\ {DAI}$. The constant product $k$ equals $1,000,000$.
+For example, a new market, or liquidity pool, is created with $100$ ETH and $10,000$ DAI. The constant product $k$ equals $1,000,000$.
 
 $$
 \begin{aligned}
@@ -37,7 +37,7 @@ x\times y &=k\\
 \end{aligned}
 $$
 
-Next we can see $1 ETH$ equals $100 DAI$.
+Next we can see $1$ ETH equals $100$ DAI.
 
 $$
 \begin{aligned}
@@ -47,7 +47,7 @@ Quote&=y \div k\\
 $$
 
 
-Then $1 DAI$ equals $0.01 ETH$.
+Then $1$ DAI equals $0.01$ ETH.
 
 $$
 \begin{aligned}
@@ -56,7 +56,7 @@ Quote&=x\div y\\
 \end{aligned}
 $$
 
-Finally, a trade is made where $1 ETH$ is removed from the pool and swapped for $DAI$.
+Finally, a trade is made where $1$ ETH is removed from the pool and swapped for DAI.
 
 $$
 \begin{aligned}
@@ -78,17 +78,21 @@ Also known as a "run on the bank", this occurs when a large enough number of use
 
 Bonding is the process of lending an asset to the DEX for a certain amount of time in exchange for discounted protocol tokens.
 
+## CHERUB
+
+The token received when a user stakes THRONES. CHERUB tokens are rewarded protocol fees.
+
 ## Decentralized Autonomous Organization (DAO)
 
 A decentralized autonomous organization (DAO) is an entity controlled by a variety of computers, networks and nodes. It is not controlled by a single institution such as a government or central bank and hence cannot be censored.
 
 ## Decentralized Exchange (DEX)
 
-An exchange running on a decentralized network.
+A Decentralized exchange (DEX) is a exchange running on a decentralized network.
 
 ## Decentralized Finance (DeFi)
 
-Decentralized finance as opposed to traditional or legacy finance. DeFi is also commonly referred to as "open finance".
+Decentralized finance (DeFi) as opposed to traditional or legacy finance. DeFi is also commonly referred to as "open finance".
 
 ## Funding Rate
 
@@ -106,7 +110,7 @@ The spot price of a given asset used for determining a perpetuals [funding rate]
 
 ## Liquidate
 
-Liquidation is when, in the context of Cherub, the exchange forces a trader to close their position in the case of an unmet margin call. Liquidation practices include auto-deleveraged liquidations (ADLS), socialized losses or insurance funds. The difference between the bankruptcy and liquidation price is kept by the exchange as profit.
+Liquidation is when, in the context of Cherub, the exchange forces a trader to close their position in the case of an unmet margin call. Liquidation practices include auto-deleveraged liquidations (ADLS), socialized losses and insurance funds. The difference between the bankruptcy and liquidation price is kept by the exchange as profit.
 
 ## Market Price
 
@@ -129,9 +133,17 @@ A game theory problem used to analyze why two rational actors might night cooper
 
 A manipulative and illegal scheme that attempts to increase the price of an asset through false information.
 
+## SERAPH
+
+The token used by the DAO to create and vote on proposals. There are $1,000,000,000$ SERAPH minted and in circulation.
+
 ## Stake
 
 Staking is akin to keeping your tokens in the protocol thereby preventing a bank run. By staking protocol tokens, users help secure the network and earn rewards while doing so.
+
+## THRONES
+
+The token received when collateral is bonded.
 
 ## Trade
 
