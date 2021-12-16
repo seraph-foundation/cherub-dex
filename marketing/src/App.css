@@ -63,7 +63,7 @@ body {
     background-color: transparent;
     height: 100vh;
     position: relative;
-    background-image: url(./wings.svg);
+    /*background-image: url(./wings.svg);*/
     background-size: 200% 200%;
     background-position: center center;
     background-repeat: no-repeat;
