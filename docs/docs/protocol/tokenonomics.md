@@ -4,9 +4,9 @@ sidebar_position: 1
 
 # Tokenomics
 
-## What is the gCHRB market capitalization?
+## What is the dCHRB market capitalization?
 
-There are currently $1,000,000,000$ [gCHRB](/docs/about/terminology#gchrb) tokens minted and in circulation.
+There are currently $1,000,000,000$ [dCHRB](/docs/about/terminology#dchrb) tokens minted and in circulation.
 
 ## Do the CHRB tokens have any burn?
 
