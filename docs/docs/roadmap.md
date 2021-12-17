@@ -11,7 +11,7 @@ sidebar_position: 4
 ## 2021 Q4
 
 - [ ] Documentation
-- [ ] SERAPH DAO token launch
+- [ ] [dCHRB](/docs/about/terminology#dchrb) token launch
 
 ## 2022 Q1
 
@@ -21,7 +21,7 @@ sidebar_position: 4
 ## 2022 Q2
 
 - [ ] Launch
-- [ ] DAO transition via SERAPH token listing
+- [ ] DAO transition via dCHRB token listing
 
 ## 2022 Q3
 

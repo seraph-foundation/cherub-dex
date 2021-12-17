@@ -18,7 +18,7 @@ New [sCHRB](/docs/about/terminology#schrb) tokens are created when CHRB tokens a
 
 ## Is there a lockup on earned CHRB?
 
-Right now, staked CHRB tokens reward CHERUB tokens over a specified period. Earned CHRB go into a lockup address and are later distributed to the bonders who earned it from the staking.
+Right now, staked CHRB tokens reward sCHRB tokens over a specified period. Earned CHRB go into a lockup address and are later distributed to the bonders who earned it from the staking.
 
 ## Why CHRB does have infinite inflation?
 

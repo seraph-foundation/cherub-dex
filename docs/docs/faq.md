@@ -26,7 +26,7 @@ The token does not produce rewards nor is this token expected to even have a val
 
 ## How does the sCHRB token produce rewards?
 
-[CHERUB](/docs/about/terminology#schrb) produces rewards through [staking](/docs/about/terminology#stake). See [equations](/docs/protocol/equations) for more information.
+[sCHRB](/docs/about/terminology#schrb) produces rewards through [staking](/docs/about/terminology#stake). See [equations](/docs/protocol/equations) for more information.
 
 ## How does the CHRB token produce rewards?
 
