@@ -6,7 +6,7 @@ sidebar_position: 4
 
 ## What makes Cherub unique?
 
-The Cherub Protocol is a perpetuals exchange focused on retail users, that is, [traders](/docs/about/terminology#trade), [bonders](/docs/about/terminology#bond) and [stakers](/docs/about/terminology#stake). It is also the first inverse perpetuals market on Solana and features a uniquely integrated [vAMM](/docs/about/terminology#virtual-automated-market-maker-vamm) design featuring a dynamic liquidation engine based on bonding governed by a [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) ([3, 3](/docs/about/terminology#3-3)).
+The Cherub Protocol is a perpetuals exchange focused on retail [traders](/docs/about/terminology#trade), [bonders](/docs/about/terminology#bond) and [stakers](/docs/about/terminology#stake). It is also the first inverse perpetuals market on Solana and features a uniquely integrated [vAMM](/docs/about/terminology#virtual-automated-market-maker-vamm) design featuring a dynamic liquidation engine based on bonding governed by a [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) ([3, 3](/docs/about/terminology#3-3)).
 
 ## Who runs Cherub?
 

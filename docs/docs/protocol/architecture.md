@@ -14,7 +14,7 @@ Factory contract code is responsible for creating, reading, updating and deletin
 
 ## Exchange
 
-Cherub is based on a unique implementation of the constant product market making [vAMM](/docs/about/terminology#virtual-automated-market-maker-vamm) function $x \times y = k$. See [code](https://github.com/cherub-protocol/cherub-protocol/tree/master/programs/exchange) for more information.
+Cherub is based on a unique implementation of a [vAMM](/docs/about/terminology#virtual-automated-market-maker-vamm) for determining the [funding rate](/docs/terminology#funding-rate). See [code](https://github.com/cherub-protocol/cherub-protocol/tree/master/programs/exchange) for more information.
 
 ## Oracle
 
