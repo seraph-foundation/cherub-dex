@@ -4,4 +4,22 @@ sidebar_position: 1
 
 # Tokenomics
 
-The protocol tokenomics are fairly simple. Bonds are sold for discounted protocol tokens as a means of providing liquidity for the exchange. Trades are made via a virtual [AMM](/about/terminology.md#amm) with a bonding curve that ranges between `+/- 1`. An invariant of `0` represents equal [market](/about/terminology.md#market-price) and [index](/about/terminology.md#index-price) prices. The liquidation and bankruptcy spread is based on open interest ([OI](/about/terminology.md#open-interest-oi)). This spread is dynamically calculated based on the difference between the insurance fund holdings and OI. When the insurance fund is large, the spread is small, and vise versa. The insurance fund grows by receiving the liquidation and bankruptcy price spread from trading.
+## What is the gCHRB market capitalization?
+
+There are currently $1,000,000,000$ [gCHRB](/docs/about/terminology#gchrb) tokens minted and in circulation.
+
+## Do the CHRB tokens have any burn?
+
+Yes. When collateral is bonded [CHRB](/docs/about/terminology#chrb) tokens are minted and when collateral is unbonded the token is burned.
+
+## How does the sCHRB token enter into circulation?
+
+New [sCHRB](/docs/about/terminology#schrb) tokens are created when CHRB tokens are staked.
+
+## Is there a lockup on earned CHRB?
+
+Right now, staked CHRB tokens reward CHERUB tokens over a specified period. Earned CHRB go into a lockup address and are later distributed to the bonders who earned it from the staking.
+
+## Why CHRB does have infinite inflation?
+
+CHRB does not have infinite inflation. A hard cap of $250$M has been approved, but there are not yet contractual changes in place to create this hard cap.

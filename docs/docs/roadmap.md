@@ -21,10 +21,8 @@ sidebar_position: 4
 ## 2022 Q2
 
 - [ ] Launch
-- [ ] DAO treasury partnerships
-- [ ] SERAPH token listing
+- [ ] DAO transition via SERAPH token listing
 
 ## 2022 Q3
 
 - [ ] Expansion of asset pools
-- [ ] DAO transition

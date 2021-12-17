@@ -78,9 +78,13 @@ Also known as a "run on the bank", this occurs when a large enough number of use
 
 Bonding is the process of lending an asset to the DEX for a certain amount of time in exchange for discounted protocol tokens.
 
-## CHERUB
+## CHRB
 
-The token received when a user stakes THRONES. CHERUB tokens are rewarded protocol fees.
+The token received when collateral is bonded.
+
+## dCHRB
+
+The token used by the DAO to create and vote on proposals is called dCHRB.
 
 ## Decentralized Autonomous Organization (DAO)
 
@@ -96,13 +100,7 @@ Decentralized finance (DeFi) as opposed to traditional or legacy finance. DeFi i
 
 ## Funding Rate
 
-A $Funding\ Rate\ (F)$ is used to keep the spot price and perpetual swap contract price in line. The formula to calculate $F$ with $Premium\ Index\ (P)$ and an $Interest\ Rate\ (I)$ is as follows.
-
-$$
-F=P+ clamp(I-P,\ 0.05\%, -0.05\%)
-$$
-
-The $clamp$ function returns the value clamped to the inclusive range of min and max. When funding is positive, longs pay shorts. When funding is negative, shorts pay longs.
+A funding rate is an interest rate applied to long and short perpetual swap positions. It is used to keep the spot price and contract price in line. When funding is positive, longs pay shorts. When funding is negative, shorts pay longs. See [equations](/docs/protocol/equations#funding-rate) for more information.
 
 ## Index Price
 
@@ -110,7 +108,7 @@ The spot price of a given asset used for determining a perpetuals [funding rate]
 
 ## Liquidate
 
-Liquidation is when, in the context of Cherub, the exchange forces a trader to close their position in the case of an unmet margin call. Liquidation practices include auto-deleveraged liquidations (ADLS), socialized losses and insurance funds. The difference between the bankruptcy and liquidation price is kept by the exchange as profit.
+Liquidation is when, in the context of Cherub, the exchange forces a trader to close their position in the case of an unmet margin call. Liquidation practices include auto-deleveraged liquidations (ADLS), socialized losses, and insurance funds. The difference between the bankruptcy and liquidation price is kept by the exchange as profit.
 
 ## Market Price
 
@@ -133,17 +131,13 @@ A game theory problem used to analyze why two rational actors might night cooper
 
 A manipulative and illegal scheme that attempts to increase the price of an asset through false information.
 
-## SERAPH
-
-The token used by the DAO to create and vote on proposals. There are $1,000,000,000$ SERAPH minted and in circulation.
-
 ## Stake
 
 Staking is akin to keeping your tokens in the protocol thereby preventing a bank run. By staking protocol tokens, users help secure the network and earn rewards while doing so.
 
-## THRONES
+## sCHRB
 
-The token received when collateral is bonded.
+The token received when a user stakes CHRB.
 
 ## Trade
 

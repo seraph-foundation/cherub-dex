@@ -6,7 +6,7 @@ sidebar_position: 4
 
 ## What makes Cherub unique?
 
-The Cherub Protocol is a perpetuals exchange focused on retail users, that is, [traders](/docs/about/terminology#trade), [bonders](/docs/about/terminology#bond) and [stakers](/docs/about/terminology#stake). It is also the first inverse perpetuals market on Solana and features a uniquely integrated virtual [AMM](/about/terminology.md#amm) design featuring a dynamic liquidation engine based on bonding governed by a [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) ([3, 3](/about/terminology.md#3-3)).
+The Cherub Protocol is a perpetuals exchange focused on retail users, that is, [traders](/docs/about/terminology#trade), [bonders](/docs/about/terminology#bond) and [stakers](/docs/about/terminology#stake). It is also the first inverse perpetuals market on Solana and features a uniquely integrated [vAMM](/docs/about/terminology#virtual-automated-market-maker-vamm) design featuring a dynamic liquidation engine based on bonding governed by a [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) ([3, 3](/docs/about/terminology#3-3)).
 
 ## Who runs Cherub?
 
@@ -20,14 +20,18 @@ The project was ideated by Pindaroso and is being built by a distributed pseudo-
 
 Cherub users include traders, for example, individuals and institutions, bonders, like builders and protocols, and stakers, potentially individuals, institutions, builders and protocols.
 
-## How does the CHERUB token produce rewards?
+## How does the dCHRB token produce rewards?
 
-The protocol token produces rewards in three distinct ways.
+The token does not produce rewards nor is this token expected to even have a value. [dCHRB](/docs/about/terminology#dchrb) is a DAO token used to govern the protocol.
 
-1. Protocol fees based on the bankruptcy and liquidation price spread
-2. Bond discounts
-3. A productive treasury via protocol-owned liquidity
+## How does the sCHRB token produce rewards?
 
-## How are funds from supporters used?
+[CHERUB](/docs/about/terminology#schrb) produces rewards through [staking](/docs/about/terminology#stake). See [equations](/docs/protocol/equations) for more information.
 
-Cherub uses funding for engineering and community management purposes.
+## How does the CHRB token produce rewards?
+
+The [CHRB](/docs/about/terminology#chrb) produces rewards by means of [bonding](/docs/about/terminology#bond). See [equations](/docs/protocol/equations) for more information.
+
+## What is the purpose of the DAO treasury?
+
+Cherub uses funding to support engineering and community management efforts.
