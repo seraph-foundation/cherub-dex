@@ -26,14 +26,14 @@ This meme refers to the prisoner's dilemma. In the case of Cherub, it involves s
 
 ## Automated Market Maker (AMM)
 
-Automated market makers use liquidity pools instead of relying on a traditional market of buyers and sellers for price discovery. By using a constant product function $x\times\ y=k$, an invariant is determined and used for quoting. In other words, because there is no order book with an AMM, prices are quoted. [Martin Koppelmann](https://www.reddit.com/r/ethereum/comments/55m04x/lets_run_onchain_decentralized_exchanges_the_way/) is credited for making the concept popular.
+Automated market makers use liquidity pools instead of relying on a traditional market of buyers and sellers for price discovery. By using a constant product function $x * y=k$, an invariant is determined and used for quoting. In other words, because there is no order book with an AMM, prices are quoted. [Martin Koppelmann](https://www.reddit.com/r/ethereum/comments/55m04x/lets_run_onchain_decentralized_exchanges_the_way/) is credited for making the concept popular.
 
 For example, a new market, or liquidity pool, is created with $100$ ETH and $10,000$ DAI. The constant product $k$ equals $1,000,000$.
 
 $$
 \begin{aligned}
-x\times y &=k\\
-100\times 10,000&=1,000,000
+x * y &=k\\
+100 * 10,000&=1,000,000
 \end{aligned}
 $$
 
@@ -41,8 +41,8 @@ Next we can see $1$ ETH equals $100$ DAI.
 
 $$
 \begin{aligned}
-Quote&=y \div k\\
-100&=10,000 \div 100
+quote&=y / k\\
+100&=10,000 / 100
 \end{aligned}
 $$
 
@@ -51,8 +51,8 @@ Then $1$ DAI equals $0.01$ ETH.
 
 $$
 \begin{aligned}
-Quote&=x\div y\\
-0.01&=1\div 10,000
+quote&=x / y\\
+0.01&=1 / 10,000
 \end{aligned}
 $$
 
@@ -60,10 +60,10 @@ Finally, a trade is made where $1$ ETH is removed from the pool and swapped for 
 
 $$
 \begin{aligned}
-(100 - 1) \times  (10,000 + x) &= 1,000,000\\
-99 \times (10,000 + x) &= 1,000,000\\
-10,000 + x &= 1,000,000 \div 99\\
-x &= (1,000,000 \div 99) - 10,000\\
+(100 - 1) *  (10,000 + x) &= 1,000,000\\
+99 * (10,000 + x) &= 1,000,000\\
+10,000 + x &= 1,000,000 / 99\\
+x &= (1,000,000 / 99) - 10,000\\
 x &= 101.0101010101
 \end{aligned}
 $$
@@ -74,17 +74,21 @@ The deeper the liquidity, the lower the change.
 
 Also known as a "run on the bank", this occurs when a large enough number of users withdraw funds from the exchange because they believe the protocol will cease to operate in the near future. This is detrimental to fractional-reserve systems.
 
+## Bankruptcy Price
+
+The price at which a position is closed in the case of an unmet margin call.
+
 ## Bond
 
 Bonding is the process of lending an asset to the DEX for a certain amount of time in exchange for discounted protocol tokens.
 
+## bCHRB
+
+The token received when trading collateral is bonded.
+
 ## CHRB
 
-The token received when collateral is bonded.
-
-## dCHRB
-
-The token used by the DAO to create and vote on proposals is called dCHRB.
+The token used by the DAO to create and vote on proposals is called CHRB.
 
 ## Decentralized Autonomous Organization (DAO)
 
@@ -116,7 +120,7 @@ The current protocol market price for a given asset.
 
 ## Open Interest (OI)
 
-This is the total number of unsettled contracts, or the outstanding value of the futures contracts.
+The total number of unsettled contracts, or the outstanding value of the futures contracts.
 
 ## Prisoner's Dilemma
 

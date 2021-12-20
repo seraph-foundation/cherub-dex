@@ -8,9 +8,9 @@ sidebar_position: 2
 >
 > Vitalik Buterin
 
-The Cherub Protocol requires capital to operate. Capital is used to fund engineering and community management efforts. The [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) token for Cherub is known as [dCHRB](/docs/about/terminology#dchrb) and the minted tokens are distributed through treasury diversification swaps or accrued using a three-tiered vesting schedule. Token holders can be thought of as members of a social club responsible for managing the protocol development through treasury management.
+The Cherub Protocol requires capital to operate. Capital is used to fund engineering and community management efforts. The [DAO](/docs/about/terminology#decentralized-autonomous-organization-dao) token for Cherub is known as [CHRB](/docs/about/terminology#dchrb) and the minted tokens are distributed through treasury diversification swaps or accrued using a three-tiered vesting schedule. Token holders can be thought of as members of a social club responsible for managing the protocol development through treasury management.
 
-Treasury management is based on voting. Any dCHRB holder may create or vote on a proposal. Treasury diversification rounds can be done with other protocols, DAOs and venture capital. This is the ideal framework for accomplishing decentralized management. It is important to note that the DAO token has no intrinsic value and can only be used for voting. It does not receive rewards like [sCHRB](/docs/about/terminology#schrb) or [CHRB](/docs/about/terminology#chrb) token. See [tokenomics](/docs/about/terminology#tokenomics) for more information.
+Treasury management is based on voting. Any CHRB holder may create or vote on a proposal. Treasury diversification rounds can be done with other protocols, DAOs and venture capital. This is the ideal framework for accomplishing decentralized management. It is important to note that the DAO token has no intrinsic value and can only be used for voting. It does not receive rewards like [sCHRB](/docs/about/terminology#schrb) or [bCHRB](/docs/about/terminology#chrb) token. See [tokenomics](/docs/about/terminology#tokenomics) for more information.
 
 ## Vision
 

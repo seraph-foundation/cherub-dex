@@ -22,3 +22,5 @@ target/
 app/build
 
 .secrets
+
+notebooks/.ipynb_checkpoints

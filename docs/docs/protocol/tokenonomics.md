@@ -4,13 +4,13 @@ sidebar_position: 1
 
 # Tokenomics
 
-## What is the dCHRB market capitalization?
+## What is the CHRB market capitalization?
 
-There are currently $1,000,000,000$ [dCHRB](/docs/about/terminology#dchrb) tokens minted and in circulation.
+There are currently $5,000,000,000$ [CHRB](/docs/about/terminology#chrb) tokens minted and in circulation.
 
 ## Do the CHRB tokens have any burn?
 
-Yes. When collateral is bonded [CHRB](/docs/about/terminology#chrb) tokens are minted and when collateral is unbonded the token is burned.
+Yes. When collateral is bonded [bCHRB](/docs/about/terminology#bchrb) tokens are minted and when collateral is unbonded the token is burned.
 
 ## How does the sCHRB token enter into circulation?
 
