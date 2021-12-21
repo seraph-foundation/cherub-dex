@@ -6,7 +6,7 @@ sidebar_position: 1
 
 ## What is the CHRB market capitalization?
 
-There are currently $5,000,000,000$ [CHRB](/docs/about/terminology#chrb) tokens minted and in circulation.
+There are currently $7,000,000,000$ [CHRB](/docs/about/terminology#chrb) tokens minted and in circulation.
 
 ## Do the CHRB tokens have any burn?
 
